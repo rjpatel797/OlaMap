@@ -711,6 +711,7 @@
       const polylineId = "dynamicPolyline";
       let dynamicPlaybackData = [];
       let isPopupClosedManually = false;
+      let deviceData = [];
 
       const ANGLE_OFFSET = 90;
       const popup = document.getElementById("customPopup");
@@ -765,6 +766,7 @@
               did: item.did,
             }));
             populateVehicleList(devices);
+            deviceData = devices;
           })
           .catch((error) => console.error("Error fetching devices:", error));
       }
@@ -870,9 +872,10 @@
 
       // Create popup content with GPS and Engine status
       function createPopupContent(data) {
+        const devicename = deviceData.find((d) => d.did == data.deviceId)?.name;
         return `
         <div style="border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 5px;">
-            <b>Vehicle:</b> ${data.deviceId} 
+            <b>Vehicle:</b> ${devicename} 
         </div>
         <div>
             <b>Speed:</b> ${Math.round(data.speed)} km/h <br/>
