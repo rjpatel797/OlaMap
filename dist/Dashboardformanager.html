@@ -1,0 +1,52 @@
+ <script type="text/javascript">
+ 
+
+ var cars= '<div class="row" align="center" style="margin-top: 27%;"><div class="col-md-3 col-xs-6"><a  href="#"  onclick="callstauswisedevice(\'moving\')"><img alt="moving" src="images/Green_Car_d.png" /><span class="badge bg-green" id="movingcount"></span></a></div> <div class="col-md-3 col-xs-6"><a  href="#"  onclick="callstauswisedevice(\'stop\')"><img alt="stop" src="images/Red_Car_d.png" /><span class="badge bg-red" id="stopedcount"></span></a></div></div><div class="row"><div class="col-xs-offset-3 col-xs-6"><a  href="#"  onclick="callstauswisedevice(\'all\')"><img alt="all" src="images/Blue_Car_d.png" /><span class="badge bg-blue" id="allcount"></span></a></div></div><div class="row"><div class="col-md-3 col-xs-6"><a  href="#"  onclick="callstauswisedevice(\'ideal\')"><img alt="ideal" src="images/Orange_Car_d.png" /><span class="badge bg-orange" id="count"></span></a></div><div class="col-md-3 col-xs-6"><a  href="#"  onclick="callstauswisedevice(\'dead\')"><img alt="dead" src="images/Black_Car_d.png" /><span class="badge bg-black" id="deadcount"></span></a></div></div> ';
+ $("#getvehical").html(cars);
+ datatable();
+getcount();
+// 	alert(mid);
+function getcount()
+{
+ var url=API+"Jsoncontroller?";
+ var query="Operation=getstatus";
+ //alert(url+query);
+ $.ajax({
+     type: "GET",
+     url: url+query,
+	 dataType: "jsonp",
+     beforeSend: function(HttpRequest) {
+     	//$("#count").html(' <img src="images/loading.gif"/>');
+     },
+     success: function(msg2) 
+     {
+   var conten="";
+     	var msg = eval(msg2);
+         for(var i=0;i<msg.length;i++)
+         {
+         	
+         	$("#movingcount").html(msg[0].running);
+         	$("#stopedcount").html(msg[0].stop);
+         	$("#count").html(msg[0].ideal);
+         	$("#deadcount").html(msg[0].dead);
+         	$("#allcount").html(msg[0].total);
+           
+         }
+              
+     }
+ });
+}
+
+function callstauswisedevice(name)
+{
+$("#status").val(name);	
+changeview2("Statuswisedevice.html");
+}
+ 
+ 
+ </script>
+  <div class="content-wrapper" >
+    <section class="content" id="getvehical">
+            </section>
+            </div>
+   

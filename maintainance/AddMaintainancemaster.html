@@ -1,0 +1,252 @@
+
+<script type="text/javascript">
+var url=API+"Jsoncontroller?";
+var query="Operation=getDevicedetailbymid";
+//alert(url+query);
+$.ajax({
+    type: "GET",
+    url: url+query,
+    dataType: "jsonp",
+    success: function(msg2) 
+    {
+   // alert(msg2);
+    	 var conten="";
+      	var msg = eval(msg2);
+
+    	var select= '<select name="deviceId" id="deviceId" class="form-control select2" multiple="multiple" data-placeholder="Select a Device" style="width: 100%;">';
+        for(var i=0;i<msg.length;i++)
+        {
+        	conten = conten+' <option value="'+msg[i].DeviceID+'">'+msg[i].Devicename+'</option>';
+        }
+        $("#Getdevice").html(select+conten+"</select>");
+      //  alert(conten);
+        $(".select2").select2({
+      	  tags: "true",
+      	  placeholder: "Select an option",
+      	  allowClear: true
+      	});
+    }
+});
+
+
+var url=API+"Jsoncontroller?";
+var query="Operation=getMaintainanceAlertType";
+//alert(url+query);
+$.ajax({
+    type: "GET",
+    url: url+query,
+    dataType: "jsonp",
+    success: function(msg2) 
+    {
+   // alert(msg2);
+    	 var conten="";
+      	var msg = eval(msg2);
+
+    	var select= '<select  name="MaintainanceExpiryType" class="form-control" id="MaintainanceExpiryTypeid" >';
+        for(var i=0;i<msg.length;i++)
+        {
+        	conten = conten+' <option value="'+msg[i] [0]+'">'+msg[i][1]+'</option>';
+        }
+        $("#MaintainanceExpiryType").html(select+conten+"</select>");
+     
+    }
+});
+
+
+
+</script>
+    
+      
+             <div class="modal-header">
+ <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+	  <h4> Add Maintainance Information</h4>
+</div>
+<div class="modal-body">
+        <div id="welcometext" ></div>
+        <div id="welcometext1"   ></div>
+       
+                <div class="control-group">
+                    <label> Device Name :</label>
+                  <div id="Getdevice"></div>
+                </div>   
+                <div class="control-group">
+
+                    <label class="control-label"  for="inputMaintainanceExpiryType">Expiry Type :</label>
+                    <div class="controls">
+                      <div id="MaintainanceExpiryType"></div> 
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Date rage :</label>
+                <div class="input-group">
+                  <div class="input-group-addon">
+                    <i class="fa fa-clock-o"></i>
+                  </div>
+                  <input type="text" class="form-control pull-right " id="reservationtime">
+                </div>
+                </div>
+               
+                <div class="control-group">
+                    <label class="control-label"  > Alert Before :</label>
+                    <div class="controls">
+                        <input type="text" name="MaintainanceAlertBefore" class="form-control" id="MaintainanceAlertBefore" placeholder="Maintainance Alert Before" value="7"/>
+
+                    </div>
+                </div> 
+                <input type="hidden" id="MaintainanceAlertType" value="Both" />
+                <div class="control-group">
+                    <label class="control-label"> Alert No :</label>
+                    <div class="controls">
+                        <input type="text" name="MaintainanceAlertNo" class="form-control" id="MaintainanceAlertNo" placeholder="Maintainance Alert No"/>
+
+                    </div>
+                </div>              
+                <div class="control-group">
+                    <label class="control-label" for="inputMaintainanceEmailID" id="lblMaintainanceEmailID"> Email ID :</label>
+                    <div class="controls">
+                        <input type="text" name="MaintainanceEmailID" class="form-control" id="MaintainanceEmailID" placeholder="Maintainance Email ID"/>
+
+                    </div>
+                </div>                         
+
+           <div class="control-group">
+                    <label class="control-label" for="inputMaintainancePeriod">Period :</label>
+                    <div class="controls">
+
+                        <input type="text"  class="form-control" id="MaintainancePeriod" name="MaintainancePeriod" placeholder="In days"  /> 
+
+ 
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="inputNotes">Notes :</label>
+                    <div class="controls">
+                        <textarea  name="Notes" class="form-control" id="Notes" placeholder="Notes"></textarea>
+                    </div>
+                </div>
+                <input type="hidden" id="IsActive" value="1"/>
+              <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" onclick="insert()" >Save</button>
+      </div>     
+            
+
+</div>
+
+
+  <script type="text/javascript">
+           $(document).ready(function(){
+
+        	   $('#reservationtime').daterangepicker({timePicker: true, timePickerIncrement: 30, format: 'DD/MM/YYYY HH:mm',timePicker12Hour: false});
+           });
+ 
+            function insert()
+            {
+                // MaintainanceStartDate
+                // alert($("#MaintainanceDueDate").text());
+                var reservationtime=$("#reservationtime").val().split("-");
+                var post_data='MaintainanceDeviceName='+$("#deviceId").val()+'&MaintainanceExpiryType='+$("#MaintainanceExpiryTypeid").val()+'&isActive='+$("#IsActive").val()+'&MaintainancePeriod='+$( "#MaintainancePeriod" ).val()+'&MaintainanceDueDate='+reservationtime[1]
+                    +'&MaintainanceAlertBefore='+$("#MaintainanceAlertBefore").val() +'&MaintainanceStartDate='+reservationtime[0]+'&MaintainanceAlertType='+$("#MaintainanceAlertType").val()+'&MaintainanceAlertNo='+$("#MaintainanceAlertNo").val()+'&MaintainanceEmailID='+$("#MaintainanceEmailID").val()+"&Notes="+$("#Notes").val()+"&option=add";
+                
+                console.log(post_data);
+                $.ajax({
+                    type: "GET",
+                    url: "Jsoncontroller?Operation=maintainacealertinfo",                        
+                    data: post_data,
+                    beforeSend: function(HttpRequest)
+                    {
+                        $("#welcometext").html("<em class='loding'>&nbsp;Please wait while saving....</em>");
+                    },
+                    success: function(response) {  
+                        //  alert(response);			
+                        if(response==1)
+                        {
+                            $("#welcometext").html("<em color='green'  class='alert alert-success'>&nbsp;Suceessfully Added!!!!!!</em>");
+                        //    clear_form_elements(ele);
+                        }
+                        else 
+                        {               
+                            $("#welcometext1").html("<em color='red' class='alert alert-error'>&nbsp;Record Already Exist</em>");
+                        }
+                    }                             
+                             
+                    //$("#status").fadeOut(10000);
+                });
+                getMaintainancemaster(null);
+                           
+            }               
+            function clear_form_elements(ele) {
+
+ 
+                $(ele).find(':input').each(function() {
+                    switch(this.type) {
+                        case 'password':
+
+                        case 'select-multiple':
+
+                        case 'select-one':
+
+                        case 'text':
+
+                        case 'textarea':
+
+                            $(this).val('');
+
+                            break;
+
+                        case 'checkbox':
+
+                        case 'radio':
+
+                            this.checked = false;
+
+                    }
+
+                });
+
+ 
+
+            }
+
+                
+
+
+
+        </script>
+        <script type="text/javascript">
+          
+                  
+                $('#MaintainanceAlertType').change(function() {
+                    var optval= $( "select#MaintainanceAlertType" ).val();
+                    if(optval=="Mail")
+                    {
+                         
+                        $( "#MaintainanceAlertNo" ).attr("disabled","disabled");
+                        $( "#MaintainanceEmailID" ).removeAttr("disabled");
+                                            
+                         
+                    }
+                    else if(optval=="SMS")
+                    {
+                       
+                        $( "#MaintainanceEmailID" ).attr("disabled","disabled");
+                        $( "#MaintainanceAlertNo" ).removeAttr("disabled");
+                        
+                    }
+                    else if(optval=="None")
+                    {
+                        $( "#MaintainanceAlertNo" ).attr("disabled","disabled");
+                        $( "#MaintainanceEmailID" ).attr("disabled","disabled");
+                    }
+                    else if(optval=="Both")
+                    {
+                        $( "#MaintainanceAlertNo" ).removeAttr("disabled");
+                        $( "#MaintainanceEmailID" ).removeAttr("disabled");
+                    }
+                               
+                           
+                });
+        </script>
+    </body>
+
+</html>

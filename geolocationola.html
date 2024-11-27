@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>GPS Tracking System 2</title>
+  
+  <script src="plugins/jQuery/jQuery-2.1.4.min.js"></script>
+  <meta http-equiv='cache-control' content='no-cache'> 
+  <link href="olamap/style.css" rel="stylesheet" />
+  <script src="olamap/olamaps-js-sdk.umd.js"></script>
+
+  <!-- Additional JavaScript -->
+  <script src="js/api.js"></script>
+  <script src="js/index.js"></script>
+</head>
+<body class="hold-transition skin-blue sidebar-collapse sidebar-mini">
+<div class="wrapper">
+
+  <header class="main-header">
+    <nav class="navbar navbar-static-top">
+      <a href="#" class="sidebar-toggle" data-toggle="offcanvas" role="button">
+        <span class="sr-only"></span>
+      </a>
+    </nav>
+  </header>
+   
+  <div class="content-wrapper">
+    <section class="content" style="margin-top:-3%;">
+      <p>
+        <div id="getvehical"></div>
+        <!-- Map container -->
+        <div id="map" style="width: 100%; height: 725px;"></div>
+      </p>
+    </section>
+  </div>
+  
+  <!-- Hidden inputs -->
+  <input type="hidden" id="did" name="did" />
+  <input type="hidden" id="diddd" name="diddd" />
+  <input type="hidden" id="didfromdashbord" />
+  <input type="hidden" id="status" />
+</div>
+
+<script>
+  // Initialize Ola Maps SDK
+  const olaMaps = new OlaMapsSDK.OlaMaps({
+    apiKey: '0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9',
+  });
+
+  // Initialize the map
+  const myMap = olaMaps.init({
+    style: "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
+    container: 'map',
+    center: [72.5714, 23.0225],
+    zoom: 15,
+  });
+
+  // Add marker to the map
+  olaMaps
+    .addMarker({ 
+      offset: [0, 0], // Set the offset as per your needs
+      anchor: 'center', // Set the anchor position
+      color: '#FF0000' // Set the marker color (e.g., Red)
+    })
+    .setLngLat([72.5714, 23.0225]) // Sattadhar Cross Road, Ahmedabad
+    .addTo(myMap);
+
+  // Add Geolocate controls
+  const geolocate = olaMaps.addGeolocateControls({
+    positionOptions: {
+      enableHighAccuracy: true, // Enable high-accuracy location tracking
+    },
+    trackUserLocation: true, // Enable tracking of user location
+  });
+
+  // Add geolocate control to the map
+  myMap.addControl(geolocate);
+</script>
+
+</body>
+</html>

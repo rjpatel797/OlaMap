@@ -1,0 +1,329 @@
+<script type="text/javascript">
+var url=API+"Jsoncontroller?";
+var query="Operation=getDevicedetailbymid";
+//alert(url+query);
+$.ajax({
+    type: "GET",
+    url: url+query,
+    dataType: "jsonp",
+    success: function(msg2) 
+   {
+  // alert(msg2);
+   	 var conten="";
+     	var msg = eval(msg2);
+
+    	var select= '<select name="deviceId" id="deviceId" class="form-control select2"  data-placeholder="Select a Device" style="width: 100%;" onchange="getdigital()">';
+        for(var i=0;i<msg.length;i++)
+        {
+        	conten = conten+' <option value="'+msg[i].DeviceID+'">'+msg[i].Devicename+'</option>';
+        }
+        $("#Getdevice").html(select+conten+"</select>");
+      //  alert(conten);
+        $(".select2").select2({
+      	  tags: "true",
+      	  placeholder: "Select an option",
+      	  allowClear: true
+      	});
+    }
+});
+
+
+//Date range picker with time picker
+$('#reservationtime').daterangepicker({timePicker: true, timePickerIncrement: 30, format: 'DD/MM/YYYY HH:mm',timePicker12Hour: false});
+
+
+function getdigital()
+{
+	var url=API+"Jsoncontroller?";
+	var query="Operation=getanalogdigitalparameter&deviceId="+$("#deviceId").val();
+	//alert(url+query);
+	$.ajax({
+	    type: "GET",
+	    url: url+query,
+	    dataType: "jsonp",
+	    success: function(msg2) 
+	    {
+	   // alert(msg2);
+	    	 var conten="";
+	      	var msg = eval(msg2);
+
+    	var select= '<select name="ioreport" id="ioreport" class="form-control select2"  data-placeholder="Select a digitalinput" style="width: 100%;">';
+	        for(var i=0;i<msg.length;i++)
+	        {
+	        	conten = conten+' <option value="'+msg[i].ParameterName+'">'+msg[i].ParameterName+'</option>';
+	        }
+	        $("#inuptparameter").html(select+'<option value="">select input type</option>'+conten+'</select>');
+      //  alert(conten);
+        $(".select2").select2({
+      	  tags: "true",
+      	  placeholder: "Select an option",
+	      	  allowClear: true
+	      	});
+	    }
+	});
+}
+
+</script>
+  <section class="content">
+
+      <div class="box box-default">
+         <div class="box-header with-border" style="background-color: #3C8DBC;">
+
+ <h3 class="box-title" style="margin-left: 45%;color: #ffffff;"> <b>  Input History Report</b></h3>
+ <div class="box-tools pull-right">
+           <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
+          </div>
+           </div>
+          <div class="box-body">
+ <div class="row">     
+        <div class="col-xs-6">
+       <label>Date and time range:</label>
+               <div class="input-group">
+                 <div class="input-group-addon">
+                                     <i class="fa fa-clock-o"></i>
+                  </div>
+                  <input type="text" class="form-control pull-right" id="reservationtime">
+                </div>
+        </div>
+          <div class="col-xs-4">
+          <label for="deviceId">Device:</label>
+          <div id="Getdevice"></div>
+          </div>
+          <div class="col-xs-2">
+       <label for="ioreport"> INPUT</label>:<br/>
+  <div id="inuptparameter"></div>
+          </div>
+        </div>
+         <div class="row" style="margin-top: 4%;">
+  <!--    <div class="col-xs-2">
+          <label>Report By: </label><br/>
+          <select id="reprottype" onchange="changetype();" class="form-control select2"  data-placeholder="Select a type"><option value="day"> Date </option></select>
+          </div> -->
+        <div class="col-xs-4" style="margin-left: 50%;">
+        <input class="btn btn-success" type="button" name="Submit" value="Submit" onclick="submit()" />
+                </div>
+        </div>
+       </div>
+       </div>
+       <input type="hidden" id="reportname" value="Input History Report" />
+        </section>
+        
+    <script type="text/javascript">
+        //alert($("#deviceId").val());
+        var msgcont=new Array();
+        var pdfstring="";
+        // var extend="";
+        //   var extstart="";
+        var endDateTextBox="";
+        var startDateTextBox="";
+       
+        function reset()
+        {
+            $("#startdate").val("");
+            $("#enddate").val("");
+            $("#interval").val("");
+        }
+        var msg="";
+        function submit()
+        {
+            // alert("insubmit");
+             var reservationtime= $("#reservationtime").val();
+           var part=reservationtime.split("-");
+                  //  alert(JSON.stringify(deviceId));
+                  var startd=part[0];
+           var endd=part[1];
+          //  alert(part[0]+" and "+part[1]);
+           var device=  $("#deviceId").val().toString();
+           var mid=  $("#Mid").val();
+            var ioreport=$("#ioreport").val();
+           // alert("INPUT == " + ioreport);
+            if(reservationtime=="" || reservationtime==null)
+            {
+                alert("Please Select Date range");
+                        
+            }
+                   
+           else if(device=="" || device==null)
+           {
+               alert("Please Select Device");
+                        
+          } else if(ioreport=="" || ioreport==null)
+            {
+               alert("Please Select input type");
+                       
+           }
+           else{
+              var dataarray = new Array();
+        		  var url=API+"Jsoncontroller?Operation=getinputhistoryreport";
+        	      var query="&did="+$("#deviceId").val()+"&sdate="+startd+"&edate="+endd+"&ioreport="+ioreport;
+        		//alert(url+query);
+        	      $.ajax({
+        	          type: "GET",
+        	          url: url+query,
+        	          dataType: "jsonp",
+        	          success: function(msg2) {
+        	        	// alert(msg2);
+        	        	  msg= eval(msg2);
+        	        	  Gridview();
+        	          }
+        	      });
+  
+           }
+               
+       }
+        
+        
+        function listview()
+        {
+        	  var conten="";
+        	  $("#fleetsummryreportgirdview").html('');
+        	  var total_on=0;
+        	  var total_off=0;
+        	  var on_count=0;
+        	  var off_count=0;
+              for(var i=0;i<msg.length;i++)
+              {
+            	  if(msg[i].time != 0)
+            		  {
+
+            		 conten = conten+ '<tr><td>'+msg[i].starttime+'</td><td style="width:30%;">'+msg[i].endtime+'</td>';
+            		 if(msg[i].status=="on")
+            		 {
+            		                                    
+            		total_on+=parseInt(msg[i].time);
+            		                                  
+            		conten +='<td><font color=green>'+exchangeTime(msg[i].time/1000)+'</font></td><td></td>';
+            		 on_count++;
+            	     }
+            		 else
+            		{
+            		                                
+            		total_off +=parseInt(msg[i].time);
+            		 conten +='<td></td><td ><font color=red>'+exchangeTime(msg[i].time/1000)+'</font></td>';
+            	     off_count++;
+            		  }
+            	 }
+              }
+              var inittable= '<br/><table id="expiryreport" class="table table-striped" style="border-color:#3C8DBC;"><thead style="background-color:#3C8DBC; color:white;"><tr><th><b>Start Time</b></th><th><b>End Time</b></th><th><b>On</b></th><th><b>Off</b></th></thead><tbody><tr><td style="width:30%;">--</td><td style="width:30%;">---</td><td style="width:20%;"><font color=green>Total Times:: '+on_count+'</font></td><td style="width:20%;"><font color=red>Total Times:: '+off_count+'</font></td></tr>';
+         	 var closetable='</tbody></tr></table>';
+             
+              $("#fleetsummryreportlistview").html(inittable+conten+closetable);
+              initdtforreport();
+        }
+        
+        
+        function Gridview()
+        {
+        	$("#fleetsummryreportlistview").html('');
+         	var divbody="";
+      	  var initdiv = '';
+      	  var closediv='';
+            for (var i = 0; i < msg.length; i++)
+            {
+            	// if(msg[i].time != 0)
+       		 // {
+            	if(msg[i].status=="off")
+            		{
+            		divbody += '<div class="box box-danger"><div id="box-header with-border"><div class="box-body"><div class="row"><div class="col-xs-3" style="text-align: center;"><label>'+ msg[i].starttime+'</label><br/><img src="androimage/starttime.png"> <label> Start Time</label></div><div class="col-xs-3" style="text-align: center;">'+ exchangeTime(msg[i].time/1000)+'</label><br/><label>Duration</label></div><div class="col-xs-3" style="text-align: center;"><label style="text-align: center;">'
+                	  + msg[i].endtime+'<br/><img src="androimage/endtime.png"> <label> End Time</label></label></div><div class="col-xs-3" style="text-align: center;"><img src="androimage/inputoff.png"></div></div>'
+                      +'</div></div></div>';
+            		}
+            	else{
+            			  divbody += '<div class="box box-success"><div id="box-header with-border"><div class="box-body"><div class="row"><div class="col-xs-3" style="text-align: center;"><label>'+ msg[i].starttime+'</label><br/><img src="androimage/starttime.png"> <label> Start Time</label></div><div class="col-xs-3" style="text-align: center;">'+ exchangeTime(msg[i].time/1000)+'</label><br/><label>Duration</label></div><div class="col-xs-3" style="text-align: center;"><label style="text-align: center;">'
+                      	  + msg[i].endtime+'<br/><img src="androimage/endtime.png"> <label> End Time</label></label></div><div class="col-xs-3" style="text-align: center;"><img src="androimage/inputon.png"></div></div>'
+                            +'</div></div></div>';
+            		}
+       		  }
+            //}
+          //  alert(tableheader+tablebody);
+          
+            $("#fleetsummryreportgirdview").html(initdiv+divbody+closediv);
+        }
+       function exchangeTime(msecond) 
+        {
+    
+   // alert(msecond);
+            var dd,hh,mm,ss;
+            var strtip = "";
+            if(msecond!=0)
+           {
+               dd = Math.round(msecond / 86400 + 0.5) - 1;
+                hh = Math.round((msecond - dd * 86400) / 3600 + 0.5) - 1;
+                mm = Math.round((msecond - dd * 86400 - hh * 3600) / 60 + 0.5);
+               
+   
+               if (dd > 0)
+                    strtip = strtip + dd + " day ";
+               if (hh > 0)
+                    strtip = strtip + hh + " hour ";
+               if (mm > 0){
+                    strtip = strtip + mm + " mins ";
+                    if(dd > 0)
+                       return strtip;
+                }
+            }
+            else
+            {
+                strtip="0";  
+            }
+            // if (ss > 0)
+            //    strtip = strtip + ss + " secs";
+           return strtip;
+      }
+
+
+        
+        function roundNumber(num, dec)
+       {
+           var result = Math.round(num*Math.pow(10,dec))/Math.pow(10,dec);
+            return result;
+        }
+      
+
+        function theclock(rightnow)
+        {
+            //  var rightnow= new Date();
+            var month= rightnow.getMonth();var today= rightnow.getDate();var year= rightnow.getYear();var hour= rightnow.getHours();var min= rightnow.getMinutes(); var second= rightnow.getSeconds();
+           month+=1;
+            if (year<2000)
+                year+=1900;
+            if (hour<10)
+                hour="0"+hour;
+            if (min<10)
+                min="0"+min;
+            if (second<10)
+                second="0"+second;
+            if (hour<12)
+               var ampm="AM";
+            else
+                var ampm="PM";
+            if (hour==0)
+                hour=12;
+           if (hour>=13)
+                hour-=12;
+            return today+"/"+month+"/"+year+" "+hour+":"+min+":"+second+" "+ampm;
+       }
+
+
+
+   </script>
+
+  <ul class="nav nav-tabs" role="tablist">
+   <li role="presentation" class="active"><a href="#Gridview" aria-controls="Gridview" role="tab" data-toggle="tab" onclick="Gridview()">Grid view</a></li>
+    <li role="presentation" ><a href="#Listview" aria-controls="Listview" role="tab" data-toggle="tab" onclick="listview()">List view</a></li> 
+<!--     <li role="presentation"><a href="#messages" aria-controls="messages" role="tab" data-toggle="tab">Graphs</a></li> -->
+  </ul>
+
+  <!-- Tab panes -->
+  <div class="tab-content">
+   <div role="tabpanel" class="tab-pane active" id="Gridview" style="margin-top: 1%;">
+   <div  id="fleetsummryreportgirdview" style="text-align: center">
+  </div>
+    <div role="tabpanel" class="tab-pane " id="Listview" ><div  id="fleetsummryreportlistview" style="text-align: center"> </div></div>
+   
+   <!--  <div role="tabpanel" class="tab-pane" id="Graphsview">...</div> -->
+  </div>
+
+</div>
+
+   </div>

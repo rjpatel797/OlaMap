@@ -1,0 +1,171 @@
+<script type="text/javascript">
+
+var url=API+"Jsoncontroller?";
+var query="Operation=getDeviceprofileBymid";
+//alert(url+query);
+$.ajax({
+    type: "GET",
+    url: url+query,
+    dataType: "jsonp",
+    success: function(msg2) 
+    {
+    	msg2=eval(msg2);
+    	var table=' <table id="expiryreport" class="table table-striped" style="border-color:#3C8DBC;"><thead style="background-color:#3C8DBC; color:white;"><tr><th>Select</th><th>No</th><th> Device Name</th><th>vehicle Type </th><th>Driver MobileNo </th><th> Driver Name</th><th>Group Name</th> <th>Device Description</th><th> Mileage</th><th>Expiry</th><th>Edit</th></tr></thead><tbody>';
+    	var body="";
+    	for (var i = 0; i < msg2.length; i++)
+    	{
+			body+='<tr><td><input  type="checkBox" id="Device'+msg2[i][0]+'" value="'+msg2[i][0]+'" name="select1"></td><td>'+(i+1)+'</td><td>'+msg2[i][1]+'</td><td>'+msg2[i][2]+'</td><td>'+msg2[i][3]+'</td><td>'+msg2[i][4]+'</td><td>'+msg2[i][5]+'</td><td>'+msg2[i][6]+'</td><td>'+msg2[i][7]+'</td><td>'+msg2[i][8]+'</td><td><a href="User/AddUser.html"  data-toggle="modal" data-target="#myModal">Edit</a></td></tr>'	;
+		}
+    	$("#Devicedetails").html(table+body+"</tbody></table>");
+    	$("#Devicecount").html(msg2.length);
+    	initdt();
+    }
+});
+
+
+
+            function editdata()
+            {
+                 var num = document.getElementsByName('select1');
+
+                var success = 0;
+                for(i=0;i<num.length;i++){
+
+                    if(num[i].checked==true){
+                        success = 1;
+                        break;
+                    }
+                }
+                 if(success==1){
+
+
+                    document.getElementById('Operation').value='MyprofileEdit';
+                    document.myProfile.action="controllerServlet";
+                    document.myProfile.submit();
+
+                }
+                  else{
+
+                    alert("Select atleast one record.");
+                    return false;
+                }
+            }
+
+   
+          
+         
+
+        </script>
+
+    </head>
+
+    <body>
+   
+         <section class="content">
+      <div class="box box-default" >
+        <div class="box-header with-border" style="background-color: #3C8DBC;">
+
+ <h3 class="box-title" style="margin-left: 45%;color: #ffffff;"> <b>Profile SetUp</b></h3>
+  <div class="box-tools pull-right">
+            <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
+          </div>
+           </div>
+           <div class="box-body">
+ <div class="row">     
+        <div class="col-xs-4" > <label>Email: </label>
+<input type="text"  class="from-control" id="emailId"name="emailId" /> 
+</div>
+<div class="col-xs-4" >
+ <label> Address: </label>
+ <input  class="from-control" name="address" id="address"  />
+ </div>
+ <div class="col-xs-4"  >
+                 <label> Mobile No: </label>
+               <input type="text"  class="from-control"  id="mobileNo"name="mobileNo" /> 
+		</div> 
+        </div>
+         <div class="row" style="margin-top: 4%;margin-left: 50%;">
+        <div class="col-xs-3 ">
+        <input class="btn btn-success" type="button" name="Submit" value="Submit" onclick="submit()" />
+        </div>
+        </div>
+        <div class="row">
+        <div class="col-xs-4">
+        <label>Total Vehicle:</label><div id="Devicecount"></div>
+        </div>
+         <div class="col-xs-4">
+        <label>Sms limit:</label><div id="Smslimit"></div>
+        </div>
+         <div class="col-xs-4">
+        <label>  Sms Sent :</label><div id="SmsSent"></div>
+        </div>       
+         </div>
+       </div>
+       </div>
+        </section>
+
+         
+
+<div id="Devicedetails"></div>
+
+
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Modal title</h4>
+      </div>
+      <div class="modal-body">
+        ...
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+
+var url=API+"Jsoncontroller?";
+var query="Operation=getsmsCount";
+//alert(url+query);
+$.ajax({
+    type: "GET",
+    url: url+query,
+    dataType: "jsonp",
+    success: function(msg2) 
+    {
+    	
+    	msg2=eval(msg2);
+    	//alert(msg2[0][0]);
+    	for (var i = 0; i < msg2.length; i++)
+    	{
+    	$("#Smslimit").html(msg2[i][0]);
+    	$("#SmsSent").html(msg2[i][1]);
+    	}
+    }
+});
+var url=API+"Jsoncontroller?";
+var query="Operation=getprofileBymid";
+//alert(url+query);
+$.ajax({
+    type: "GET",
+    url: url+query,
+    dataType: "jsonp",
+    success: function(msg2) 
+    {
+    	//alert(msg2);
+    	msg2=eval(msg2);
+    	for (var i = 0; i < msg2.length; i++)
+    	{
+    		//document.getElementById('Operation').value=
+			$("#emailId").val(msg2[i][7]);
+			$("#address").val(msg2[i][4]);
+			$("#mobileNo").val(msg2[i][6]);
+		}
+    }
+});
+
+</script>

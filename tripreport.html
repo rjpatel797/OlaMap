@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Trip Report</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        #navbar-container {
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 0;
+        }
+
+        .content {
+            padding: 20px;
+            background: #f5f5f5;
+            /* height: 100vh; */
+        }
+
+        /* Report Controls */
+        .report-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #2c3e50;
+            border-radius: 8px;
+        }
+
+        .date-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-group label,
+        .device-selector label,
+        .trip-time label {
+            color: white;
+            font-size: 13px;
+        }
+
+        .form-select {
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            min-width: 200px;
+        }
+
+        .submit-btn,
+        .reset-btn {
+            padding: 6px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .submit-btn {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .reset-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .datetime-selector {
+            display: flex;
+            gap: 15px;
+        }
+
+        .date-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-input label {
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .date-input input[type="date"],
+        .date-input input[type="time"] {
+            padding: 5px 8px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #2c3e50;
+            background-color: white;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .date-input input[type="date"] {
+            width: 130px;
+        }
+
+        .date-input input[type="time"] {
+            width: 100px;
+        }
+
+        .date-input input[type="date"]:hover,
+        .date-input input[type="time"]:hover {
+            background-color: #f8f9fa;
+        }
+
+        .date-input input[type="date"]:focus,
+        .date-input input[type="time"]:focus {
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+        }
+        /* Update the device selector styles */
+        .device-selector {
+            position: relative;
+            width: 250px;
+        }
+
+        .dropdown-container {
+            position: relative;
+        }
+
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1000;
+        }
+
+        .dropdown-header {
+            padding: 10px;
+            color: rgb(0, 0, 0);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 500;
+        }
+
+        .dropdown-search {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown-search input {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 4px;
+            color: rgb(0, 0, 0);
+            font-size: 13px;
+        }
+
+        .dropdown-search input::placeholder {
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        .dropdown-items {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .dropdown-item {
+            padding: 8px 10px;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Selected state */
+        .selected-vehicle {
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            color: rgb(0, 0, 0);
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .selected-vehicle:after {
+            content: '▼';
+            font-size: 10px;
+            margin-left: 8px;
+        }
+        .submit-btn {
+            background-color: #2ecc71;
+            color: white;
+            padding: 8px 16px;
+            font-size: 13px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            height: 32px;
+        }
+
+        /* Report Table */
+        .report-table {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .report-table table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .report-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 12px 15px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .report-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .report-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .export-buttons {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .export-buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            background: #34495e;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .export-buttons button:hover {
+            background: #2c3e50;
+        }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navbar -->
+        <div id="navbar-container"></div>
+
+        <div class="content">
+            <div class="report-controls">
+                <!-- Start DateTime -->
+                <div class="date-group">
+                    <label>Start DateTime:</label>
+                    <input type="date" id="startDate">
+                    <input type="time" id="startTime" value="00:00">
+                </div>
+            
+                <!-- End DateTime -->
+                <div class="date-group">
+                    <label>End DateTime:</label>
+                    <input type="date" id="endDate">
+                    <input type="time" id="endTime" value="23:59">
+                </div>
+            
+                <!-- Device Selector with correct structure -->
+                <div class="device-selector">
+                    <select id="deviceSelect" class="form-select">
+                        <option value="">Select Vehicle</option>
+                    </select>
+                </div>
+            
+                <!-- Trip Time -->
+                <div class="trip-time">
+                    <label>Minimum Trip Time:</label>
+                    <select id="minTripTime">
+                        <option value="15">15 Min</option>
+                        <option value="30">30 Min</option>
+                        <option value="45">45 Min</option>
+                        <option value="60">60 Min</option>
+                    </select>
+                </div>
+            
+                <!-- Buttons -->
+                <button class="submit-btn">Submit</button>
+                <button class="reset-btn">Reset</button>
+            </div>
+
+            <div class="export-buttons">
+                <button onclick="exportCopy()">Copy</button>
+                <button onclick="exportCSV()">CSV</button>
+                <button onclick="exportExcel()">Excel</button>
+                <button onclick="exportPDF()">PDF</button>
+                <button onclick="window.print()">Print</button>
+                <button onclick="saveReport()">Save</button>
+            </div>
+
+            <div class="report-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Srno</th>
+                            <th>Device Name</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Start Location</th>
+                            <th>End Location</th>
+                            <th>Total KM</th>
+                            <th>Total Time</th>
+                            <th>Fuel Consumption</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportData">
+                        <!-- Report data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+
+        let selectedDeviceId = null;
+        let devices = [];
+
+        $(document).ready(function() {
+            console.log("Document ready, initializing..."); // Debug log
+    
+            $("#navbar-container").load("navbarola.html", function() {
+                console.log("Navbar loaded successfully!");
+            });
+
+            setDefaultDates();
+            fetchDeviceData();
+
+            // Add event listener for form submission
+            $('.submit-btn').click(function() {
+                generateReport();
+            });
+
+            // Add event listener for reset
+            $('.reset-btn').click(function() {
+                resetForm();
+            });
+        });
+
+        function resetForm() {
+            document.getElementById('deviceSelect').value = '';
+            setDefaultDates();
+            document.getElementById('minTripTime').value = '15';
+            // Clear any existing report data
+            document.getElementById('reportData').innerHTML = '';
+        }
+
+        function setDefaultDates() {
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            
+            document.getElementById('endDate').value = today;
+            document.getElementById('endTime').value = '23:59';
+            
+            document.getElementById('startDate').value = today;
+            document.getElementById('startTime').value = '00:00';
+        }
+
+        function toggleDropdown() {
+            const dropdown = document.getElementById('deviceDropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function filterVehicles(searchText) {
+            const vehicleList = document.getElementById('vehicleList');
+            const filteredDevices = devices.filter(device => 
+                device.name.toLowerCase().includes(searchText.toLowerCase())
+            );
+            
+            populateVehicleList(filteredDevices);
+        }
+
+        function selectVehicle(deviceId, deviceName) {
+            selectedDeviceId = deviceId;
+            document.getElementById('selectedVehicle').textContent = deviceName;
+            document.getElementById('deviceDropdown').style.display = 'none';
+            
+            // If you want to fetch data immediately when selecting a vehicle
+            // fetchPlaybackData(deviceId);
+        }
+
+        function populateVehicleList(devicesList) {
+            const vehicleList = document.getElementById('vehicleList');
+            vehicleList.innerHTML = '';
+            
+            devicesList.forEach(device => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.textContent = device.name;
+                item.onclick = () => selectVehicle(device.did, device.name);
+                vehicleList.appendChild(item);
+            });
+        }
+
+        function fetchDeviceData() {
+            const mid = localStorage.getItem("mid");
+            console.log("Fetching devices with mid:", mid); // Debug log
+
+            fetch(`${API}getandrojsonfortts.jsp?opr=getVehileByMid&mid=${mid}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Device data received:", data); // Debug log
+                    
+                    if (Array.isArray(data)) {
+                        devices = data.map(item => ({
+                            name: item.dname || 'Unnamed Device',
+                            did: item.did
+                        }));
+                        
+                        // Populate device select
+                        const deviceSelect = document.getElementById('deviceSelect');
+                        if (deviceSelect) {
+                            deviceSelect.innerHTML = '<option value="">Select Vehicle</option>';
+                            devices.forEach(device => {
+                                const option = document.createElement('option');
+                                option.value = device.did;
+                                option.textContent = device.name;
+                                deviceSelect.appendChild(option);
+                            });
+
+                            // Add change event listener
+                            deviceSelect.addEventListener('change', function() {
+                                selectedDeviceId = this.value;
+                            });
+                        } else {
+                            console.error('Device select element not found');
+                        }
+                    } else {
+                        console.error('Invalid data format received:', data);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching devices:", error);
+                });
+        }
+
+        // document.addEventListener('click', function(event) {
+        //     const dropdown = document.getElementById('deviceDropdown');
+        //     const selectedVehicle = document.getElementById('selectedVehicle');
+            
+        //     if (!event.target.closest('.device-selector') && 
+        //         event.target !== selectedVehicle) {
+        //         dropdown.style.display = 'none';
+        //     }
+        // });
+
+        function createDeviceList() {
+            const dropdownInput = document.getElementById("searchInput");
+            const dropdownList = document.getElementById("deviceDropdown");
+
+            // Populate dropdown list
+            function populateDropdown(filteredDevices) {
+                dropdownList.innerHTML = ""; // Clear existing items
+                filteredDevices.forEach((device) => {
+                    const item = document.createElement("div");
+                    item.className = "dropdown-item";
+                    item.textContent = device.name;
+                    item.dataset.deviceId = device.did;
+
+                    // Add click event to select the item
+                    item.addEventListener("click", () => {
+                        dropdownInput.value = device.name; // Set input value to selected item
+                        dropdownList.style.display = "none"; // Hide dropdown
+                        fetchPlaybackData(device.did); // Fetch data for the selected vehicle
+                    });
+
+                    dropdownList.appendChild(item);
+                });
+            }
+
+            // Initialize with all devices
+            populateDropdown(devices);
+
+            // Show/Hide dropdown on input focus
+            dropdownInput.addEventListener("focus", () => {
+                dropdownList.style.display = "block";
+            });
+
+            // Filter items based on input
+            dropdownInput.addEventListener("input", (event) => {
+                const searchTerm = event.target.value.toLowerCase();
+                const filteredDevices = devices.filter((device) =>
+                    device.name.toLowerCase().includes(searchTerm)
+                );
+                populateDropdown(filteredDevices);
+            });
+
+            // Hide dropdown when clicking outside
+            document.addEventListener("click", (event) => {
+                if (!event.target.closest(".dropdown-container")) {
+                    dropdownList.style.display = "none";
+                }
+            });
+        }
+
+        function generateReport() {
+            const startDate = document.getElementById('startDate').value;
+            const startTime = document.getElementById('startTime').value;
+            const endDate = document.getElementById('endDate').value;
+            const endTime = document.getElementById('endTime').value;
+            const deviceId = document.getElementById('deviceSelect').value;
+            const minTripTime = document.getElementById('minTripTime').value;
+
+            if (!startDate || !endDate) {
+                alert("Please select dates");
+                return;
+            }
+
+            if (!deviceId) {
+                alert("Please select a vehicle");
+                return;
+            }
+
+            const startDateTime = `${startDate} ${startTime}`;
+            const endDateTime = `${endDate} ${endTime}`;
+
+            console.log("Generating report for:", {
+                startDateTime,
+                endDateTime,
+                deviceId,
+                minTripTime
+            });
+
+            // Format dates for API
+            const formattedStartDate = formatDateForApi(startDateTime);
+            const formattedEndDate = formatDateForApi(endDateTime);
+
+            // Make API call with formatted dates and selectedDeviceId
+            fetchReportData(formattedStartDate, formattedEndDate, selectedDeviceId, minTripTime);
+        }
+
+        function formatDateForApi(dateTimeString) {
+            const date = new Date(dateTimeString);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+        }
+
+        function fetchReportData(fromdate, todate, did, mintrip) {
+            console.log("Fetching report data...");
+            
+            // Show loading state
+            const reportBody = document.getElementById('reportData');
+            reportBody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center;">Loading...</td>
+                </tr>
+            `;
+
+            // Construct the URL
+            const url = `${API}getandrojsonfortts.jsp?opr=gettripreport&fromdate=${fromdate}&todate=${todate}&did=${did}&mintrip=${mintrip}&bypoi=false`;
+            
+            fetch(url)
+                .then(response => response.text())
+                .then(text => {
+                    // Fix the date format issues in the response
+                    const fixedText = text.replace(/(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+)/g, '"$1"');
+                    
+                    try {
+                        const data = JSON.parse(fixedText);
+                        console.log("Parsed Report Data:", data);
+                        
+                        if (Array.isArray(data)) {
+                            const formattedData = data.map(item => formatReportItem(item));
+                            displayReportData(formattedData);
+                        } else if (data && typeof data === 'object') {
+                            const formattedData = [formatReportItem(data)];
+                            displayReportData(formattedData);
+                        } else {
+                            throw new Error("Invalid data structure");
+                        }
+                    } catch (parseError) {
+                        console.error("JSON Parse Error:", parseError);
+                        throw new Error(`Failed to parse JSON: ${parseError.message}`);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching report data:", error);
+                    reportBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: red;">
+                                Error loading report data: ${error.message}
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+
+        function formatReportItem(item) {
+            // Convert timestamps to readable format
+            const formatDate = (dateStr) => {
+                try {
+                    const date = new Date(dateStr);
+                    return date.toLocaleString();
+                } catch (e) {
+                    return dateStr;
+                }
+            };
+
+            // Calculate duration in minutes
+            const calculateDuration = (start, end) => {
+                try {
+                    const startTime = new Date(start).getTime();
+                    const endTime = new Date(end).getTime();
+                    return Math.round((endTime - startTime) / (1000 * 60)); // Convert to minutes
+                } catch (e) {
+                    return 0;
+                }
+            };
+
+            return {
+                deviceName: item.dname || 'undefined',
+                fromLocation: item.frmloc || 'Unknown',
+                toLocation: item.toloc || 'Unknown',
+                startTime: formatDate(item.frmdate),
+                endTime: formatDate(item.todate),
+                distance: parseFloat(item.odometer || 0).toFixed(2),
+                mileage: parseFloat(item.milage || 0).toFixed(1),
+                duration: calculateDuration(item.frmdate, item.todate),
+                holdTime: Math.round((item.hold || 0) / 1000) // Convert milliseconds to seconds
+            };
+        }
+
+        function displayReportData(data) {
+            const reportBody = document.getElementById('reportData');
+            
+            if (!data || data.length === 0) {
+                reportBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="text-align: center;">No data available</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            reportBody.innerHTML = data.map(item => `
+                <tr>
+                    <td>${data.indexOf(item) + 1}</td>
+                    <td>${item.deviceName}</td>
+                    <td>${item.startTime}</td>
+                    <td>${item.endTime}</td>
+                    <td>${item.fromLocation}</td>
+                    <td>${item.toLocation}</td>
+                    <td>${item.distance} km</td>
+                    <td>${item.duration} mins</td>
+                    <td>${item.mileage} km/l</td>
+                </tr>
+            `).join('');
+        }
+
+        // Format time from milliseconds/seconds to hours and minutes
+        function formatTime(time) {
+            if (!time || isNaN(time)) return '0 hours 0 mins';
+            
+            // Convert to minutes first (assuming time is in milliseconds)
+            let minutes = Math.floor(time / (1000 * 60));
+            const hours = Math.floor(minutes / 60);
+            minutes = minutes % 60;
+            
+            return `${hours} hours ${minutes} mins`;
+        }
+
+        function formatDuration(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours} hour${hours !== 1 ? 's' : ''} ${mins} min${mins !== 1 ? 's' : ''}`;
+        }
+
+        // Add export functionality
+        function exportCopy() {
+            const table = document.querySelector('.report-table');
+            const range = document.createRange();
+            range.selectNode(table);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+            alert('Table copied to clipboard!');
+        }
+
+        function exportExcel() {
+            // Get headers
+            const headers = ['Device Group', 'Device Name', 'Distance Travelled(km)', 'Max. Speed(km/h)', 'Drive Time', 'Stoppage Time'];
+            
+            // Get data rows
+            const rows = document.querySelectorAll('#reportData tr');
+            const data = Array.from(rows).map(row => {
+                const cells = row.querySelectorAll('td');
+                return Array.from(cells).map(cell => cell.textContent);
+            });
+
+            // Combine headers and data
+            const workSheetData = [headers, ...data];
+
+            // Create a new workbook and worksheet
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(workSheetData);
+
+            // Add styling
+            const headerStyle = {
+                font: { bold: true, color: { rgb: "FFFFFF" } },
+                fill: { fgColor: { rgb: "2C3E50" } },
+                alignment: { horizontal: "center" }
+            };
+
+            // Apply column widths
+            const colWidths = [15, 20, 20, 15, 15, 15];
+            ws['!cols'] = colWidths.map(width => ({ width }));
+
+            // Apply header styling
+            for (let i = 0; i < headers.length; i++) {
+                const cellRef = XLSX.utils.encode_cell({ r: 0, c: i });
+                if (!ws[cellRef]) ws[cellRef] = {};
+                ws[cellRef].s = headerStyle;
+            }
+
+            // Add the worksheet to the workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'Fleet Report');
+
+            // Get current date for filename
+            const date = new Date().toLocaleDateString().replace(/\//g, '-');
+            
+            // Generate Excel file
+            XLSX.writeFile(wb, `fleet_report_${date}.xlsx`);
+        }
+
+        // Export as CSV
+        function exportCSV() {
+            // Get the table data
+            const table = document.querySelector('.report-table');
+            const rows = table.querySelectorAll('tr');
+            let csv = [];
+            
+            // Convert table to CSV format
+            rows.forEach(row => {
+                const rowData = [];
+                const cols = row.querySelectorAll('td, th');
+                cols.forEach(col => rowData.push('"' + col.textContent.trim() + '"'));
+                csv.push(rowData.join(','));
+            });
+
+            // Create and trigger download
+            const csvContent = csv.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'fleet_report.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportPDF() {
+            try {
+                // Create new jsPDF instance
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation for better fit
+
+                // Add title
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(20);
+                doc.text("Trip Report", doc.internal.pageSize.width / 2, 15, { align: 'center' });
+
+                // Add date range using the correct field IDs
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                const startDate = document.getElementById('startDate').value;
+                const startTime = document.getElementById('startTime').value;
+                const endDate = document.getElementById('endDate').value;
+                const endTime = document.getElementById('endTime').value;
+                doc.text(`Report Period: ${startDate} ${startTime} to ${endDate} ${endTime}`, 15, 25);
+
+                // Get vehicle number using the correct ID
+                const vehicleSelect = document.querySelector('select[id*="deviceSelect"]').value || 'Unknown Vehicle';
+                doc.text(`Vehicle: ${vehicleSelect}`, 15, 30);
+
+                // Define table headers based on your actual table
+                const headers = [[
+                    'Srno',
+                    'Device Name',
+                    'Start Date',
+                    'End Date',
+                    'Start Location',
+                    'End Location',
+                    'Total KM',
+                    'Total Time',
+                    'Fuel Consumption'
+                ]];
+
+                // Get table data
+                const rows = document.querySelectorAll('table tr:not(:first-child)'); // Skip header row
+                const data = Array.from(rows).map(row => {
+                    const cells = row.querySelectorAll('td');
+                    return Array.from(cells).map(cell => cell.textContent.trim());
+                });
+
+                // Calculate totals
+                const totals = data.reduce((acc, row) => {
+                    return {
+                        distance: acc.distance + parseFloat(row[6]?.replace('km', '') || 0),
+                        time: acc.time + parseFloat(row[7]?.replace('mins', '') || 0)
+                    };
+                }, { distance: 0, time: 0 });
+
+                // Add summary section
+                doc.setFontSize(10);
+                doc.text([
+                    `Total Distance: ${totals.distance.toFixed(2)} km`,
+                    `Total Time: ${Math.round(totals.time)} mins`
+                ], 15, 35);
+
+                // Add table
+                doc.autoTable({
+                    head: headers,
+                    body: data,
+                    startY: 45,
+                    theme: 'grid',
+                    styles: {
+                        fontSize: 7,
+                        cellPadding: 2,
+                        overflow: 'linebreak',
+                        cellWidth: 'wrap'
+                    },
+                    headStyles: {
+                        fillColor: [41, 128, 185],
+                        textColor: 255,
+                        fontSize: 8,
+                        fontStyle: 'bold',
+                        halign: 'center',
+                        valign: 'middle'
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 10 },  // Srno
+                        1: { cellWidth: 25 },  // Device Name
+                        2: { cellWidth: 25 },  // Start Date
+                        3: { cellWidth: 25 },  // End Date
+                        4: { cellWidth: 45 },  // Start Location
+                        5: { cellWidth: 45 },  // End Location
+                        6: { cellWidth: 20, halign: 'right' },  // Total KM
+                        7: { cellWidth: 20, halign: 'right' },  // Total Time
+                        8: { cellWidth: 20, halign: 'right' }   // Fuel Consumption
+                    },
+                    didDrawPage: function(data) {
+                        // Add footer with timestamp and page number
+                        doc.setFontSize(8);
+                        doc.setFont("helvetica", "italic");
+                        
+                        // Add generation timestamp
+                        doc.text(
+                            `Generated on: ${new Date().toLocaleString()}`, 
+                            doc.internal.pageSize.width - 15, 
+                            doc.internal.pageSize.height - 10, 
+                            { align: 'right' }
+                        );
+                        
+                        // Add page numbers
+                        const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
+                        const totalPages = doc.internal.getNumberOfPages();
+                        doc.text(
+                            `Page ${pageNumber} of ${totalPages}`, 
+                            15, 
+                            doc.internal.pageSize.height - 10
+                        );
+                    }
+                });
+
+                // Get current date and time for filename
+                const now = new Date();
+                const dateStr = now.toLocaleDateString().replace(/\//g, '-');
+                const timeStr = now.toLocaleTimeString().replace(/:/g, '-');
+                
+                // Save the PDF
+                doc.save(`trip_report_${vehicleSelect}_${dateStr}_${timeStr}.pdf`);
+
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                // More detailed error message
+                alert(`Error generating PDF: ${error.message}\nPlease check the console for more details.`);
+            }
+        }    
+    
+    </script>
+</body>
+</html>

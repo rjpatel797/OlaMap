@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>GPS Tracking System 2</title>
+  
+     <script src="plugins/jQuery/jQuery-2.1.4.min.js"></script>
+     <meta http-equiv='cache-control' content='no-cache'> 
+     <link href="olamap/style.css" rel="stylesheet" />
+     <script src="olamap/olamaps-js-sdk.umd.js"></script>
+     
+
+<!-- Tell the browser to be responsive to screen width -->
+ 
+<script src="js/api.js"></script>
+<script src="js/index.js"></script>
+
+<body class="hold-transition skin-blue sidebar-collapse sidebar-mini" >
+<div class="wrapper">
+
+  <header class="main-header" >
+    <nav class="navbar navbar-static-top">
+      <a href="#" class="sidebar-toggle" data-toggle="offcanvas" role="button">
+        <span class="sr-only"></span>
+      </a>
+    </nav>
+  </header>
+   
+     
+  <div class="content-wrapper">
+    <section class="content" style="margin-top:-3%;">
+      <p>
+        <div id="getvehical"></div>
+        <!-- Update the map container ID to 'map' for Ola Maps initialization -->
+        <div id="map" style="width: 100%; height: 725px;"></div>
+      </p>
+    </section>
+  </div>
+  
+  <!-- /.content-wrapper -->
+<input type="hidden" id="did" name="did" />
+<input type="hidden" id="diddd" name="diddd" />
+ <input type="hidden" id="didfromdashbord" />
+  <input type="hidden" id="status" />
+<!--   <footer class="main-footer">
+    <div class="pull-right hidden-xs">
+      <b>Version</b> 2.3.5
+    </div>
+    <strong>Copyright &copy; 2014-2016</strong> All rights
+    reserved.
+  </footer>
+   -->
+
+</div>
+
+<script>
+const olaMaps = new OlaMapsSDK.OlaMaps({
+    apiKey: '0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9',
+});
+const myMap = olaMaps.init({
+  style: "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
+  container: 'map',
+  center: [72.5714, 23.0225],
+  zoom: 15,
+});
+
+olaMaps
+  .addMarker({ 
+    offset: [0, 0], // Set the offset as per your needs
+    anchor: 'center', // Set the anchor position
+    color: '#FF0000' // Set the marker color (e.g., Red)
+  })
+  .setLngLat([72.5714, 23.0225]) // Sattadhar Cross Road, Ahmedabad
+  .addTo(myMap);
+
+
+// Adding Ground Overlay to the map
+myMap.on('load', () => {
+  // Add the Taj Mahal overlay
+  myMap.addSource('tajmahal-overlay', {
+    type: 'image',
+    url: 'https://encrypted-tbn1.gstatic.com/licensed-image?q=tbn:ANd9GcTNuI7dqiU9_9ybRIiQ9cjOBQHQyRR_DZQYHhRAbFL-J6lLY9ErYkpILBt3ZEzZUOgpca0IUEGYkLl8kopWbDnYJEkJcLX9_g',
+    coordinates: [
+      [78.0405, 27.1763], // NW Corner
+      [78.0415, 27.1763], // NE Corner
+      [78.0415, 27.1751], // SE Corner
+      [78.0405, 27.1751], // SW Corner
+    ],
+  });
+
+  myMap.addLayer({
+    id: 'tajmahal-layer',
+    type: 'raster',
+    source: 'tajmahal-overlay',
+    paint: {
+      'raster-opacity': 0.7, // Adjust opacity for Taj Mahal
+    },
+  });
+
+  // Add the Statue of Unity overlay
+  myMap.addSource('statueofunity-overlay', {
+    type: 'image',
+    url: 'https://www.cgisaopaulo.gov.in/pdf/1541049762_statueofunity7879_660_103118111454.jpg',
+    coordinates: [
+      [73.7186, 21.8385], // NW Corner
+      [73.7196, 21.8385], // NE Corner
+      [73.7196, 21.8375], // SE Corner
+      [73.7186, 21.8375], // SW Corner
+    ],
+  });
+
+  myMap.addLayer({
+    id: 'statueofunity-layer',
+    type: 'raster',
+    source: 'statueofunity-overlay',
+    paint: {
+      'raster-opacity': 0.7, // Adjust opacity for Statue of Unity
+    },
+  });
+
+  
+});
+
+myMap.on('load', () => {
+  // Add a marker for the Statue of Unity
+  olaMaps.addMarker({
+    offset: [0, 0],
+    anchor: 'center',
+    color: '#FF0000', // Red color for the marker
+  })
+  .setLngLat([73.7191, 21.8380]) // Statue of Unity Coordinates
+  .addTo(myMap);
+
+  // Add a marker for the Sardar Sarovar Dam
+  olaMaps.addMarker({
+    offset: [0, 0],
+    anchor: 'center',
+    color: '#0000FF', // Blue color for the marker
+  })
+  .setLngLat([73.7366, 21.8325]) // Sardar Sarovar Dam Coordinates
+  .addTo(myMap);
+
+  // Fly to the Statue of Unity with nearby landmarks visible
+  myMap.flyTo({
+    center: [73.7191, 21.8380],
+    zoom: 14, // Adjust zoom level to fit nearby locations
+  });
+});
+
+
+
+</script>
+
+<!-- ./wrapper -->
+
+<!-- page script -->
+</body>
+</html>

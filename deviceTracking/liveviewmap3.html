@@ -1,0 +1,485 @@
+ <script type='text/javascript' >
+      var url=API+"Jsoncontroller?";
+var query="Operation=getDevicedetailbymid";
+//alert(url+query);
+$.ajax({
+    type: "GET",
+    url: url+query,
+    dataType: "jsonp",
+    success: function(msg2) 
+    {
+   // alert(msg2);
+    	 var conten="";
+      	var msg = eval(msg2);
+
+    	var select= '<select name="deviceId" id="deviceId" class="form-control" data-placeholder="Select a Device" style="width: 100%;">';
+        for(var i=0;i<msg.length;i++)
+        {
+        	conten = conten+' <option value="'+msg[i].DeviceID+'">'+msg[i].Devicename+'</option>';
+        }
+        $("#Getdevice").html(select+conten+"</select>");
+      //  alert(conten);
+        $(".select2").select2({
+      	  tags: "true",
+      	  placeholder: "Select an option",
+      	  allowClear: true
+      	});
+    }
+});
+</script>
+
+	
+	
+		<script type="text/javascript">
+		
+				var markersArray=new Array();
+			
+				var map="";
+                                var firstcall=false;
+				   
+                                var side_bar_html = "";
+                                var gmarkers = [];
+                                var htmls = [];
+                                var i = 0;
+                                var lastpoint="";
+                                var polyline="";
+                                var markers23=[];            
+		
+				function deleteOverlays() {
+                              if (markersArray) {
+                                for (i in markersArray) {
+                                  markersArray[i].setMap(null);
+                                }
+                                markersArray.length = 0;
+                              }
+                            }                           
+			
+				
+			</script>
+
+    
+    
+    <script language="JavaScript">
+		var timerID = null;
+		var timerRunning = false;
+		var delay = 15000;
+		
+		function InitializeTimer()
+		{
+              //   alert("InitializeTimer");
+               
+               $("#track").attr("value","Stop");               
+               $("#track").attr("onclick","StopTheClock()");
+                 deleteOverlays();
+                    // deleteploy();
+                    firstcall=false;
+                    deleteOverlays22();
+		   // StopTheClock();
+		    StartTheTimer();
+                    readMap();
+                    
+		}
+		
+                function resettimer()
+                {
+                	
+                    StopTheClock();
+                    StartTheTimer();
+                    
+                    
+                }
+		function StopTheClock()
+		{
+	
+                 if(timerRunning)
+		        clearTimeout(timerID)
+		    timerRunning = false
+	             $("#track").attr("value","track");               
+               $("#track").attr("onclick","InitializeTimer()");	
+            }
+                
+                
+		
+		function StartTracking()
+		{
+		// ajaxFunctioncheck();
+			readMap();
+			StartTheTimer();
+		}
+		
+		function StartTheTimer()
+		{ 
+			//alert("hello");
+		   
+			timerRunning = true
+			timerID = self.setTimeout("StartTracking()",20*1000)
+			
+		}
+
+	</script>
+
+
+</head>
+   
+          <div class="box box-default" >
+        <div class="box-header with-border" style="background-color: #3C8DBC;text-align: center;">
+ <h3 class="box-title" style="color: #ffffff;"> <b>Live Track</b></h3>
+  <div class="box-tools pull-right">
+            <button type="button" class="btn-tools" data-widget="collapse"><i class="fa fa-minus"></i></button>
+          </div>
+           </div>
+           <div class="box-body">
+           <div class="row">
+           <div class="col-xs-12">
+                  <label>Device Name</label><br/>
+                 <div id="Getdevice"></div>
+                    </div>
+                    </div>
+                    
+                         <div class="row">
+                    <div class="col-xs-6 col-xs-offset-4" style="margin-top: 10px;">
+                    <input id="track" class="btn btn-success" name="track" type="button" value="Track" onclick="InitializeTimer()"/>
+                    </div>
+                    </div>
+          </div>
+          </div>
+          
+                <!-- <div id="jGaugeDemo1" class="jgauge"></div>  -->
+
+
+	 <table width="100%"  border="0" cellspacing="0" cellpadding="0" class="topmrgn">
+      <tr>
+       
+	<td valign="top" style="border:1px solid #a1a1a1;">
+	<div id="map" style="width:100%; height:550px; background-color: rgb(229, 227, 223);">
+	   </div>
+	
+	</td>
+      </tr>
+    </table>
+    <div id="tab">
+    </div>
+    <script type="text/javascript">
+    //<![CDATA[
+
+      
+      function deleteOverlays22() {
+            
+   //  alert("deleteOverlays22");
+            
+    for (var i = 0, marker2; marker2 = markers23[i]; i++) {
+        // marker.setVisible(false);
+        //marker.hideMarker();
+        polyline.setMap(null);
+        marker2.setMap(null);
+    }
+}
+      function digital_Input_Image(gps,power,ignition,ac){
+    	//  alert("in function"+gps);
+       /*    var index=document.getElementById("deviceid").value();
+          var mySplitResult = digitalArray[deviceIDLookup(index)].split(",");
+          //      var digitalDivValues = "<table class='param_grid_final'>"; */
+          var headTR = "";
+          var newhead="";
+          // alert(difference);
+          //  var imageTR = "";
+       /*    for(i = 0; i < mySplitResult.length; i++){ */
+
+              //                       alert(mySplitResult[i]);   
+
+              if(gps==true)
+              {
+                  $("#gpsinfo").html("<img src='satcop//image//green_wheel.png'/>");
+              }
+          
+              else if(gps==false)
+              {
+            	//  alert("in else");
+                  $("#gpsinfo").html("<img src='satcop//image//red_wheel.png'/>");
+              }
+			  
+			  if(ac==true)
+              {
+                  $("#acinfo").html("<img src='satcop//image//green_wheel.png'/>");
+              }
+          
+              else if(ac==false)
+              {
+            	//  alert("in else");
+                  $("#acinfo").html("<img src='satcop//image//red_wheel.png'/>");
+              }
+              
+              if(power==true)
+              {
+                  $("#powerinfo").html("<img src='satcop//image//green_wheel.png'/>");
+              }
+          
+              else if(power==false)
+              {
+            	 //alert("in else");
+                  $("#powerinfo").html("<img src='satcop//image//red_wheel.png'/>");
+              }
+              
+              
+              if(ignition==true)
+              {
+                  $("#ignitioninfo").html("<img src='satcop//image//green_wheel.png'/>");
+              }
+          
+              else if(ignition==false)
+              {
+            	  //alert("in else");
+                  $("#ignitioninfo").html("<img src='satcop//image//red_wheel.png'/>");
+              }
+          
+      }
+ function addpoibutton(map)
+ {
+          /*   var dropdown2 = document.getElementById('jGaugeDemo1');
+            map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(dropdown2); */
+            
+            var dropdown1 = document.getElementById('icon');
+            map.controls[google.maps.ControlPosition.RIGHT_TOP].push(dropdown1);
+            
+            var dropdown = document.getElementById('odod');
+            map.controls[google.maps.ControlPosition.RIGHT_TOP].push(dropdown);
+            
+            var dropdown2 = document.getElementById('tab');
+            map.controls[google.maps.ControlPosition.BOTTOM_RIGHT].push(dropdown2);
+        }
+
+                                       var myOptions = { zoom:  8,center: new google.maps.LatLng(28.38,77.12),mapTypeId: google.maps.MapTypeId.ROADMAP};
+       map = new google.maps.Map(document.getElementById("map"),myOptions); 
+       
+     //  addpoibutton(map);
+      function createMarker(point,name,html,angle,imgcolor) {
+          
+          
+                var marker = new google.maps.Marker({
+                    position: point,
+                 // icon: new google.maps.MarkerImage(image),
+            icon: new google.maps.MarkerImage(GetVehIcon(parseInt(angle),imgcolor)),
+                    map: map
+                });
+                var infowindow="";
+                
+                var geocoder = new google.maps.Geocoder();
+                geocoder.geocode({latLng: marker.position}, function(results, status) {
+                    if (status == google.maps.GeocoderStatus.OK) {
+                        place = results[0].formatted_address;
+                        infowindow = new google.maps.InfoWindow({
+                    content: html+"<br/><b>Location</b>:"+place
+                });
+                    }
+                });
+                    google.maps.event.addListener(marker, 'click', function() {
+                    infowindow.open(map,marker);
+             
+                });
+       
+        gmarkers[i] = marker;
+        htmls[i] = html;
+        side_bar_html = '<a style="padding-left:0px;margin-left:0px;" href="javascript:myclick(' + i + ')">' +name+ '<\/a>';
+        
+        i++;
+        return marker;
+      }
+
+         var geocoder = new google.maps.Geocoder();
+
+
+            function getLocation(lat,lng){
+
+                geocoder.geocode({latLng: new google.maps.LatLng(lat,lng)},function(results, status)
+                
+                {
+                     if (status == google.maps.GeocoderStatus.OK) {
+                        if (results[0]) {
+                            place = results[0].formatted_address;
+                           //document.getElementById("location").innerHTML=""+place;
+                        }}
+                });
+               // getCallBackFor("location"));
+            }
+            
+
+      function myclick(i) {
+        //gmarkers[i].openInfoWindowHtml(htmls[i]);
+            generateTriggerCallback(gmarkers[i],'click');
+
+      }
+      
+         function generateTriggerCallback(object, eventType) {
+
+                google.maps.event.trigger(object, eventType);
+            }
+
+         function device_description(index,odometer,speed)
+         {
+		//alert("speed"+speed);
+           /*    document.getElementById("odod1").innerHTML=speed; */
+ 			var gms2=0;
+ 			 options = {value: 100,label: 'FUEL', min: 0,max: 100,majorTicks: 4,minorTicks: 3, // small ticks inside each major tick
+                     bands: [	        
+                         { color: '#ccc', from:  0, to: 10 },
+                         { color: '#bbb', from: 10, to: 20 },
+                         { color: '#aaa', from: 20, to: 30 },
+                         { color: '#999', from: 30, to: 40 },
+                         { color: '#888', from: 40, to: 60 },
+                         { color: '#777', from: 60, to: 80 },
+                         { color: '#666', from: 80, to: 99 }
+                     ]
+                 };
+         
+          
+         }
+     
+      //    readMap();
+      // A function to read the data
+      function readMap() 
+      {
+          var url=API+"Jsoncontroller?";
+          var query="Operation=getlasttrackpega&did="+$("#deviceId").val();
+          //alert(url+query);
+          $.ajax({
+              type: "GET",
+              url: url+query,
+              dataType: "jsonp",
+              beforeSend: function(HttpRequest) {
+                 	$("#resultLoading").hide();
+                 },
+              success: function(msg2) 
+              {
+            //	  alert(msg2);
+             deleteOverlays();
+            var markers =eval(msg2);
+           // alert("+++"+markers[0].odometer);
+            digital_Input_Image(markers[0].gps,markers[0].power,markers[0].ignition,markers[0].ac);
+            device_description($("#deviceid").val(),markers[0].odometer,markers[0].speed);
+            var imgtype="";
+             var imgcolor="R";
+             var status="Stop";
+               if(markers[0].speed > 0 ){
+                    imgcolor="G";
+                     imgtype = "<b>Vehicle</b>:<img src='js/pegasus/images/on_b.gif' title=Moving/>";
+                     status="Moving";
+                }
+                else if(markers[0].speed ==0 && markers[0].ignition ==true)
+                {
+                    imgcolor="Y" ;    
+                     imgtype = "<b>Vehicle</b>:<img src='js/pegasus/images/idle_b.gif' title=Idle />";   
+                     status="Idle";
+                }
+                
+                else
+                {
+                    imgcolor="R";     
+                      imgtype = "<b>Vehicle</b>:<img src='js/pegasus/images/off_b.gif' title=Stop/>";   
+                      status="Stop";
+                }
+            gmarkers = [];
+         side_bar_html="";
+              var lat = markers[0].lat;
+              var lng = markers[0].lng;
+              var icon_type = parseFloat(66);
+              var point =new google.maps.LatLng(lat,lng);
+              
+              //alert(map.getBounds());
+            // alert(markers[0].ac+"AC");
+          /*    document.getElementById("dname").innerHTML=markers[0].DNAME;
+             document.getElementById("dreivermob").innerHTML=markers[0].dreivermob;
+             document.getElementById("dreivername").innerHTML=markers[0].dreivername; */
+          //  getLocation(lat,lng);
+              //setVal(Math.round(markers[0].speed));
+              var html ="<div id='info'><b>Vehicle</b> : "+markers[0].DNAME+"<br/><b>Speed</b> : "+ Math.round(markers[0].speed)+" km/h<br/><b>GPS</b> : "+ truefalse(markers[0].gps)+"<br/><b>Engine</b> : "+ truefalse(markers[0].ignition)+"<br/><b>Power</b> : "+ truefalse(markers[0].power)+"<br/><b>Date-Time</b> : "+ markers[0].datetime;
+              var label = imgtype+markers[0].DNAME+"<br/><b>Speed</b> : "+ Math.round(markers[0].speed)+"<br/><b>GPS</b> : "+ truefalse(markers[0].gps)+"<br/><b>Engine</b> : "+ truefalse(markers[0].ignition)+"<br/><b>Power</b> : "+ truefalse(markers[0].power)+"<br/><b>AC</b> : "+ truefalse(markers[0].ac)+"<br/><b>Date-Time</b> : "+ markers[0].datetime.substr(0, markers[0].datetime.length-1)+"</div><br/>";
+		//$("#time").html(markers[0].datetime);	  
+           ///     $("#vehicleStatus").html(status);
+              // create the marker
+              
+              
+              
+              if(firstcall)
+                  {
+               //  alert("firstcall");
+                 if(!map.getBounds().contains(point))
+                                map.panTo(point);
+
+               polyline = new google.maps.Polyline({
+                                    path:[lastpoint,  point], 
+                                    strokeColor:"#00FF00",
+                                    strokeWeight:3
+                                });
+                                
+                                
+            polyline.setMap(map);
+              markers23.push(polyline);
+                  }
+                  else
+                 {
+                      map.panTo(point);
+                 }
+            firstcall=true;
+            lastpoint=point;
+              var marker = createMarker(point,label,html,markers[0].angle,imgcolor);
+             marker.setMap(map);
+             
+             markersArray.push(marker);
+              }
+            });
+        
+        }
+              function GetVehIcon(Angle,color)
+                {
+                    
+                        {  if (Angle > 350 || Angle < 10)
+                            image = "js/pegasus/images/car/"+color+"1.png";
+                        if (Angle >= 10 && Angle <= 35)
+                            image = "js/pegasus/images/car/"+color+"1.png";
+                        if (Angle > 35 && Angle < 55)
+                            image = "js/pegasus/images/car/"+color+"2.png";
+                        if (Angle >= 55 && Angle <= 80)
+                            image = "js/pegasus/images/car/"+color+"2.png";
+                        if (Angle > 80 && Angle < 100)
+                            image = "js/pegasus/images/car/"+color+"3.png";
+                        if (Angle >= 100 && Angle <= 125)
+                            image = "js/pegasus/images/car/"+color+"3.png";
+                        if (Angle > 125 && Angle < 145)
+                            image = "js/pegasus/images/car/"+color+"4.png";
+                        if (Angle >= 145 && Angle <= 170)
+                            image = "js/pegasus/images/car/"+color+"4.png";
+                        if (Angle > 170 && Angle < 190)
+                            image = "js/pegasus/images/car/"+color+"5.png";
+                        if (Angle >= 190 && Angle <= 215)
+                            image = "js/pegasus/images/car/"+color+"5.png";
+                        if (Angle > 215 && Angle < 235)
+                           image = "js/pegasus/images/car/"+color+"6.png";
+                        if (Angle >= 235 && Angle <= 260)
+                            image = "js/pegasus/images/car/"+color+"6.png";
+                        if (Angle > 260 && Angle < 280)
+                            image = "js/pegasus/images/car/"+color+"7.png";
+                        if (Angle >= 280 && Angle <= 305)
+                            image = "js/pegasus/images/car/"+color+"7.png";
+                        if (Angle > 305 && Angle < 325)
+                            image = "js/pegasus/images/car/"+color+"8.png";
+                        if (Angle >= 325 && Angle <= 350)
+                            image = "js/pegasus/images/car/"+color+"8.png";
+                    }      
+                    return image;
+                }
+         
+     
+        function truefalse(i)
+        {
+           // alert("in function"+i);
+            var t = "OFF";
+            if(i==true)
+                {
+                    t="ON";
+                }
+                else{
+                    t="OFF";
+                }
+                return t;
+        }
+    </script>

@@ -1,0 +1,275 @@
+@charset "utf-8";
+/* CSS Document */
+html{
+	height:100%;	
+}
+body{
+padding:0px;
+margin:0px;
+font-family:Tahoma, Arial, Verdana;
+color:#000;
+font-size:11px;
+height:100%;
+}
+
+a,img,p,h1,h2,h3,h4,h5,h6,form{
+padding:0px;
+margin:0px;
+border:none;
+}
+
+h2
+{
+font-family:Tahoma, Verdana, Arial;
+font-size:14px;
+font-weight:bold;
+letter-spacing:1px;
+line-height:21px;
+color:#fff;
+}
+
+.datatbl{
+	padding:0px;
+	margin:0px;
+	
+}
+.datatbl th{
+	background:#e3f5e2;	
+	border-collapse:collapse;
+}
+.datatbl td ,.datatbl th{
+	font-family:Tahoma, Geneva, sans-serif;
+	font-size:12px;
+	color:#252525;
+	padding:5px 15px;
+	margin:0px;
+	border:1px solid #8a8a8a;
+	text-align:center;
+	line-height:18px;
+	border-collapse:collapse;
+}
+
+
+
+.content
+{
+font-family:Arial, Helvetica, sans-serif;
+font-size:11px;
+color:#000000;
+letter-spacing:1px;
+width:90%;
+/*border:1px solid #F0F0F0;
+*/
+border:none;
+}
+
+.content ul li
+{
+font-family:Arial, Helvetica, sans-serif;
+font-size:11px;
+color:#000000;
+text-align:center;
+letter-spacing:1px;
+list-style:none;
+padding:5px;
+}
+
+.contenthead
+{
+font-family:Arial, Helvetica, sans-serif;
+font-size:13px;
+color:#000000;
+letter-spacing:1px;
+font-weight:bold;
+line-height:18px;
+padding:5px;
+border-right:1px solid #F0F0F0;
+background:#BBBBBB;
+}
+
+.contentbrdright
+{
+border-right:1px solid #F0F0F0;
+border-top:1px solid #F0F0F0;
+font-family:Arial, Helvetica, sans-serif;
+font-size:11px;
+color:#000000;
+padding:5px;
+letter-spacing:1px;
+line-height:18px;
+}
+
+.contentbrdright a
+{
+font-family:Arial, Helvetica, sans-serif;
+font-size:11px;
+color:#000000;
+padding:5px;
+letter-spacing:1px;
+line-height:18px;
+text-decoration:none;
+}
+
+.contentbrdright a:hover
+{
+font-family:Arial, Helvetica, sans-serif;
+font-size:11px;
+color:red;
+padding:5px;
+letter-spacing:1px;
+line-height:18px;
+text-decoration:underline;
+}
+.datatbl{
+	padding:0px;
+	margin:0px;
+	
+}
+.datatbl th{
+	
+	background:#BBBBBB;
+	
+}
+.datatbl td ,.datatbl th{
+	font-family:Tahoma, Geneva, sans-serif;
+	font-size:12px;
+	color:#252525;
+	padding:5px 15px;
+	margin:0px;
+	border:1px solid #8a8a8a;
+	text-align:center;
+	line-height:18px;
+	
+}
+.brdnone
+{
+border-right:none;
+}
+
+.asterik
+{
+height:35px;
+color:#FF0000;
+vertical-align:middle;
+}
+
+.weltxt
+{
+font-family:Tahoma, Verdana, Arial;
+font-size:11px;
+color:#ffffff;
+background:url(images/nav_sep.jpg) no-repeat left top;
+padding-left:30px;
+text-transform:uppercase;
+}
+
+.chkbxtxt{
+padding:1px 0  1px 5px;
+border-bottom:1px solid #fff;
+margin-left:5px;
+font-family:Tahoma, Arial, Verdana;
+font-size:11px;
+letter-spacing:1px;
+color:#000;
+}
+
+.chkbxtxt a{
+padding:1px 0  1px 5px;
+border-bottom:1px solid #fff;
+margin-left:5px;
+font-family:Tahoma, Arial, Verdana;
+font-size:11px;
+letter-spacing:1px;
+color:#666;
+text-decoration:none;
+height:35px;
+}
+
+.chkbxtxt a:hover{
+padding:1px 0  1px 5px;
+border-bottom:1px solid #fff;
+margin-left:5px;
+font-family:Tahoma, Arial, Verdana;
+font-size:11px;
+letter-spacing:1px;
+color:#666;
+text-decoration:none;
+}
+
+
+.livetrkhd{
+font-family:Arial, Helvetica, sans-serif;
+font-size:18px;
+color:#000px;
+padding-left:15px;
+}
+
+.btmimg
+{
+border:2px solid #333; padding:3px;
+}
+
+
+.chkbxtxthis{
+padding:1px 0  1px 5px;
+border-bottom:1px solid #fff;
+margin-left:5px;
+font-family:Tahoma, Arial, Verdana;
+font-size:11px;
+letter-spacing:1px;
+color:#000;
+}
+
+.chkbxtxthis a{
+padding:1px 0  1px 5px;
+border-bottom:1px solid #fff;
+margin-left:5px;
+font-family:Tahoma, Arial, Verdana;
+font-size:11px;
+letter-spacing:1px;
+color:#666;
+text-decoration:none;
+height:35px;
+}
+
+.chkbxtxthis a:hover{
+padding:1px 0  1px 5px;
+border-bottom:1px solid #fff;
+margin-left:5px;
+font-family:Tahoma, Arial, Verdana;
+font-size:11px;
+letter-spacing:1px;
+color:#666;
+text-decoration:none;
+}
+
+
+.scrollhis{
+height:100%; 
+width:100%;
+overflow:scroll;
+overflow-x:hidden;
+}
+
+
+
+/*********start***********************************/
+
+.submitbtn{
+	background:url(images/locate_veh.jpg) no-repeat left top;
+	width:122px; 
+	display:inline-block;
+	border:none;
+	color:#fff;
+	font-weight:bold;
+	font-size:12px;
+	padding:2px 0 7px 0;
+	height:26px;
+	cursor:pointer;
+}
+.submitbtn:hover{
+	color:#f7fb9a;
+	};
+	}tn:hover{
+	color:#f7fb9a;
+	}

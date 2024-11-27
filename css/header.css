@@ -1,0 +1,198 @@
+
+
+body {
+	font: normal 12px/18px "Lucida Sans Unicode", "Lucida Grande", Helvetica, Arial, sans-serif;
+	background: url(../images/nav/header2.gif) repeat-x 0 0;
+       /*background: url(../js/menu/images/main-bg.png) repeat-x  0 0;*/
+        
+        
+	color: #454545;
+}
+
+	
+	
+
+/*------------------ BEGIN New css class and id's added ------------------*/
+body.ie6 #goodAntiAliasing,
+body.ie7 #goodAntiAliasing,
+
+
+
+
+	#header h1 {
+		float: left;
+		position: relative;
+	}
+	#header h2 {
+		clear: left;
+		height: 25px;
+		float: left;
+		padding: 10px;
+		background: url(../images/nav/h2_blue_trans.png) repeat 0 0;
+		position: relative;
+		margin-top: 30px;
+        }
+        #header h2 span {
+                display: block;
+                height: 25px;
+                text-indent: -9999px;
+        }
+	ul#nav {
+		float: left;
+		height: 50px;
+		background: url(../images/nav/nav_separator.png) no-repeat 0 0;
+		padding-left: 2px;
+		margin: 0;
+		position: relative;
+		z-index: 1000;
+	}
+	
+		ul#nav li,
+		ul#nav li a {
+			display: block;
+			float: left;
+			line-height: 10px;
+		}
+		
+		ul#nav li {
+			background: url(../images/nav/nav_separator.png) no-repeat right 0;
+			padding-left: 0;
+			padding-right: 2px;
+			height: 50px;
+			position: relative;
+		}
+		
+		ul#nav li a {
+			text-transform: uppercase;
+			text-decoration: none;
+			font-weight: bold;
+			color: #787878;
+			padding: 13px 10px 13px 10px;
+			background: none;
+                        font-size: 13px;
+		}
+		
+			ul#nav li.active a {
+				color: #3c9b8d;
+			}
+			
+		/*-- Blog link --*/
+		ul#nav li.blog a {
+			color: #32648d;
+			background: url(../images/nav/blog-arrow.png) no-repeat 20px 13px;
+			padding-left: 45px;
+		}
+		ul#nav li.blog:hover a{
+			background: url(../images/nav/blog-arrow-hover.png) no-repeat 20px 13px;
+		}
+		/*-- Dropdowns --*/
+		ul#nav li .dropdown {
+			display:none;
+			position: absolute;
+			width: 218px;
+			top: 50px;
+			left: -4px;
+			overflow: hidden;
+			clear: left;
+			background: url(../images/nav/nav_dropdown_grad.png) no-repeat 2px 0;
+			padding-top: 1px;
+			z-index: 1000;
+		}
+		
+		ul#nav li ul {
+			width: 218px;
+			background: url(../images/nav/nav_dropdown_li.png) repeat-y 0 0;
+			overflow: hidden;
+			margin: 0;
+			padding: 0;
+			display: block;
+			float: left;
+		}
+
+
+		
+		ul#nav li:hover .dropdown,
+		ul#nav li.over .dropdown {
+			display: block;
+		}
+		
+		/* FIX: add styling? */
+		ul#nav li:hover a,
+		ul#nav li.over a {
+			color: #353535;
+		}
+		
+		ul#nav li:hover ul li a,
+		ul#nav li.over ul li a {
+			color: #454545;
+		}
+		
+		/* get a clean slate for the dropdowns */
+		ul#nav li ul li,
+		ul#nav li ul li a {
+			float:none;
+			height: 1%;
+			background: none;
+			margin: 0;
+			padding: 0;
+			text-transform: none;
+			font-weight: normal;
+		}
+		
+		ul#nav li ul li {
+			margin:0 5px 0 4px;
+			padding:5px 0 7px 8px;
+			background: url(../images/nav/nav_dropdown_sep.gif) repeat-x 0 bottom;
+		}
+		
+			ul#nav li ul li.last { 
+				background: none;
+				padding-bottom: 4px;
+			}
+		
+			ul#nav li ul li a {
+				font-size: 15px;
+				line-height: 12px;
+				padding: 5px 7px 6px 7px;
+				color: #454545;
+				margin: 0;
+				background: url(../images/nav/nav_dropdown_hover.gif) no-repeat left -23px;
+			}
+			
+			ul#nav li ul li a:hover {
+				background-position: left center;
+				color: #fff;
+			}
+			
+			ul#nav li .dropdown .bottom {
+				float: left;
+				width: 218px;
+				background: url(../images/nav/nav_dropdown_bottom.png) no-repeat left top;
+				height: 11px;
+				line-height:1px;
+			}
+			
+			
+	
+	
+
+	/*------------------ reset ------------------*/
+/*body,html { margin:0; padding: 0; width: 100%; }*/
+/*body,h1,h2,h3,h4,h5,h6,pre,code { font-size: 1em; }*/
+ul,ol,li,h1,h2,h3,h4,h5,h6,pre,form,body,html,p,blockquote,fieldset,legend,
+input,button,select,textarea,dl,dd,dt,hr,table,thead,tbody,tfoot,tr,th,td { margin:0; padding:0 }
+img,a img,:link img,:visited img { border:0;padding:0;margin:0; }
+address,cite,caption { font-style: normal }
+caption,th { text-align: left }
+ol,ul { margin-left: 5px; }
+ol { margin-left: 25px }
+ul { list-style: none; }
+
+* :focus { outline: 0; }
+
+body,html {
+	width: 100%;
+	height: 100%;
+}
+
+	

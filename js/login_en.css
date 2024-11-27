@@ -1,0 +1,40 @@
+@charset "utf-8";
+/* CSS Document */
+html{overflow-x:hidden}
+body{margin:0px;padding:0px;background-image:url(../images/login/bg.jpg);font-family: arial;}
+.top1{margin-left:auto;margin-right:auto;text-align:center;}
+.top2{width:780px;height:570px;margin-left:auto;margin-right:auto;}
+
+
+.pic_1{width:299px;height:97px;background-image:url(../images/login/traker_02.jpg);float:left}
+.pic_2{width:231px;height:97px;background-image:url(../images/login/traker_03.jpg);float:left}
+.pic_3{width:250px;height:97px;background-image:url(../images/login/traker_04.jpg);float:left}
+.pic_4{width:299px;height:115px;background-image:url(../images/login/traker_06.jpg);float:left}
+.pic_5{width:231px;height:115px;background-image:url(../images/login/traker_07.jpg);float:left}
+.pic_6{width:250px;height:115px;background-image:url(../images/login/traker_08.jpg);float:left}
+.pic_7{width:299px;height:137px;background-image:url(../images/login/traker_09.jpg);float:left}
+.pic_8{width:231px;height:137px;background-image:url(../images/login/traker_10.jpg);float:left}
+.pic_9{width:250px;height:137px;background-image:url(../images/login/traker_11.jpg);float:left}
+.pic_10{width:354px;height:211px;background-image:url(../images/login/traker_12.jpg);float:left}
+.pic_11{width:426px;height:211px;background-image:url(../images/login/traker_13.jpg);float:left;font-size:12px;color:#FFFFFF;padding-top:70px;text-align:left;}
+.pic_11 ul{list-style:none;text-align:left;padding:0px;margin:0px;}
+.pic_11 ul li{height:35px;}
+.pic_12{width:426px;height:211px;background:url(../images/login/traker_13.jpg) no-repeat;float:left;font-size:12px;color:#FFFFFF;padding-top:30px;text-align:left;}
+.pic_12 ul{list-style:none;text-align:left;padding:0px;margin:0px;}
+.pic_12 ul li{text-align:left;height:35px;}
+.fin{background-color: #2e2e2e;padding: 0px;height: 23px;width: 148px;border: 1px solid #4c4c4c;color:#EEF1F2;}
+.lajis{padding-left:58px;}
+
+.menugroupover{height:16px;float:left;padding-top:3px; padding-bottom:3px; padding-left:5px; padding-right:5px; border-left:1px solid #fefffd;border-top:1px solid #fefffd;border-right:1px solid #fefffd;background:#666;}
+.menugroup{height:16px;float:left;padding-top:3px; padding-bottom:3px;padding-left:5px; padding-right:5px;border-left:1px solid #fefffd;border-top:1px solid #fefffd;border-right:1px solid #fefffd;}
+a.bai:link{text-decoration:none;color:#ffffff; font-size:12px;}
+a.bai:visited{text-decoration:none;color:#ffffff;font-size:12px; }
+a.bai:hover{text-decoration:none;color:#ffffff;font-size:12px; }
+a.bai:active{text-decoration:none;color:#ffffff;font-size:12x;}
+
+
+
+a.white:link{text-decoration:none;color:#ffffff;font-size:12px;text-decoration:underline;}
+a.white:visited {text-decoration:none;color:#ffffff;font-size:12px;text-decoration:underline}
+a.white:hover {text-decoration:none;color:#ffffff;font-size:12px;}
+a.white:active {text-decoration:none;color:#ffffff;font-size:12px;text-decoration:underline}

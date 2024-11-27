@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GPS Based Vehicle Tracking System</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 90%;
+            max-width: 400px;
+            backdrop-filter: blur(10px);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            color: #2d3748;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            border: 2px solid #E3F2FD;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #F8FBFE;
+        }
+
+        .form-group input:focus {
+            border-color: #87CEEB;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(135, 206, 235, 0.2);
+        }
+
+        .form-group i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #87CEEB;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: #2d3748;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background: #1a202c;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .demo-credentials {
+            margin-top: 20px;
+            text-align: center;
+            padding: 15px;
+            background: #F8FBFE;
+            border-radius: 10px;
+            border: 1px solid #E3F2FD;
+        }
+
+        .demo-credentials h3 {
+            color: #4a5568;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .demo-credentials p {
+            color: #718096;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        #errordiv {
+            text-align: center;
+            margin-top: 15px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background-color: #FEF2F2;
+            border: 1px solid #FCA5A5;
+            color: #DC2626;
+            font-size: 14px;
+            display: none;
+        }
+
+        #errordiv.show {
+            display: block;
+        }
+
+        #errordiv i {
+            margin-right: 6px;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+        }
+
+        label.error {
+            color: #DC2626;
+            font-size: 14px;
+            margin-top: 5px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>GPS Tracker Login</h1>
+        </div>
+
+        <form method="POST" id="form-horizontal" action="">
+            <div class="form-group">
+                <input type="text" name="uid" id="uid" placeholder="Username">
+                <i class="fas fa-user"></i>
+            </div>
+            
+            <div class="form-group">
+                <input type="password" id="password" name="passwd" placeholder="Password">
+                <i class="fas fa-lock"></i>
+            </div>
+
+            <button type="submit" name="submit" class="submit-btn">Sign In</button>
+            
+            <div id="errordiv"></div>
+        </form>
+
+       
+    </div>
+
+    <input type="hidden" name="ipaddress" value="192.168.1.134" id="ipaddress" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="js/jquery.validate.min.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        $(document).ready(function() {
+            $("#uid").focus();
+            $('#form-horizontal').validate({
+                rules: {
+                    uid: { required: true },
+                    passwd: { required: true }
+                },
+                messages: {
+                    required: "Please enter required value"
+                },
+                submitHandler: function(form) {
+                    loginajax();
+                }
+            });
+        });
+
+        function loginajax() {
+            var username = $('#uid').val();
+            var password = $('#password').val();
+            var ip = $('#ipaddress').val();
+
+            if (username.length == 0) {
+                showError("Please enter valid ID/Password.");
+            } else if (password.length == 0) {
+                showError("Please enter valid ID/Password.");
+            } else {
+                var post_data = "?Operation=authenticationv3&uid=" + username + "&passwd=" + password + "&ip=" + ip;
+
+                $.ajax({
+                    type: "POST",
+                    url: API + "Jsoncontroller" + post_data,
+                    dataType: "jsonp",
+                    beforeSend: function(HttpReq) {
+                        $('#errordiv').removeClass('show').html("");
+                    },
+                    success: function(msg) {
+                        var error = geterrorcode(msg);
+                        if (error == "success") {
+                            window.location = "livetrackingola.html";
+                        } else if(msg == 2) {
+                            $("#uid").val('');
+                            $("#password").val('');
+                            showError("Please enter valid ID/Password.");
+                        } else {
+                            $("#uid").val('');
+                            $("#password").val('');
+                            showError("Please enter valid ID/Password.");
+                        }
+                    }
+                });
+            }
+        }
+
+        function showError(message) {
+            $('#errordiv').html("<i class='fas fa-exclamation-circle'></i> " + message).addClass('show');
+        }
+
+        function geterrorcode(e) {
+            var t = 0;
+            if (e == -1) {
+                t = "Please enter valid ID/Password.";
+            } else if (e == -2) {
+                t = "Your Account is temporarily Deactivated! Please pay your hosting dues to reactivate your account. Contact your Supplier.";
+            } else if (e == -3) {
+                t = "Some unexpected Error occurred";
+            } else if (e == -4) {
+                t = "Please Contact Admin with Error Code 505";
+            } else if (e == 1) {
+                t = "success";
+            } else {
+                t = "Unknown Error";
+            }
+            return t;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Home : GPS Based Vehicle Tracking System</title>
+        <meta http-equiv="pragma" content="no-cache">
+        <meta http-equiv="cache-control" content="no-cache">
+        <meta http-equiv="expires" content="0">
+        <meta http-equiv="keywords" content="GPS Tracking Admin">
+        <meta http-equiv="description" content="GPS Tracking">
+
+        <style>
+
+            label.valid {
+                width: 24px;
+                height: 24px;
+                background: url(img/valid.png) center center no-repeat;
+                display: inline-block;
+                text-indent: -9999px;
+            }
+            label.error {
+                font-weight: bold;
+                color: red;
+                padding: 2px 8px;
+                margin-top: 2px;
+            }
+
+        </style>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Gps Tracking System</title>
+  <!-- Tell the browser to be responsive to screen width -->
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+  <!-- Bootstrap 3.3.5 -->
+  <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+  <!-- Ionicons -->
+  <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+  <!-- Theme style -->
+  <link rel="stylesheet" href="dist/css/AdminLTE.min.css">
+  <!-- iCheck -->
+  <link rel="stylesheet" href="plugins/iCheck/square/blue.css">
+  
+</head>
+<script src="plugins/jQuery/jQuery-2.1.4.min.js"></script>
+ <script src="js/jquery.validate.min.js"></script>
+  <script src="js/api.js"></script>
+
+ <script type="text/javascript">
+            $(document).ready(function() {
+
+                $("#uid").focus();
+                $('#form-horizontal').validate({
+                	
+                    rules: {uid: { required: true},passwd: {required: true} },messages:{required: "Please enter required value"},submitHandler: function(form) {loginajax();} });
+            }); // end document.ready
+
+
+            function loginajax()
+            {
+                var username = $('#uid').val();
+                var password = $('#password').val();
+                var ip = $('#ipaddress').val();
+                //   alert($("#remember").attr('checked'));
+                if (username.length == 0)
+                {
+                    $('#errordiv').html("<img src='images/unchecked.gif' />&nbsp;&nbsp;<font size='3' color='Red'>Please Enter Username</font>")
+                }
+                else if (password.length == 0)
+                {
+                    $('#errordiv').html("<img src='images/unchecked.gif' />&nbsp;&nbsp; <font size='4' color='red' >Plase Enter Password</font>");
+                }
+                else {
+
+                    var usertyp = $("#usertyp").val();
+                    var post_data = "?Operation=" + usertyp + "&uid=" + username + "&passwd=" + password + "&ip=" + ip;
+
+                    $.ajax({
+                        type: "POST",
+                        url: API+"Jsoncontroller"+post_data,
+						 dataType: "jsonp",
+				beforeSend: function(HttpReq) 
+                        {
+                            $('#errordiv').html("<em>&nbsp;Please wait while login in...</em>");
+                        },
+                        success: function(msg)
+                        {
+                          //   alert(msg);
+                            var error = geterrorcode(msg);
+                            if (error == "success") 
+                            {
+                                $('#errordiv').html("<em><font size='3' color='green'>Login Success! Redirecting...</font></em>");
+
+                                if ($("#usertyp").val() == "authenticationv3")
+                                {
+                                    window.location = "home.html";
+                                }
+                                else
+                                {
+                                    window.location = "index2.html";
+                                }
+                            } else if(msg==2)
+                            	{
+                            	alert("Unknown error");
+                            	 $("#uid").val('');
+                                 $("#password").val('');
+
+                                 $('#errordiv').html("<img src='images/unchecked.gif' />&nbsp;&nbsp;<font size='4' color='Red'>" + error + "</font>");
+                            	}
+                            else 
+                            {
+                                $("#uid").val('');
+                                $("#password").val('');
+
+                                $('#errordiv').html("<img src='images/unchecked.gif' />&nbsp;&nbsp;<font size='4' color='Red'>" + error + "</font>");
+                            }
+                        }
+						
+                    });
+                }
+            }
+
+
+function geterrorcode(e){var t=0;if(e==-1){t="Please enter valid ID/Password."}else if(e==-2){t="Your Account is temporary Deactived ! <br/>Please pay your hosting Dues to Reactivate your account. Contact your Supplier."}else if(e==-3){t="Some unexpected Error occures"}else if(e==-4){t="Please Contect Admin with Error Code 505"}else if(e==1){t="success"}else{t="unkonwn Error"}return t}
+
+
+            function check()
+            {
+                if ((document.form1.uid.value) != "")
+                {
+                    if ((document.form1.passwd.value) != "")
+                    {
+                        document.getElementById('Operation').value = "authentication";
+                        document.form1.submit();
+                    }
+                    else
+                    {
+                        alert("Password must be entered..!");
+                        document.form1.passwd.focus();
+                    }
+                }
+                else
+                {
+                    alert("Username must be Digit..!");
+                    document.form1.uid.focus();
+                }
+
+            }
+
+            function checkuser()
+            {
+                if ((document.form2.uid2.value) != "")
+                {
+                    if ((document.form2.passwd2.value) != "")
+                    {
+                        document.getElementById('Operation2').value = "authenticationofuser";
+                        document.form2.submit();
+                    }
+                    else
+                    {                        alert("Password must be entered..!");
+                        document.form2.passwd2.focus();
+                    }
+                }
+                else
+                {
+                    alert("Username must be Digit..!");
+                    document.form2.uid2.focus();
+                }
+
+            }
+            function godemo()
+            {
+                //      document.form1.uid.value="demo";
+                document.getElementById('uid').value = "demo";
+                document.getElementById('password').value = "demo";
+                //   document.form1.passwd.value="demo";
+                document.getElementById('Operation').value = "authentication";
+                document.form1.submit();
+            }
+
+            function sendEmail()
+            {
+                document.getElementById('operation9').value = "EmailSendCall";
+                document.form3.submit();
+            }
+            function sendMessage()
+            {
+                document.getElementById('operation9').value = "MessageSendCall";
+                document.form3.submit();
+            }
+
+            function echeck()
+            {
+                var str = document.form3.emailadd.value;
+
+                var at = "@"
+                var dot = "."
+                var lat = str.indexOf(at)
+                var lstr = str.length
+                var ldot = str.indexOf(dot)
+                if (str.indexOf(at) == -1)
+                {
+                    document.form3.emailadd.value = "";
+                    alert("Invalid E-mail ID")
+                    return false
+                }
+
+                if (str.indexOf(at) == -1 || str.indexOf(at) == 0 || str.indexOf(at) == lstr) {
+                    document.form3.emailadd.value = "";
+                    alert("Invalid E-mail ID")
+                    return false
+                }
+
+                if (str.indexOf(dot) == -1 || str.indexOf(dot) == 0 || str.indexOf(dot) == lstr) {
+                    document.form3.emailadd.value = "";
+                    alert("Invalid E-mail ID")
+                    return false
+                }
+                if (str.indexOf(at, (lat + 1)) != -1) {
+                    document.form3.emailadd.value = "";
+                    alert("Invalid E-mail ID")
+                    return false
+                }
+                if (str.substring(lat - 1, lat) == dot || str.substring(lat + 1, lat + 2) == dot) {
+                    document.form3.emailadd.value = "";
+                    alert("Invalid E-mail ID")
+                    return false
+                }
+                if (str.indexOf(dot, (lat + 2)) == -1) {
+                    document.form3.emailadd.value = "";
+                    alert("Invalid E-mail ID")
+                    return false
+                }
+
+                if (str.indexOf(" ") != -1) {
+                    document.form3.emailadd.value = "";
+                    alert("Invalid E-mail ID")
+                    return false
+                }
+                else
+                {
+                    sendEmail();
+                    return true
+                }
+            }
+
+            var StatusNo = 0;
+            var MaxStatus = 11;
+            var Refresh = true;
+            var wind_b = null;
+            var FirstTime_b = false;
+
+            function openAWindow_B(pageToLoad, winName, width, height, center)
+            {
+                if (FirstTime_b && !wind_b.closed)
+                    return;
+                FirstTime_b = true;
+                xposition = 0;
+                yposition = 0;
+                if ((parseInt(navigator.appVersion) >= 4) && (center))
+                {
+                    xposition = (screen.width - width) / 2;
+                    yposition = (screen.height - height) / 2;
+                }
+                args = "width=" + width + "," + "height=" + height + "," + "location=0," + "menubar=0," + "resizable=yes," + "scrollbars=yes," + "status=0," + "titlebar=no," + "toolbar=0," + "hotkeys=0," + "screenx=" + xposition + "," + "screeny=" + yposition + "," + "left=" + xposition + "," + "top=" + yposition;
+                wind_b = window.open(pageToLoad, winName, args);
+            }
+        </script>
+<body class="hold-transition login-page">
+        
+        <!--             <script type="text/javascript" src="~/../js/tooltip.js"></script>-->
+        <!--<script type="text/javascript" src="~/../js/ajax.js"></script>-->
+ 
+    <div class="login-box">
+  <div class="login-logo">
+   <b>Welcome TO  GPS Tracker</b>
+  </div>
+  <!-- /.login-logo -->
+  <div class="login-box-body">
+    <p class="login-box-msg" ><div id="errordiv"></div></p>
+
+<form method="POST" id="form-horizontal" action="" accept-charset="UTF-8">
+      <div class="form-group has-feedback">
+         <input type="text" name="uid" type="text"  id="uid" class="form-control"     placeholder="Username">
+        <span class="glyphicon glyphicon-envelope form-control-feedback"></span>
+      </div>
+      <div class="form-group has-feedback">
+      <input type="password" id="password" name="passwd" class="form-control"  placeholder="Password">
+        <span class="glyphicon glyphicon-lock form-control-feedback"></span>
+      </div>
+      <div class="row">
+        <div class="col-xs-8">
+          <div class="checkbox icheck">
+            <select id="usertyp" class="span2"> <option selected value="authenticationv3">Manager</option><option value="authenticationofuser">SubUser</option></select>
+                            <!--<label class="checkbox">-->
+          </div>
+        </div>
+        <!-- /.col -->
+        <div class="col-xs-4">
+          <button type="submit" name="submit" class="btn btn-primary btn-block btn-flat">Sign In</button>
+          
+   <!--         <div align="center"> <a href="forgotpass.jsp" target="_blanck">Forgot Password?</a></div> -->
+        </div>
+        <!-- /.col -->
+      </div>
+      
+    </form>
+
+  </div>
+  <!-- /.login-box-body -->
+</div>
+  
+        <input type="hidden" name="ipaddress" value="192.168.1.134"  id="ipaddress" />  
+        <!-- jQuery 2.1.4 -->
+
+<!-- Bootstrap 3.3.5 -->
+<script src="bootstrap/js/bootstrap.min.js"></script>
+</body>
+</html>

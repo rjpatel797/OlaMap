@@ -1,0 +1,204 @@
+#divNav {
+		background: url(bk-nav.jpg) repeat top left;
+		margin: 0;
+		padding: 0;
+		height: 78px;
+		width: 960px;
+		}
+
+	#nav {
+		font-family:Tahoma, Geneva, sans-serif;
+		font-size:11px;
+		position: relative;
+		top: 0px;
+		height: 140px;
+		width: 950px;
+		
+
+	}
+
+	#nav li ul
+	{
+		margin: 0;
+		padding: 0;
+		width:100%;
+		display: none;
+		text-align:center;
+		background-color:#bbbbbb;
+	}
+
+	#nav a {
+		text-decoration: none;
+	}
+
+	#nav li { /*float the main list items*/
+		margin: 0;
+		float: left;
+		display: block;
+		padding-right: 5px;
+		text-align:center;
+	}
+
+	#nav li.off ul, #nav li.on ul  { /*put the subnav below*/
+	position: absolute;
+	left: -3px;
+	padding-top: 0px;
+	height: 100px;
+	width: 100%;
+	top: 48px;
+	background-color:#BBBBBB;
+	border-top:#E60619 1px solid;
+	}
+
+	#nav li.on ul {
+		background:none;
+	}
+	#nav li.off ul {
+		background:none;
+		display:block;
+		background-color:#BBBBBB;
+	}
+	
+	#nav li a {
+		color: #fff;
+		font-weight: bold;
+		display: block;
+		width: 113px;
+		height:40px;
+		background-image:url(images/nev-bk.png);
+		background-repeat:no-repeat;
+		background-position:top left;
+		color:#FFF;
+		padding-top:11px;
+	}
+	#nav li a:hover
+	{
+		background-image:url(images/nev-bk-hover.jpg);
+		background-repeat:no-repeat;
+		color:#FFF;
+	}
+
+	#nav li.off ul li{
+		color: #fff;
+		text-align:center;
+		background-color:#bbbbbb;
+		
+	}
+
+	#nav li.on ul a, #nav li.off ul a {
+		border: none;
+		float: left; /*ie doesn't inherit the float*/
+		color: #fff;
+		width: auto;
+		margin-right:10px;
+	}
+
+	#nav li.on:hover ul a, #nav li.over ul li a { /*for ie - the specificity is necessary*/
+		background: #224d6f;
+	}
+
+	#nav li.on ul {
+		display: block;
+		width:100%;
+		text-align:center;
+		background-color:#BBBBBB;
+	}
+
+	#nav li.off:hover ul, #nav li.over ul {
+		display: block;
+		z-index: 6000;
+	}
+
+	#nav li.off a:hover, #nav li.on a:hover { 
+		color: #fff;
+	}
+
+	/*do the image replacement*/
+
+	#nav li span {
+		position: absolute;
+		left: -9384px;
+	}
+
+	#liRenaissance a, #liArtNouveau a, #liModern a, #liPostModern a, #liDigital a {
+		display: block;
+		position: relative;
+		height: 26px;
+		background: url(bk-dropdownMap.gif) no-repeat; /*contains all hover states*/
+	}
+
+/*first, put the initial states in place*/
+
+#liRenaissance a {
+	background-position: 0 0;
+}
+
+#liArtNouveau a {
+	background-position: -102px 0;
+}
+
+#liModern a {
+	background-position: -204px 0;
+}
+
+#liPostModern a {
+	background-position: -306px 0;
+}
+
+#liDigital a {
+	background-position: -408px 0;
+}
+
+/*active area - for this demo - the code could be based on a body class, and probably work better.*/
+
+ #liModern.on a {
+ 	background-position: -204px -37px;
+ } /*add selectors for the other li's and background-positions*/
+
+/*hover states*/
+
+#liRenaissance a:hover, #liRenaissance:hover a, #liRenaissance.over a {
+	background-position: 0 -73px;
+}
+
+#liArtNouveau a:hover, #liArtNouveau:hover a, #liArtNouveau.over a {
+	background-position: -102px -73px;
+}
+
+#liModern a:hover, #liModern:hover a, #liModern.over a {
+	background-position: -204px -73px;
+}
+
+#liPostModern a:hover, #liPostModern:hover a, #liPostModern.over a {
+	background-position: -306px -73px;
+}
+
+#liDigital a:hover, #liDigital:hover a, #liDigital.over a {
+	background-position: -408px -73px;
+}
+
+/*subnav formatting*/
+
+#nav li.off ul a, #nav li.on ul a {
+	display: block;
+	background: none;
+	color: #fff;
+	font-family: arial, verdana, sans-serif;
+	font-size: small;
+	padding-left:5px;
+}		
+
+#nav li.on ul a {
+	background: #f90;
+}
+
+.submitbtn{
+	background:none!important;
+	/*background:url(images/auct_srchbtn.gif) no-repeat left top !important;*/
+	background:url(images/locate-vehhicle-btn.jpg) no-repeat left top!important;
+	width:131px;
+	height:31px;
+	cursor:pointer;
+	border:none;
+	vertical-align:top;	
+}

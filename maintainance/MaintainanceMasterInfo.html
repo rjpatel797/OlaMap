@@ -1,0 +1,325 @@
+
+        <script type="text/javascript">
+
+            $(document).ready(function(){
+
+            	  getMaintainancemaster();
+                });
+          
+ 
+            function deleteit(id)
+            {
+                //  alert(id);
+		     if (window.confirm("Are you sure To Delete alert ?"))
+		       	    {
+		       	    	
+		    	 $.ajax({
+		             type: "GET",
+		             url: API+"Jsoncontroller?Operation=maintainacealertinfo",                        
+		             data: "id="+id,
+		             dataType: "jsonp",
+		             beforeSend: function(HttpRequest){
+		                 // $("#welcometext").html("<em class='loding'>&nbsp;Please wait while saving....</em>");
+		             },
+		             success: function(response) { 
+		                 
+		                  alert("scessfully deleted..."); 
+		                 getMaintainancemaster();
+		             }});
+		       	    }
+       	    return false;
+               
+               
+            }
+            $('body').on('hidden.bs.modal', '.modal', function () {
+      		  $(this).removeData('bs.modal');
+      		});
+            function getMaintainancemaster()
+            {            
+                      
+            	var option=$("#getMaintainancemaster").val();
+                //console.log(post_data);
+                $.ajax({
+                    type: "GET",
+                    url: API+"Jsoncontroller?Operation=maintainacealertinfo&option=getMaintainancemaster",                        
+                    dataType: "jsonp",
+                    beforeSend: function(HttpRequest)
+                    {
+                        $("#welcometext").html("<em class='loding'>&nbsp;Please wait while saving....</em>");
+                    },
+                    success: function(response) 
+                    {  
+                      //   alert(response);
+                        var data =response;
+                        var html="<table id='expiryreport' class='table table-striped' style='border-color:#3C8DBC;'> <thead style='background-color:#3C8DBC; color:white;'><tr><th>Sr.No</th>"+
+                            "<th> Device Name</th>"+
+                            "<th> Expiry Type</th>"+
+                            "<th> Start Date</th>"+                             
+                            //"<th> Period(in days)</th>"+
+                        "<th> Due Date</th>"+
+                            // "<th> Alert Type</th>"+
+                        "<th> Alert No</th>"+             
+                            "<th> Email ID</th>"+                        
+                            "<th>Notes</th>"+   
+                            "<th>Alert Before</th>"+
+                            "<th>Status</th>"+ 
+                            "<th>Delete</th>"+
+                            "<th>Edit</th></tr></thead>";
+                        var html2="";
+                        //alert(html);
+                        var current= new Date();                   
+                    
+                        // alert(data.length);
+                                
+                        if(option=="expired")
+                        {      
+                        	//alert("expired");
+                            for(var i=0;i<data.length;i++)
+                            {                              
+                                // alert(current.getDate());
+                                var someDate=new Date(data[i][3]);                
+                              
+                                var current =new Date();
+                                var diff=someDate.getTime()-current.getTime();
+                                var difference1 = Math.round(diff / (1000 * 60 * 60 * 24));
+                                //alert(dd);
+                                if(difference1<0)
+                                {
+                                   
+                                    html2+=gethtml(data,i);
+                                }
+                                
+                            }
+                            $("#mytbl").html(html+'<tbody>'+html2+'</tbody></table>');
+                           // initdt();                
+                        
+                        }
+                        else if(option=="expiry")
+                        {                      
+                         //'    alert(data.length +"expiry");
+                              
+                            for(var i=0;i<data.length;i++)
+                            {
+                               
+                                // alert(current.getDate());
+                                var someDate=new Date(data[i][3]);
+                               
+                                var current =new Date();
+                                var diff=someDate.getTime()-current.getTime();
+                                var difference1 = Math.round(diff / (1000 * 60 * 60 * 24));
+                                // alert(difference);
+                                if(difference1<=7 && difference1>0)
+                                {
+                                   
+                                    html2+=gethtml(data,i);
+                                }
+                            }
+                            $("#mytbl").html(html+'<tbody>'+html2+'</tbody></table>');
+                          //  initdt();
+                        }
+                        else if(option=="Both")
+                        {
+                            // alert("both");
+                          
+                              
+                              
+                            // alert(data.length);
+                              
+                            for(var i=0;i<data.length;i++)
+                            {
+                               
+                                // alert(current.getDate());
+                                var someDate=new Date(data[i][3]);
+                               
+                                var current =new Date();
+                                var diff=someDate.getTime()-current.getTime();
+                                var difference1 = Math.round(diff / (1000 * 60 * 60 * 24));
+                                //alert(dd);
+                                if(difference1<0 || difference1>=7 || difference1>=0 )
+                                {
+                                  
+                                    html2+=gethtml(data,i);
+                                }
+                            }
+                            $("#mytbl").html(html+'<tbody>'+html2+'</tbody></table>');
+                          // initdt();
+                        }
+                        else
+                        {           
+                        	//alert("in else");
+                              
+                            for(var i=0;i<data.length;i++)
+                            {
+                                
+                                html2+=gethtml(data,i);
+                                // alert(html2);
+                            }
+                            $("#mytbl").html(html+'<tbody>'+html2+'</tbody></table>');
+                            
+                        }
+                        datatable();
+                    }                         
+                });
+                
+            }
+            function gethtml(data,i,opt)
+            {
+                var html1="";
+                var active="";
+                var duedate="";
+                var someDate=new Date(data[i][3]);
+                var dd = someDate.getDate();
+                var mm = someDate.getMonth() + 1;
+                var y = someDate.getFullYear();
+                var someFormattedDate = dd+ '-'+ mm + '-'+ y;
+                var current =new Date();
+                var diff=someDate.getTime()-current.getTime();
+                var difference1 = Math.round(diff / (1000 * 60 * 60 * 24));
+                //alert(dd);
+                
+                if(data[i][7]==true)
+                {
+                    active='<span class="label label-success">Active</span>';
+
+                }
+                else
+                {
+                    active='<span class="label label-important">DeActive</span>';
+                } 
+                if(difference1< 0)
+                {
+                    duedate='<b style="color: red;">'+someFormattedDate+'</b>';
+                    // alert("xep")
+                }  
+                else if(difference1<=7 && difference1>0)
+                {
+                    duedate='<b style="color: yellow;">'+someFormattedDate+'</b>';
+                    // alert("expir")
+                }   
+                else
+                {
+                    duedate='<span class="label label-success">'+someFormattedDate+'</span>';
+                    //  alert("both");
+                }
+
+               
+                var someDate1=new Date(data[i][10]);
+                var dd1 = someDate1.getDate();
+                var mm1 = someDate1.getMonth() + 1;
+                var y1 = someDate1.getFullYear();
+
+                var someFormattedDate1= dd1+ '-'+ mm1 + '-'+ y1;
+                                        
+                var name="editit("+data[i][9]+",\""+data[i][0]+"\")";
+                html1+="<tr><td>"+(i+1)+"</td>"+"<td>"+data[i][0]+"</td>"+"<td>"+data[i][1]+"</td>"+"<td>"+someFormattedDate1+"</td><td>"+duedate+"</td><td>"+data[i][5]+"</td>"+"<td>"+data[i][6]+"</td>"
+                    +"<td>"+data[i][8]+"</td>"+"<td>"+data[i][11]+"</td>"+"<td>"+active+"</td>"+ "<td><a href='#' onClick='deleteit("+data[i][9]+");' class='btn btn-danger'>Delete</a></td>"
+                    +"<td> <a href='#' onclick='"+name+"'  class='btn btn-primary'>Edit</a></td> </tr>";
+                // alert(html1);
+                return html1;
+            }
+            
+            function generatealert()
+            {
+                var post_data="option=getmaintainancealert"+"&managerId="+$("#managerId").val();                 
+                    
+                //alert(post_data);  
+                      
+                //console.log(post_data);
+                $.ajax({
+                    type: "GET",
+                    url: "Jsoncontroller?Operation=maintainacealertinfo",                        
+                    data: post_data,
+                    dataType: "jsonp",
+                    beforeSend: function(HttpRequest){
+                        $("#welcometext").html("<em class='loding'>&nbsp;Please wait while saving....</em>");
+                    },
+                    success: function(response) 
+                    {  
+                        
+                        for(var i=0;i<response.length;i++)
+                        {
+                            var date= new Date(response[i][2]);
+                            var current =new Date();
+                            var diff=date.getTime()-current.getTime();
+                            var difference1 = Math.round(diff / (1000 * 60 * 60 * 24));
+                            //alert(difference1);
+                            if (difference1 <=response[i][3] && difference1 >= 0) {
+
+                                if (difference1 == 0) {
+                            
+                                    alert("your vehicle"+response[i][0]+"'s"+response[i][1]+"is expiring on today."+response[i][2]);
+
+                                } else {
+                                    alert("your vehicle"+""+""+response[i][0]+""+""+"'s"+response[i][1]+"will expire on"+""+""+response[i][2]+""+""+"with"+""+""+difference1+"days remaining.");
+                                }
+                            } else if (difference1 < 0) {
+                                alert("your vehicle"+""+""+response[i][0]+""+""+"'s"+response[i][1]+" expired on"+""+""+response[i][2]);
+                            }
+
+                        }
+                        
+                    }
+                });
+            }
+       	 function editit(id,dname){
+     	//	 alert("editid:");
+     		 $("#editid").val(id);
+     		 $("#dname").val(dname);
+     		 edititd=id;
+     		 dname=encodeURIComponent(dname);
+     		 $("#myModal").modal({show:true,closeOnEscape: true,remote:"maintainance/UpdateMaintainancemaster.html"});
+     		 
+     		 
+     		 
+     	 } 
+       	
+       	function formattedDate(date) {
+       	    var d = new Date(date || Date.now()),
+       	        month = '' + (d.getMonth() + 1),
+       	        day = '' + d.getDate(),
+       	        year = d.getFullYear();
+
+       	    if (month.length < 2) month = '0' + month;
+       	    if (day.length < 2) day = '0' + day;
+
+       	    return [day,month,year ].join('/');
+       	}
+
+
+    
+        </script>      
+        <div class="row">
+        <div class="col-md-3">
+        <a href="maintainance/AddMaintainancemaster.html" class="btn btn-primary" data-toggle="modal" data-target="#myModal">Add Maintainance</a>
+        <a href="#" class="btn btn-info" onclick="getMaintainancemaster()">Refresh</a>
+        </div>
+         <div class="col-md-6" style="text-align: center;">
+        <h2 style="margin-top: 0px;"> Maintainance Information</h2>
+        </div>
+         <div class="col-md-3">
+             <!--  <label>Filter By:</label>   --><select id="getMaintainancemaster" onchange="getMaintainancemaster()">
+                <option value="all">ALL</option>
+                <option value="Both">Expired & Expiry Vehicles</option>
+                <option value="expired">&nbsp;Expired Vehicles&nbsp;</option>
+                <option value="expiry">&nbsp;Expiry Vehicles</option>
+                </select>   
+            </div>
+            </div>
+            <div id="mytbl" align="center"></div>
+            
+            <input type="hidden" id="editid" />  
+            <input type="hidden" id="dname" /> 
+     <!-- Modal -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <!-- <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Modal title</h4>
+      </div> -->
+      <div class="modal-body">
+       Please Wait.............
+      </div>
+    </div>
+  </div>
+</div>
