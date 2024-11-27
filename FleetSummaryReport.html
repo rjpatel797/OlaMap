@@ -339,12 +339,12 @@
         $(document).ready(function() {
 
             // Check if 'mid' is available in localStorage otherwise ri-direct login page
-            window.onload = function () {
+
             if (!localStorage.getItem('mid')) {
                 // Redirect to login page if 'mid' is not found
                 window.location.href = '/index.html';  
             }
-            };
+            
 
             $("#navbar-container").load("navbarola.html", function() {
                 console.log("Navbar loaded successfully!");
