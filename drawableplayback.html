@@ -1165,9 +1165,7 @@
 
       function startPlayback() {
         if (!playbackData || playbackData.length === 0) {
-          alert(
-            "No playback data available. Please select a vehicle and date range first."
-          );
+          alert("No playback data available. Please select a vehicle and date range first.");
           return;
         }
 
@@ -1177,10 +1175,12 @@
           playbackInterval = null;
         }
 
-        // Reset state
-        index = 0;
-        isPaused = false;
-        isPopupClosedManually = false;
+        // If resuming from pause, do not reset index
+        if (!isPaused) {
+          index = 0;
+        } else {
+          isPaused = false; // Reset the paused state
+        }
 
         try {
           // Initialize or reset marker
@@ -1201,7 +1201,6 @@
             carImage.onerror = (e) => {
               console.error("Error loading car image:", e);
               carImage.style.display = "none";
-              // Fallback styling
               const fallbackMarker = document.createElement("div");
               fallbackMarker.style.width = "20px";
               fallbackMarker.style.height = "20px";
@@ -1214,8 +1213,8 @@
 
             vehicleMarker = olaMaps.addMarker({
               element: carMarkerElement,
-              anchor: "center", // Ensure marker is centered on coordinates
-              offset: [0, 0], // Remove any offset
+              anchor: "center",
+              offset: [0, 0],
             });
 
             vehicleMarker.getElement().addEventListener("click", () => {
@@ -1225,11 +1224,10 @@
             });
           }
 
-          // Set initial position
-          const initialPoint = playbackData[0];
-          if (initialPoint && initialPoint.coordinates) {
-            vehicleMarker.setLngLat(initialPoint.coordinates).addTo(myMap);
-            updateMarkerRotation(initialPoint.angle);
+          // Set initial position only if starting for the first time
+          if (index === 0 && playbackData[0]?.coordinates) {
+            vehicleMarker.setLngLat(playbackData[0].coordinates).addTo(myMap);
+            updateMarkerRotation(playbackData[0].angle);
           }
 
           // Start playback interval

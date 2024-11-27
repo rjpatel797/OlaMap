@@ -492,6 +492,77 @@
         color: #fff;
         padding: 8px;
       }
+
+      .device-selector {
+        position: relative;
+        width: 250px;
+      }
+
+      .dropdown-container {
+        position: relative;
+      }
+
+      .dropdown-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #ffffff;
+        border-radius: 4px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        display: none;
+        z-index: 1000;
+      }
+
+      .dropdown-search {
+        padding: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .dropdown-search input {
+        width: 100%;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 4px;
+        color: rgb(0, 0, 0);
+        font-size: 13px;
+      }
+
+      .dropdown-items {
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .dropdown-item {
+        padding: 8px 10px;
+        color: black;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .dropdown-item:hover {
+        background: rgba(0, 0, 0, 0.1);
+      }
+
+      .selected-vehicle {
+        padding: 8px 12px;
+        background: #f8f9fa;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        color: rgb(0, 0, 0);
+        cursor: pointer;
+        font-size: 13px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .selected-vehicle:after {
+        content: "▼";
+        font-size: 10px;
+        margin-left: 8px;
+      }
     </style>
   </head>
   <body>
@@ -501,9 +572,27 @@
       <div class="content">
         <div class="controls">
           <div class="device-selector">
-            <select id="deviceSelect">
-              <option value="">Select Vehicle</option>
-            </select>
+            <div class="dropdown-container">
+              <div
+                class="selected-vehicle"
+                id="selectedVehicle"
+                onclick="toggleDropdown()"
+              >
+                Select Vehicle
+              </div>
+              <div class="dropdown-list" id="deviceDropdown">
+                <div class="dropdown-search">
+                  <input
+                    type="text"
+                    placeholder="Search vehicle..."
+                    id="vehicleSearch"
+                    onclick="event.stopPropagation()"
+                    onkeyup="filterVehicles(this.value)"
+                  />
+                </div>
+                <div class="dropdown-items" id="vehicleList"></div>
+              </div>
+            </div>
           </div>
           <div class="refresh-selector">
             <select id="refreshRate">
@@ -557,23 +646,60 @@
         fetchDeviceData();
       });
 
+      let devices = []; // Holds the fetched devices
+
+      function toggleDropdown() {
+        const dropdown = document.getElementById("deviceDropdown");
+        dropdown.style.display =
+          dropdown.style.display === "block" ? "none" : "block";
+      }
+
+      function filterVehicles(searchText) {
+        const filteredDevices = devices.filter((device) =>
+          device.name.toLowerCase().includes(searchText.toLowerCase())
+        );
+        populateVehicleList(filteredDevices);
+      }
+
+      function selectVehicle(deviceId, deviceName) {
+        document.getElementById("selectedVehicle").textContent = deviceName;
+        document.getElementById("deviceDropdown").style.display = "none";
+        fetchVehicleLocation(deviceId);
+      }
+
+      function populateVehicleList(devicesList) {
+        const vehicleList = document.getElementById("vehicleList");
+        vehicleList.innerHTML = "";
+
+        devicesList.forEach((device) => {
+          const item = document.createElement("div");
+          item.className = "dropdown-item";
+          item.textContent = device.name;
+          item.onclick = () => selectVehicle(device.did, device.name);
+          vehicleList.appendChild(item);
+        });
+      }
+
       function fetchDeviceData() {
         const mid = localStorage.getItem("mid");
         fetch(`${API}getandrojsonfortts.jsp?opr=getVehileByMid&mid=${mid}`)
           .then((response) => response.json())
           .then((data) => {
-            console.log("Original Data:", data);
-
             devices = data.map((item) => ({
               name: item.dname,
               did: item.did,
             }));
-
-            console.log("Mapped Devices:", devices);
-            createDeviceList();
+            populateVehicleList(devices);
           })
-          .catch((error) => console.error("Error fetching data:", error));
+          .catch((error) => console.error("Error fetching devices:", error));
       }
+
+      document.addEventListener("click", function (event) {
+        const dropdown = document.getElementById("deviceDropdown");
+        if (!event.target.closest(".device-selector")) {
+          dropdown.style.display = "none";
+        }
+      });
 
       // Then update your JavaScript
       function createDeviceList() {
@@ -898,24 +1024,40 @@
 
       // Add these functions
       function startTracking() {
-        const did = $("#deviceSelect").val();
-        if (!did) {
-          alert("Please select a vehicle first");
-          return;
+        
+        // Get the selected device ID from the dynamically updated dropdown
+        const selectedVehicle = document.getElementById("selectedVehicle").textContent;
+
+        // Ensure a valid vehicle is selected
+        if (selectedVehicle === "Select Vehicle" || selectedVehicle.trim() === "") {
+            alert("Please select a vehicle first");
+            return;
         }
 
-        const refreshRate = parseInt($("#refreshRate").val());
+        // Find the device ID based on the selected vehicle name
+        const selectedDevice = devices.find(device => device.name === selectedVehicle);
+        if (!selectedDevice) {
+            alert("Selected vehicle not found in the list");
+            return;
+        }
+
+        const did = selectedDevice.did; // The device ID
+        const refreshRate = parseInt(document.getElementById("refreshRate").value);
+
+        // Start tracking the selected vehicle
         isTracking = true;
-        $("#trackButton").text("Stop Tracking").addClass("tracking");
+        document.getElementById("trackButton").textContent = "Stop Tracking";
+        document.getElementById("trackButton").classList.add("tracking");
 
         // Initial fetch
         fetchVehicleLocation(did);
 
-        // Set up interval
+        // Set up interval for periodic updates
         trackingInterval = setInterval(() => {
-          fetchVehicleLocation(did);
+            fetchVehicleLocation(did);
         }, refreshRate);
       }
+
 
       function stopTracking() {
         if (trackingInterval) {

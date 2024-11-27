@@ -701,6 +701,7 @@
           dropdown.style.display = "none";
         }
       });
+      
       // Then update your JavaScript
       function createDeviceList() {
         const deviceSelect = $("#deviceSelect");
@@ -1024,24 +1025,39 @@
 
       // Add these functions
       function startTracking() {
-        const did = $("#deviceSelect").val();
-        if (!did) {
-          alert("Please select a vehicle first");
-          return;
+        // Get the selected device ID from the dynamically updated dropdown
+        const selectedVehicle = document.getElementById("selectedVehicle").textContent;
+
+        // Ensure a valid vehicle is selected
+        if (selectedVehicle === "Select Vehicle" || selectedVehicle.trim() === "") {
+            alert("Please select a vehicle first");
+            return;
         }
 
-        const refreshRate = parseInt($("#refreshRate").val());
+        // Find the device ID based on the selected vehicle name
+        const selectedDevice = devices.find(device => device.name === selectedVehicle);
+        if (!selectedDevice) {
+            alert("Selected vehicle not found in the list");
+            return;
+        }
+
+        const did = selectedDevice.did; // The device ID
+        const refreshRate = parseInt(document.getElementById("refreshRate").value);
+
+        // Start tracking the selected vehicle
         isTracking = true;
-        $("#trackButton").text("Stop Tracking").addClass("tracking");
+        document.getElementById("trackButton").textContent = "Stop Tracking";
+        document.getElementById("trackButton").classList.add("tracking");
 
         // Initial fetch
         fetchVehicleLocation(did);
 
-        // Set up interval
+        // Set up interval for periodic updates
         trackingInterval = setInterval(() => {
-          fetchVehicleLocation(did);
+            fetchVehicleLocation(did);
         }, refreshRate);
       }
+
 
       function stopTracking() {
         if (trackingInterval) {
