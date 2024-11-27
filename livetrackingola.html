@@ -930,9 +930,9 @@
                         ${data.gps == true ? "ON" : "OFF"}
                     </span><br/>
                     <b>Engine:</b> <span class="status-indicator ${
-                      data.ac === "true" ? "status-on" : "status-off"
+                      data.ignition === "true" ? "status-on" : "status-off"
                     }">
-                        ${data.ac === "true" ? "ON" : "OFF"}
+                        ${data.ignition === "true" ? "ON" : "OFF"}
                     </span><br/>
                     <b>Power:</b> <span class="status-indicator ${
                       data.power === "true" ? "status-on" : "status-off"
