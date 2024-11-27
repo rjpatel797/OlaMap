@@ -95,15 +95,16 @@
         border: 1px solid #ccc;
       }
       .deviceItem {
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-        padding: 8px;
-        margin: 5px 0;
-        background-color: #e6e6e6;
-        border-radius: 4px;
-        text-align: left;
-        font-size: 14px;
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+          padding: 8px;
+          margin: 5px 0;
+          background-color: #e6e6e6;
+          border-radius: 4px;
+          text-align: left;
+          font-size: 14px;
+          min-height: 40px; /* Ensure consistent height for all items */
       }
       .deviceItem:hover {
         background-color: #d4d4d4;
@@ -300,6 +301,62 @@
           background-color: #e74c3c;
           color: white;
       }
+
+      .car-emoji {
+          display: inline-block;
+          font-size: 1.25rem;
+      }
+
+      /* status box css */
+      .status-box {
+        position: absolute;
+        top: 5px;
+        right: 400px;
+        background-color: white;
+        padding: 5px 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 1001;
+        display: flex;
+        gap: 15px;
+        font-size: 14px;
+    }
+
+    .status-count {
+        font-weight: bold;
+        color: #f8f9fa;
+        background-color: #2c3e50;
+        padding: 1px 5px;
+        border-radius: 4px;
+        min-width: 24px;
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+
+    .status-count.updating {
+        transform: scale(1.2);
+        background-color: #34495e;
+    }
+
+      .status-icon {
+          width: 20px;
+          height: 20px;
+          object-fit: contain;
+          vertical-align: middle;
+      }
+
+      .status-icon[src*="green.png"] {
+          width: 30px;
+          height: 30px;
+      }
+
+      .status-item {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          min-height: 30px; /* Ensure consistent height */
+      }
+
     </style>
   </head>
   <body>
@@ -415,64 +472,72 @@
             });
             createDeviceList();
             initializeMarkers();
+            updateStatusCounts();
           })
           .catch((error) => console.error("Error fetching data:", error));
       }
 
       function createDeviceList() {
-        const deviceContainer = $("#deviceContainer");
-        deviceContainer.empty();
-        devices.forEach((device, index) => {
-          const item = $(`
-            <div class="deviceItem">
-              <input type="checkbox" class="deviceCheckbox" data-index="${index}" checked />
-              <span class="deviceIcon">🚗</span>
-              ${device.name}
-            </div>
-        `);
+            const deviceContainer = $("#deviceContainer");
+            deviceContainer.empty();
+            devices.forEach((device, index) => {
+                const item = $(`
+                    <div class="deviceItem" id="device-${device.name.replace(/\s+/g, '-')}">
+                        <input type="checkbox" class="deviceCheckbox" data-index="${index}" checked />
+                        <span class="car-emoji">${getCarEmoji(device)}</span>
+                        <span>${device.name}</span>
+                    </div>
+                `);
 
-          // Add click event for the device item to toggle the popup
-          item.on("click", function () {
-            if (currentMarker && currentMarker === markers[index]) {
-              hidePopup(); // Hide the popup if already open
-            } else {
-              showPopup(index, markers[index]); // Show the popup for the selected device
-               // Use flyTo to focus on the device's location
-               myMap.flyTo({
-                    center: device.coordinates,
-                    zoom: 14, // Adjust zoom level as needed
-                    speed: 1.5, // Fly to location with smooth animation
+                item.on("click", function() {
+                    if (currentMarker && currentMarker === markers[index]) {
+                        hidePopup();
+                    } else {
+                        showPopup(index, markers[index]);
+                        myMap.flyTo({
+                            center: device.coordinates,
+                            zoom: 14,
+                            speed: 1.5,
+                        });
+                    }
                 });
-            }
-          });
 
-          deviceContainer.append(item);
-        });
-      }
+                deviceContainer.append(item);
+            });
+        }
 
-      function showPopup(index, marker) {
-    currentMarker = marker;
-    const device = devices[index];
-    popupTitle.innerHTML = device.name;
-    popupContent.innerHTML = `
-        <div style="border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 5px;">
-            <b>Vehicle:</b> ${device.name} 
-        </div>
-        <div>
-            <b>Speed:</b> ${device.speed} km/h <br/>
-            <b>Status:</b> <span class="status-indicator ${device.status === "Online" ? "status-on" : "status-off"}">
-                ${device.status}
-            </span><br/>
-            <b>Battery:</b> <span class="status-indicator ${parseFloat(device.battery) > 3.7 ? "status-on" : "status-off"}">
-                ${device.battery}V
-            </span><br/>
-            <b>Hold Time:</b> ${device.holdtime}<br/>
-            <b>Date-Time:</b> ${device.date}<br/>
-            <b>Location:</b> ${device.location}
-        </div>
-    `;
-    popup.style.display = "block";
-    if (marker) updatePopupPosition(marker);
+      function getCarEmoji(device) {
+    // Convert ignition string to boolean if necessary
+    const ignitionStatus = typeof device.ignition === 'string' 
+        ? device.ignition.toLowerCase() === 'true'
+        : Boolean(device.ignition);
+    
+    // Get current date and device date for comparison
+    const currentDate = new Date();
+    const deviceDate = new Date(device.date);
+    const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+
+    // Create image element with common styles
+    const imgStyle = 'width: 20px; height: 20px; object-fit: contain; vertical-align: middle;';
+    // Special style for green image with vertical alignment adjustment
+    const imgStyleGreen = 'width: 30px; height: 30px; object-fit: contain; vertical-align: middle; margin: -10px 0;';
+        
+    if (hoursDifference > 2) {
+        // Offline - Black Car
+        return `<img src="/deviceTracking/images/blackcar1.png" style="${imgStyle}" alt="Offline"/>`;
+    } else if (!ignitionStatus) {
+        // Stopped - Red Car
+        return `<img src="/images/icon/red/car0.png" style="${imgStyle}" alt="Stopped"/>`;
+    } else if (ignitionStatus && device.speed > 0) {
+        // Moving - Green Car
+        return `<img src="/deviceTracking/images/green.png" style="${imgStyleGreen}" alt="Moving"/>`;
+    } else if (ignitionStatus && device.speed === 0) {
+        // Idle - Yellow Car
+        return `<img src="/deviceTracking/images/yellow.png" style="${imgStyle}" alt="Idle"/>`;
+    } else {
+        // Default - Black Car
+        return `<img src="/deviceTracking/images/blackcar1.png" style="${imgStyle}" alt="Default"/>`;
+    }
 }
 
       function hidePopup() {
@@ -510,11 +575,6 @@
         const mapPos = myMap.project(coordinates);
         popup.style.left = `${mapPos.x}px`;
         popup.style.top = `${mapPos.y - 50}px`;
-      }
-
-      function hidePopup() {
-        popup.style.display = "none";
-        currentMarker = null;
       }
 
       function initializeMarkers() {
@@ -657,6 +717,98 @@
           }
 
       });
+
+      //status box
+
+      function animateCount(element, start, end, duration = 1000) {
+          let startTimestamp = null;
+          const step = (timestamp) => {
+              if (!startTimestamp) startTimestamp = timestamp;
+              const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+              const currentCount = Math.floor(progress * (end - start) + start);
+              element.textContent = currentCount;
+              
+              if (progress < 1) {
+                  window.requestAnimationFrame(step);
+              } else {
+                  element.textContent = end;
+              }
+          };
+          window.requestAnimationFrame(step);
+      }
+
+      // Add this HTML right after your navbar-container div
+      document.getElementById('navbar-container').insertAdjacentHTML('afterend', `
+          <div class="status-box">
+              <div class="status-item">
+                  <img src="/deviceTracking/images/green.png" class="status-icon" alt="Moving" />
+                  <span class="status-count" id="movingCount">0</span>
+              </div>
+              <div class="status-item">
+                  <img src="/images/icon/red/car0.png" class="status-icon" alt="Stopped" />
+                  <span class="status-count" id="stoppedCount">0</span>
+              </div>
+              <div class="status-item">
+                  <img src="/deviceTracking/images/yellow.png" class="status-icon" alt="Idle" />
+                  <span class="status-count" id="idleCount">0</span>
+              </div>
+              <div class="status-item">
+                  <img src="/deviceTracking/images/blackcar1.png" class="status-icon" alt="Offline" />
+                  <span class="status-count" id="offlineCount">0</span>
+              </div>
+          </div>
+      `);
+
+      // Add the counting function
+      function updateStatusCounts() {
+        const counts = {
+            moving: 0,
+            stopped: 0,
+            idle: 0,
+            offline: 0
+        };
+
+        devices.forEach(device => {
+            const currentDate = new Date();
+            const deviceDate = new Date(device.date);
+            const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+            const ignitionStatus = typeof device.ignition === 'string' 
+                ? device.ignition.toLowerCase() === 'true'
+                : Boolean(device.ignition);
+
+            if (hoursDifference > 2) {
+                counts.offline++;
+            } else if (!ignitionStatus) {
+                counts.stopped++;
+            } else if (ignitionStatus && device.speed > 0) {
+                counts.moving++;
+            } else if (ignitionStatus && device.speed === 0) {
+                counts.idle++;
+            } else {
+                counts.offline++;
+            }
+        });
+
+        // Animate each count
+        ['moving', 'stopped', 'idle', 'offline'].forEach(status => {
+            const element = document.getElementById(`${status}Count`);
+            if (element) {
+                const currentCount = parseInt(element.textContent) || 0;
+                const newCount = counts[status];
+                
+                if (currentCount !== newCount) {
+                    element.classList.add('updating');
+                    animateCount(element, currentCount, newCount, 500);
+                    
+                    // Remove the scaling effect after animation
+                    setTimeout(() => {
+                        element.classList.remove('updating');
+                    }, 500);
+                }
+            }
+        });
+    }
+
     </script>
   </body>
 </html>
