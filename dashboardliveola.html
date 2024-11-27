@@ -410,6 +410,7 @@
                 location: item.location,
                 holdtime: formatHoldTime(parseInt(item.holdtime)),
                 battery: item.Battery,
+                ignition: item.ignition,
               };
             });
             createDeviceList();
@@ -517,74 +518,98 @@
       }
 
       function initializeMarkers() {
-          // Remove existing markers
-          markers.forEach((marker) => marker.remove());
-          markers = [];
-        
-          devices.forEach((device, index) => {
-              if (device.coordinates[0] !== 0 || device.coordinates[1] !== 0) {
-                  // Create a custom marker element
-                  const customMarker = document.createElement("div");
-                  customMarker.classList.add("customMarkerClass");
-                  
-                  // Add the car image
-                  const carImage = document.createElement("img");
-                  
-                  // Get current date and device date for comparison
-                  const currentDate = new Date();
-                  const deviceDate = new Date(device.date);
-                  const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-                  
-                  // Determine which image to use based on conditions
-                  let imagePath;
-                  console.log(device)
-                  if (hoursDifference > 2) {
-                      // If device date is more than 2 hours old
-                      imagePath = "/deviceTracking/images/blackcar1.jpeg";
-                  } else if (device.ignition && device.speed > 0) {
-                      // Ignition on and moving
-                      imagePath = "/deviceTracking/images/green.jpeg";
-                  } else if (!device.ignition) {
-                      // Ignition off
-                      imagePath = "/deviceTracking/images/redcar.jpeg";
-                  } else if (device.ignition && device.speed === 0) {
-                      // Ignition on but not moving
-                      imagePath = "/deviceTracking/images/yellow.jpeg";
-                  } else {
-                      // Default case
-                      imagePath = "/deviceTracking/images/blackcar1.jpeg";
-                  }
-                  
-                  carImage.src = imagePath;
-                  
-                  // Rotate the marker based on the angle
-                  const angle = device.angle || 0;
+    // Remove existing markers
+    markers.forEach((marker) => marker.remove());
+    markers = [];
+
+    devices.forEach((device, index) => {
+        if (device.coordinates[0] !== 0 || device.coordinates[1] !== 0) {
+            // Create a custom marker element
+            const customMarker = document.createElement("div");
+            customMarker.classList.add("customMarkerClass");
+
+            // Add the car image
+            const carImage = document.createElement("img");
+
+            // Get current date and device date for comparison
+            const currentDate = new Date();
+            const deviceDate = new Date(device.date);
+            const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+
+            // Convert ignition string to boolean if necessary
+            const ignitionStatus = typeof device.ignition === 'string' 
+                ? device.ignition.toLowerCase() === 'true'
+                : Boolean(device.ignition);
+
+            // Initialize image style variables
+            let imageWidth = "";
+            let imageHeight = "";
+            let imagerotate = "";
+            
+            // Determine which image to use based on conditions
+            let imagePath;
+            if (hoursDifference > 2) {
+                // If device date is more than 2 hours old
+                imagePath = "/deviceTracking/images/blackcar1.png";
+                imageHeight = "27px";
+                imageWidth = "20px";
+                imagerotate = "90";
+
+            } else if (ignitionStatus === false) {
+                // Ignition off
+                imagePath = "/images/icon/red/car0.png";
+                imageHeight = "27px";
+                imageWidth = "27px";
+            } else if (ignitionStatus === true && device.speed > 0) {
+                // Ignition on and moving
+                imagePath = "/deviceTracking/images/green.png";
+                imageWidth = "20px";
+                imageHeight = "40px";
+            } else if (ignitionStatus === true && device.speed === 0) {
+                // Ignition on but not moving
+                imagePath = "/deviceTracking/images/yellow.png";
+            } else {
+                // Default case
+                imagePath = "/deviceTracking/images/blackcar1.png";
+                imageHeight = "27px";
+                imageWidth = "20px";
+                imagerotate = "90";
+            }
+
+            carImage.src = imagePath;
+
+            // Apply width and height if they are set
+            if (imageWidth) carImage.style.width = imageWidth;
+            if (imageHeight) carImage.style.height = imageHeight;
+
+            // Rotate the marker based on the angle
+            const angle = device.angle || 0;
                   carImage.style.transform = `rotate(${angle}deg)`;
-                  carImage.style.transformOrigin = "center center";
-                  
-                  customMarker.appendChild(carImage);
-                  
-                  // Add the marker to the map
-                  const marker = olaMaps
-                      .addMarker({
-                          element: customMarker,
-                          offset: [0, -20],
-                          anchor: "center",
-                      })
-                      .setLngLat(device.coordinates)
-                      .addTo(myMap);
-                  
-                  markers.push(marker);
-                  
-                  // Add a click event listener for the marker
-                  marker.getElement().addEventListener("click", () => showPopup(index, marker));
-              } else {
-                  console.warn(
-                      `Skipping marker for device ${device.name} due to invalid coordinates.`
-                  );
-              }
-          });
-      }
+            carImage.style.transformOrigin = "center center";
+
+            customMarker.appendChild(carImage);
+
+            // Add the marker to the map
+            const marker = olaMaps
+                .addMarker({
+                    element: customMarker,
+                    offset: [0, -20],
+                    anchor: "center",
+                })
+                .setLngLat(device.coordinates)
+                .addTo(myMap);
+
+            markers.push(marker);
+
+            // Add a click event listener for the marker
+            marker.getElement().addEventListener("click", () => showPopup(index, marker));
+        } else {
+            console.warn(
+                `Skipping marker for device ${device.name} due to invalid coordinates.`
+            );
+        }
+    });
+}
 
 
       function filterMarkers() {
