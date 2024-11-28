@@ -1337,6 +1337,12 @@
           vehicleMarker = null; // Set to null for clean restart
         }
 
+        // Remove starting marker
+        if (startingMarker) {
+            startingMarker.remove();
+            startingMarker = null;
+        }
+
         // Clear the polyline
         dynamicPlaybackData = [];
         if (myMap.getSource(polylineId)) {
