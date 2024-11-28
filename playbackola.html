@@ -30,7 +30,7 @@
       .container {
         display: flex;
         flex-direction: column;
-        height: 100vh;
+        height: 92vh;
       }
 
       /* Navbar styles */
@@ -64,7 +64,7 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
 
-      .controls button {
+      /* .controls button {
         padding: 5px 15px;
         font-size: 8px;
         border: none;
@@ -78,7 +78,7 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
-      }
+      } */
 
       .controls {
         margin: 3px;
@@ -92,6 +92,7 @@
       }
 
       .datetime-selector {
+        align-items: center;
         display: flex;
         gap: 10px;
       }
@@ -160,19 +161,17 @@
 
       /* Keep your existing button styles */
       .buttonclass button {
-        padding: 5px 15px;
-        font-size: 8px;
+        padding: 8px 16px;
+        font-size: 13px;
         border: none;
         border-radius: 4px;
         cursor: pointer;
         transition: all 0.3s ease;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
+        gap: 5px;
       }
 
       /* Start Button */
@@ -499,6 +498,61 @@
         background-color: #34495e;
       }
 
+            /*speed control*/
+            .speed-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 5px;
+        background: #f5f5f5;
+        border-radius: 4px;
+      }
+
+      .speed-slider {
+        flex-grow: 1;
+        height: 3px;
+        -webkit-appearance: none;
+        background: #ddd;
+        border-radius: 5px;
+        outline: none;
+      }
+
+      .speed-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 15px;
+        height: 15px;
+        background: #4caf50;
+        border-radius: 50%;
+        cursor: pointer;
+      }
+
+      .speed-label {
+        min-width: 30px;
+        text-align: center;
+        font-size: 12px;
+      }
+
+      .speed-buttons {
+        display: flex;
+        gap: 5px;
+      }
+
+      .speed-btn {
+        padding: 5px 10px;
+        border: none;
+        background: #4caf50;
+        color: white;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 10px;
+      }
+
+      .speed-btn:hover {
+        background: #45a049;
+      }
+
+
+
       /* Adjust the existing controls styles */
       .controls {
         margin: 3px;
@@ -511,7 +565,7 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
 
-      .controls button {
+      .controls .buttonclass {
         padding: 8px 16px;
         font-size: 13px;
         border: none;
@@ -630,68 +684,21 @@
         margin-left: 8px;
       }
 
-      /*speed control*/
-      .speed-control {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 5px;
-        background: #f5f5f5;
-        border-radius: 4px;
-      }
-
-      .speed-slider {
-        flex-grow: 1;
-        height: 3px;
-        -webkit-appearance: none;
-        background: #ddd;
-        border-radius: 5px;
-        outline: none;
-      }
-
-      .speed-slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 15px;
-        height: 15px;
-        background: #4caf50;
-        border-radius: 50%;
-        cursor: pointer;
-      }
-
-      .speed-label {
-        min-width: 30px;
-        text-align: center;
-        font-size: 14px;
-      }
-
-      .speed-buttons {
-        display: flex;
-        gap: 5px;
-      }
-
-      .speed-btn {
-        padding: 5px 10px;
-        border: none;
-        background: #4caf50;
-        color: white;
-        border-radius: 3px;
-        cursor: pointer;
-      }
-
-      .speed-btn:hover {
-        background: #45a049;
-      }
-
       /*over speeding*/
       .speed-threshold-container {
-          margin: 10px 0;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin: 0px 0;
           padding: 5px;
       }
 
       .speed-threshold-container label {
           display: block;
           margin-bottom: 5px;
-          font-weight: bold;
+          font-weight: normal;
+          color: white;
+          font-size: 13px;
       }
 
       .speed-dropdown {
@@ -700,7 +707,7 @@
           border: 1px solid #ccc;
           border-radius: 4px;
           background-color: white;
-          font-size: 14px;
+          font-size: 12px;
       }
 
       .speed-dropdown:hover {
@@ -1048,88 +1055,81 @@
 
       // Update polyline dynamically
       function updatePolyline() {
-          // Remove any existing layers and sources before adding new ones
-          const existingLayers = myMap.getStyle().layers;
-          existingLayers.forEach(layer => {
-              if (layer.id.startsWith(polylineId)) {
-                  myMap.removeLayer(layer.id);
+          // Remove existing polylines first
+          try {
+              if (myMap.getLayer(polylineId)) {
+                  myMap.removeLayer(polylineId);
               }
-          });
-
-          // Remove existing sources
-          const existingSources = Object.keys(myMap.getStyle().sources);
-          existingSources.forEach(source => {
-              if (source.startsWith(polylineId)) {
-                  myMap.removeSource(source);
+              if (myMap.getSource(polylineId)) {
+                  myMap.removeSource(polylineId);
               }
-          });
-
-          if (dynamicPlaybackData.length === 0) return;
-
-          // Split data into segments based on speed
-          let segments = [];
-          let currentSegment = {
-              coordinates: [],
-              isOverSpeed: false
-          };
-
-          dynamicPlaybackData.forEach((point, index) => {
-              const speed = parseFloat(point.speed);
-              const isOverSpeed = speed > speedThreshold;
-
-              // Start new segment if speed threshold state changes
-              if (index === 0 || isOverSpeed !== currentSegment.isOverSpeed) {
-                  if (currentSegment.coordinates.length > 0) {
-                      segments.push(currentSegment);
-                  }
-                  currentSegment = {
-                      coordinates: [point.coordinates],
-                      isOverSpeed: isOverSpeed
-                  };
-              } else {
-                  currentSegment.coordinates.push(point.coordinates);
-              }
-          });
-
-          // Add final segment
-          if (currentSegment.coordinates.length > 0) {
-              segments.push(currentSegment);
+          } catch (error) {
+              console.log("Error removing existing layers:", error);
           }
 
-          // Add new segments
-          segments.forEach((segment, index) => {
-              const segmentId = `${polylineId}-${index}`;
-              
-              try {
-                  myMap.addSource(segmentId, {
-                      type: 'geojson',
-                      data: {
-                          type: 'Feature',
-                          properties: {},
-                          geometry: {
-                              type: 'LineString',
-                              coordinates: segment.coordinates
-                          }
-                      }
-                  });
+          if (!dynamicPlaybackData || dynamicPlaybackData.length < 2) return;
 
-                  myMap.addLayer({
-                      id: segmentId,
-                      type: 'line',
-                      source: segmentId,
-                      layout: {
-                          'line-join': 'round',
-                          'line-cap': 'round'
+          try {
+              // Create an array of line segments with speed information
+              let lineFeatures = [];
+              
+              for (let i = 0; i < dynamicPlaybackData.length - 1; i++) {
+                  const currentPoint = dynamicPlaybackData[i];
+                  const nextPoint = dynamicPlaybackData[i + 1];
+                  
+                  // Get speed and determine if it's over threshold
+                  const speed = parseFloat(currentPoint.speed);
+                  const isOverSpeed = speed > speedThreshold;
+                  
+                  // Create a line segment between current and next point
+                  lineFeatures.push({
+                      type: 'Feature',
+                      properties: {
+                          isOverSpeed: isOverSpeed
                       },
-                      paint: {
-                          'line-color': segment.isOverSpeed ? '#FF0000' : '#00FF00', // Red for over speed, Green for normal
-                          'line-width': 4
+                      geometry: {
+                          type: 'LineString',
+                          coordinates: [
+                              currentPoint.coordinates,
+                              nextPoint.coordinates
+                          ]
                       }
                   });
-              } catch (error) {
-                  console.error('Error adding source or layer:', error);
               }
-          });
+
+              // Add source
+              myMap.addSource(polylineId, {
+                  type: 'geojson',
+                  data: {
+                      type: 'FeatureCollection',
+                      features: lineFeatures
+                  }
+              });
+
+              // Add layer with speed-based coloring
+              myMap.addLayer({
+                  id: polylineId,
+                  type: 'line',
+                  source: polylineId,
+                  layout: {
+                      'line-join': 'round',
+                      'line-cap': 'round',
+                      visibility: 'visible'
+                  },
+                  paint: {
+                      'line-color': [
+                          'case',
+                          ['get', 'isOverSpeed'],
+                          '#FF0000',  // Red for over speed
+                          '#00FF00'   // Green for normal speed
+                      ],
+                      'line-width': 4
+                  }
+              });
+
+          } catch (error) {
+              console.error("Error updating polyline:", error);
+          }
       }
 
       // Add event listener for speed threshold changes
