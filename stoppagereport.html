@@ -613,6 +613,26 @@
             };
         }
 
+        const msToHoursAndMinutes = (ms) => {
+        // Convert to hours (including decimals)
+        const hours = ms / (1000 * 60 * 60);
+        
+        // Get whole hours
+        const wholeHours = Math.floor(hours);
+        
+        // Get remaining minutes
+        const minutes = Math.round((hours - wholeHours) * 60);
+        
+        // Format the output
+        if (wholeHours === 0) {
+            return `${minutes}min`;
+        } else if (minutes === 0) {
+            return `${wholeHours}h`;
+        } else {
+            return `${wholeHours}h ${minutes}min`;
+        }
+        };
+
         function displayReport(data) {
             const tbody = document.getElementById('reportData');
             if (!data || data.length === 0) {
@@ -625,7 +645,7 @@
                     <td>${item.dname}</td>
                     <td>${item.sdate}</td>
                     <td>${item.edate}</td>
-                    <td>${Math.round((item.hold || 0) / 1000)}</td>
+                    <td>${msToHoursAndMinutes(item.hold)}</td>
                     <td>${item.lat +', '+ item.lang}</td>
                     <td>${item.location}</td>
                 </tr>
