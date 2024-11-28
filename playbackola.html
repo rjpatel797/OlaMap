@@ -554,7 +554,7 @@
 
       .device-selector {
         position: relative;
-        width: 250px;
+        width: 140px;
       }
 
       .dropdown-container {
@@ -629,6 +629,88 @@
         font-size: 10px;
         margin-left: 8px;
       }
+
+      /*speed control*/
+      .speed-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 5px;
+        background: #f5f5f5;
+        border-radius: 4px;
+      }
+
+      .speed-slider {
+        flex-grow: 1;
+        height: 3px;
+        -webkit-appearance: none;
+        background: #ddd;
+        border-radius: 5px;
+        outline: none;
+      }
+
+      .speed-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 15px;
+        height: 15px;
+        background: #4caf50;
+        border-radius: 50%;
+        cursor: pointer;
+      }
+
+      .speed-label {
+        min-width: 30px;
+        text-align: center;
+        font-size: 14px;
+      }
+
+      .speed-buttons {
+        display: flex;
+        gap: 5px;
+      }
+
+      .speed-btn {
+        padding: 5px 10px;
+        border: none;
+        background: #4caf50;
+        color: white;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+
+      .speed-btn:hover {
+        background: #45a049;
+      }
+
+      /*over speeding*/
+      .speed-threshold-container {
+          margin: 10px 0;
+          padding: 5px;
+      }
+
+      .speed-threshold-container label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: bold;
+      }
+
+      .speed-dropdown {
+          width: 120px;
+          padding: 5px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          background-color: white;
+          font-size: 14px;
+      }
+
+      .speed-dropdown:hover {
+          border-color: #888;
+      }
+
+      .speed-dropdown:focus {
+          outline: none;
+          border-color: #4a90e2;
+      }
     </style>
   </head>
   <body>
@@ -669,6 +751,45 @@
                 </div>
               </div>
             </div>
+
+            <div class="speed-control">
+              <div class="speed-buttons">
+                <button class="speed-btn" onclick="decreaseSpeed()">-</button>
+                <button class="speed-btn" onclick="increaseSpeed()">+</button>
+              </div>
+              <input
+                type="range"
+                min="0.25"
+                max="4"
+                step="0.25"
+                value="1"
+                class="speed-slider"
+                id="speedSlider"
+                onchange="updateSpeed(this.value)"
+              />
+              <div class="speed-label" id="speedLabel">1x</div>
+            </div>
+          </div>
+
+          <!-- Add this inside your controls section, near other controls -->
+          <div class="speed-threshold-container">
+            <label for="overSpeedingThreshold">Over Speeding:</label>
+            <select id="overSpeedingThreshold" class="speed-dropdown">
+                <option value="30">>30 KM/H</option>
+                <option value="40">>40 KM/H</option>
+                <option value="45">>45 KM/H</option>
+                <option value="50">>50 KM/H</option>
+                <option value="60">>60 KM/H</option>
+                <option value="65">>65 KM/H</option>
+                <option value="70">>70 KM/H</option>
+                <option value="75">>75 KM/H</option>
+                <option value="80">>80 KM/H</option>
+                <option value="85">>85 KM/H</option>
+                <option value="90">>90 KM/H</option>
+                <option value="95">>95 KM/H</option>
+                <option value="100">>100 KM/H</option>
+                <option value="120">>120 KM/H</option>
+            </select>
           </div>
 
           <div class="buttonclass">
@@ -704,6 +825,7 @@
       });
 
       let vehicleMarker = null;
+      let startingMarker = null;
       let playbackData = [];
       let index = 0;
       let playbackInterval = null;
@@ -712,6 +834,7 @@
       let dynamicPlaybackData = [];
       let isPopupClosedManually = false;
       let deviceData = [];
+      let speedThreshold = 30;
 
       const ANGLE_OFFSET = 90;
       const popup = document.getElementById("customPopup");
@@ -870,28 +993,29 @@
         return `${year}-${month}-${day}`;
       }
 
-      // Create popup content with GPS and Engine status
-      function createPopupContent(data) {
+      // Update this function to show distance
+      function createPopupContent(data, totalDistance) {
         const devicename = deviceData.find((d) => d.did == data.deviceId)?.name;
         return `
-        <div style="border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 5px;">
-            <b>Vehicle:</b> ${devicename} 
-        </div>
-        <div>
-            <b>Speed:</b> ${Math.round(data.speed)} km/h <br/>
-            <b>GPS:</b> <span class="status-indicator ${
-              data.gps === "true" ? "status-on" : "status-off"
-            }">
-                ${data.gps === "true" ? "ON" : "OFF"}
-            </span><br/>
-            <b>Engine:</b> <span class="status-indicator ${
-              data.engine === "true" ? "status-on" : "status-off"
-            }">
-                ${data.engine === "true" ? "ON" : "OFF"}
-            </span><br/>
-            <b>Date-Time:</b> ${data.date.split(".")[0]}
-        </div>
-    `;
+          <div style="border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 5px;">
+              <b>Vehicle:</b> ${devicename} 
+          </div>
+          <div>
+              <b>Speed:</b> ${Math.round(data.speed)} km/h <br/>
+              <b>GPS:</b> <span class="status-indicator ${
+                data.gps === "true" ? "status-on" : "status-off"
+              }">
+                  ${data.gps === "true" ? "ON" : "OFF"}
+              </span><br/>
+              <b>Engine:</b> <span class="status-indicator ${
+                data.engine === "true" ? "status-on" : "status-off"
+              }">
+                  ${data.engine === "true" ? "ON" : "OFF"}
+              </span><br/>
+              <b>Date-Time:</b> ${data.date.split(".")[0]} <br/>
+              <b>Distance:</b> ${totalDistance.toFixed(2)} km
+          </div>
+        `;
       }
 
       // Show custom popup at the marker position
@@ -924,61 +1048,171 @@
 
       // Update polyline dynamically
       function updatePolyline() {
-        if (myMap.getSource(polylineId)) {
-          myMap.getSource(polylineId).setData({
-            type: "Feature",
-            properties: {},
-            geometry: {
-              type: "LineString",
-              coordinates: dynamicPlaybackData.map(
-                (point) => point.coordinates
-              ),
-            },
-          });
-        } else {
-          myMap.addSource(polylineId, {
-            type: "geojson",
-            data: {
-              type: "Feature",
-              properties: {},
-              geometry: {
-                type: "LineString",
-                coordinates: dynamicPlaybackData.map(
-                  (point) => point.coordinates
-                ),
-              },
-            },
+          // Remove any existing layers and sources before adding new ones
+          const existingLayers = myMap.getStyle().layers;
+          existingLayers.forEach(layer => {
+              if (layer.id.startsWith(polylineId)) {
+                  myMap.removeLayer(layer.id);
+              }
           });
 
-          myMap.addLayer({
-            id: polylineId,
-            type: "line",
-            source: polylineId,
-            layout: {
-              "line-join": "round",
-              "line-cap": "round",
-            },
-            paint: {
-              "line-color": "red",
-              "line-width": 4,
-            },
+          // Remove existing sources
+          const existingSources = Object.keys(myMap.getStyle().sources);
+          existingSources.forEach(source => {
+              if (source.startsWith(polylineId)) {
+                  myMap.removeSource(source);
+              }
           });
+
+          if (dynamicPlaybackData.length === 0) return;
+
+          // Split data into segments based on speed
+          let segments = [];
+          let currentSegment = {
+              coordinates: [],
+              isOverSpeed: false
+          };
+
+          dynamicPlaybackData.forEach((point, index) => {
+              const speed = parseFloat(point.speed);
+              const isOverSpeed = speed > speedThreshold;
+
+              // Start new segment if speed threshold state changes
+              if (index === 0 || isOverSpeed !== currentSegment.isOverSpeed) {
+                  if (currentSegment.coordinates.length > 0) {
+                      segments.push(currentSegment);
+                  }
+                  currentSegment = {
+                      coordinates: [point.coordinates],
+                      isOverSpeed: isOverSpeed
+                  };
+              } else {
+                  currentSegment.coordinates.push(point.coordinates);
+              }
+          });
+
+          // Add final segment
+          if (currentSegment.coordinates.length > 0) {
+              segments.push(currentSegment);
+          }
+
+          // Add new segments
+          segments.forEach((segment, index) => {
+              const segmentId = `${polylineId}-${index}`;
+              
+              try {
+                  myMap.addSource(segmentId, {
+                      type: 'geojson',
+                      data: {
+                          type: 'Feature',
+                          properties: {},
+                          geometry: {
+                              type: 'LineString',
+                              coordinates: segment.coordinates
+                          }
+                      }
+                  });
+
+                  myMap.addLayer({
+                      id: segmentId,
+                      type: 'line',
+                      source: segmentId,
+                      layout: {
+                          'line-join': 'round',
+                          'line-cap': 'round'
+                      },
+                      paint: {
+                          'line-color': segment.isOverSpeed ? '#FF0000' : '#00FF00', // Red for over speed, Green for normal
+                          'line-width': 4
+                      }
+                  });
+              } catch (error) {
+                  console.error('Error adding source or layer:', error);
+              }
+          });
+      }
+
+      // Add event listener for speed threshold changes
+      document.getElementById('overSpeedingThreshold').addEventListener('change', function() {
+          speedThreshold = parseInt(this.value);
+          // Redraw the entire route with new threshold
+          updatePolyline();
+      });
+
+      // Function to calculate distance between two coordinates using Haversine formula (in kilometers)
+      function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Radius of the Earth in km
+        const dLat = (lat2 - lat1) * (Math.PI / 180);
+        const dLon = (lon2 - lon1) * (Math.PI / 180);
+
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * (Math.PI / 180)) *
+            Math.cos(lat2 * (Math.PI / 180)) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c; // Distance in kilometers
+      }
+
+      // Add these variables at the top with your other variables
+      let playbackSpeed = 1;
+      const MIN_SPEED = 0.25;
+      const MAX_SPEED = 4;
+      const SPEED_STEP = 0.25;
+
+      // Add these functions for speed control
+      function updateSpeed(speed) {
+        playbackSpeed = parseFloat(speed);
+        document.getElementById("speedLabel").textContent = playbackSpeed + "x";
+
+        // If playback is active, restart it with new speed
+        if (playbackInterval && !isPaused) {
+          clearInterval(playbackInterval);
+          startPlayback(true); // Pass true to indicate it's a speed update
         }
       }
 
+      function increaseSpeed() {
+        if (playbackSpeed < MAX_SPEED) {
+          playbackSpeed += SPEED_STEP;
+          updateSliderAndSpeed();
+        }
+      }
+
+      function decreaseSpeed() {
+        if (playbackSpeed > MIN_SPEED) {
+          playbackSpeed -= SPEED_STEP;
+          updateSliderAndSpeed();
+        }
+      }
+
+      function updateSliderAndSpeed() {
+        document.getElementById("speedSlider").value = playbackSpeed;
+        updateSpeed(playbackSpeed);
+      }
+
       // Playback control functions
-      function startPlayback() {
+      let startLat = null; // To store the starting position latitude
+      let startLon = null; // To store the starting position longitude
+      let totalDistance = 0; // To accumulate the distance
+
+      // Modify your startPlayback function to account for speed
+      function startPlayback(isSpeedUpdate = false) {
         if (playbackData.length === 0) {
           console.error("Playback data is empty.");
+          alert("Playback data is empty");
           return;
         }
 
-        // Remove existing marker if not paused
-        if (vehicleMarker && !isPaused) {
+        // Remove existing marker if not paused and not a speed update
+        if (vehicleMarker && !isPaused && !isSpeedUpdate) {
           vehicleMarker.remove();
-          vehicleMarker = null; // Important: Set to null after removing
+          vehicleMarker = null;
           dynamicPlaybackData = [];
           index = 0;
+          totalDistance = 0;
         }
 
         // Create new marker if it doesn't exist
@@ -1000,15 +1234,57 @@
             .setLngLat(playbackData[index].coordinates)
             .addTo(myMap);
 
+          // Set the starting location marker (only once at the beginning)
+          if (!startingMarker) {
+            const startCoordinates = playbackData[0].coordinates; // Get the starting coordinates
+
+            // Create the div element
+            const markerElement = document.createElement("div");
+            markerElement.innerHTML = "S"; // Add the "S" text
+
+            startingMarker = olaMaps
+              .addMarker({
+                element: markerElement,
+                offset: [0, -10],
+                anchor: "center",
+              })
+              .setLngLat(startCoordinates)
+              .addTo(myMap);
+
+            // Style both the container and the text
+            const element = startingMarker.getElement();
+            element.style.backgroundColor = "green";
+            element.style.width = "20px";
+            element.style.height = "20px";
+            element.style.borderRadius = "50%";
+            element.style.border = "2px solid white"; // Made border thicker
+            element.style.boxShadow = "0 0 3px rgba(0,0,0,0.3)"; // Added shadow for better visibility
+
+            // Additional styles for the text
+            element.style.color = "white";
+            element.style.fontWeight = "bold";
+            element.style.display = "flex";
+            element.style.alignItems = "center";
+            element.style.justifyContent = "center";
+            element.style.fontSize = "12px";
+          }
+
           vehicleMarker.getElement().addEventListener("click", () => {
             isPopupClosedManually = false;
-            const content = createPopupContent(playbackData[index]);
+            const content = createPopupContent(
+              playbackData[index],
+              totalDistance
+            );
             showPopup(content, playbackData[index].coordinates);
           });
+
+          startLat = playbackData[index].coordinates[1];
+          startLon = playbackData[index].coordinates[0];
         }
 
-        // Start playback interval
+        // Start playback interval with speed control
         isPaused = false;
+        clearInterval(playbackInterval); // Clear any existing interval
         playbackInterval = setInterval(() => {
           if (index < playbackData.length) {
             const { coordinates, angle } = playbackData[index];
@@ -1024,7 +1300,21 @@
             dynamicPlaybackData.push(playbackData[index]);
             updatePolyline();
 
-            const content = createPopupContent(playbackData[index]);
+            if (startLat !== null && startLon !== null) {
+              const currentLat = coordinates[1];
+              const currentLon = coordinates[0];
+              totalDistance = calculateDistance(
+                startLat,
+                startLon,
+                currentLat,
+                currentLon
+              );
+            }
+
+            const content = createPopupContent(
+              playbackData[index],
+              totalDistance
+            );
             showPopup(content);
 
             index++;
@@ -1032,7 +1322,7 @@
             clearInterval(playbackInterval);
             hidePopup();
           }
-        }, 1000);
+        }, 1000 / playbackSpeed); // Adjust interval based on speed
       }
 
       function stopPlayback() {
@@ -1090,11 +1380,10 @@
         });
 
         // Check if 'mid' is available in localStorage otherwise ri-direct login page
-          if (!localStorage.getItem('mid')) {
-            // Redirect to login page if 'mid' is not found
-            window.location.href = '/index.html';  
-          }
-        
+        if (!localStorage.getItem("mid")) {
+          // Redirect to login page if 'mid' is not found
+          window.location.href = "/index.html";
+        }
       });
       // Rest of the initialization code
 
@@ -1102,6 +1391,14 @@
       $("#startPlayback").on("click", startPlayback);
       $("#pausePlayback").on("click", pausePlayback);
       $("#stopPlayback").on("click", stopPlayback);
+
+      // Add speed control event listeners
+      $("#speedSlider").on("input", function () {
+        updateSpeed(this.value);
+      });
+
+      $("#increaseSpeed").on("click", increaseSpeed);
+      $("#decreaseSpeed").on("click", decreaseSpeed);
     </script>
   </body>
 </html>
