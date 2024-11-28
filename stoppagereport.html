@@ -763,7 +763,6 @@
 
                 // Define table headers based on your actual table
                 const headers = [[
-                    'Srno',
                     'Device Name',
                     'Start Date',
                     'End Date',
@@ -815,15 +814,12 @@
                         valign: 'middle'
                     },
                     columnStyles: {
-                        0: { cellWidth: 10 },  // Srno
+                        0: { cellWidth: 30 },  // Srno
                         1: { cellWidth: 25 },  // Device Name
                         2: { cellWidth: 25 },  // Start Date
                         3: { cellWidth: 25 },  // End Date
-                        4: { cellWidth: 45 },  // Start Location
-                        5: { cellWidth: 45 },  // End Location
-                        6: { cellWidth: 20, halign: 'right' },  // Total KM
-                        7: { cellWidth: 20, halign: 'right' },  // Total Time
-                        8: { cellWidth: 20, halign: 'right' }   // Fuel Consumption
+                        4: { cellWidth: 70 },  // Start Location
+                        5: { cellWidth: 70 },  // End Location
                     },
                     didDrawPage: function(data) {
                         // Add footer with timestamp and page number
