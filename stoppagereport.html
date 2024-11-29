@@ -647,7 +647,7 @@
                     <td>${item.edate}</td>
                     <td>${msToHoursAndMinutes(item.hold)}</td>
                     <td>${item.lat +', '+ item.lang}</td>
-                    <td>${item.location}</td>
+                    <td>${item.location ? item.location : ""}</td>
                 </tr>
             `).join('');
         }
@@ -761,14 +761,14 @@
             try {
                 // Create new jsPDF instance
                 const { jsPDF } = window.jspdf;
-                const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation for better fit
+                const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
 
                 // Add title
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(20);
-                doc.text("Trip Report", doc.internal.pageSize.width / 2, 15, { align: 'center' });
+                doc.text("Stoppage Report", doc.internal.pageSize.width / 2, 15, { align: 'center' });
 
-                // Add date range using the correct field IDs
+                // Add report parameters
                 doc.setFontSize(10);
                 doc.setFont("helvetica", "normal");
                 const startDate = document.getElementById('startDate').value;
@@ -777,41 +777,32 @@
                 const endTime = document.getElementById('endTime').value;
                 doc.text(`Report Period: ${startDate} ${startTime} to ${endDate} ${endTime}`, 15, 25);
 
-                // Get vehicle number using the correct ID
-                const vehicleSelect = document.querySelector('select[id*="deviceSelect"]').value || 'Unknown Vehicle';
-                doc.text(`Vehicle: ${vehicleSelect}`, 15, 30);
+                // Get selected vehicle name
+                const deviceSelect = document.getElementById('deviceSelect');
+                const selectedOption = deviceSelect.options[deviceSelect.selectedIndex];
+                const vehicleName = selectedOption ? selectedOption.text : 'Unknown Vehicle';
+                doc.text(`Vehicle: ${vehicleName}`, 15, 30);
 
-                // Define table headers based on your actual table
+                // Get minimum stop time
+                const minStop = document.getElementById('minStop').value;
+                doc.text(`Minimum Stop Time: ${minStop} minutes`, 15, 35);
+
+                // Define table headers based on your actual table structure
                 const headers = [[
-                    'Device Name',
+                    'Vehicle Name',
                     'Start Date',
                     'End Date',
                     'Duration',
                     'Latitude, Longitude',
-                    'Location',
+                    'Location'
                 ]];
 
                 // Get table data
-                const rows = document.querySelectorAll('table tr:not(:first-child)'); // Skip header row
+                const rows = document.querySelectorAll('#reportData tr');
                 const data = Array.from(rows).map(row => {
                     const cells = row.querySelectorAll('td');
                     return Array.from(cells).map(cell => cell.textContent.trim());
                 });
-
-                // Calculate totals
-                const totals = data.reduce((acc, row) => {
-                    return {
-                        distance: acc.distance + parseFloat(row[6]?.replace('km', '') || 0),
-                        time: acc.time + parseFloat(row[7]?.replace('mins', '') || 0)
-                    };
-                }, { distance: 0, time: 0 });
-
-                // Add summary section
-                doc.setFontSize(10);
-                doc.text([
-                    `Total Distance: ${totals.distance.toFixed(2)} km`,
-                    `Total Time: ${Math.round(totals.time)} mins`
-                ], 15, 35);
 
                 // Add table
                 doc.autoTable({
@@ -820,26 +811,26 @@
                     startY: 45,
                     theme: 'grid',
                     styles: {
-                        fontSize: 7,
+                        fontSize: 8,
                         cellPadding: 2,
                         overflow: 'linebreak',
                         cellWidth: 'wrap'
                     },
                     headStyles: {
-                        fillColor: [41, 128, 185],
+                        fillColor: [44, 62, 80], // #2c3e50
                         textColor: 255,
-                        fontSize: 8,
+                        fontSize: 9,
                         fontStyle: 'bold',
                         halign: 'center',
                         valign: 'middle'
                     },
                     columnStyles: {
-                        0: { cellWidth: 30 },  // Srno
-                        1: { cellWidth: 25 },  // Device Name
-                        2: { cellWidth: 25 },  // Start Date
-                        3: { cellWidth: 25 },  // End Date
-                        4: { cellWidth: 70 },  // Start Location
-                        5: { cellWidth: 70 },  // End Location
+                        0: { cellWidth: 40 },  // Vehicle Name
+                        1: { cellWidth: 35 },  // Start Date
+                        2: { cellWidth: 35 },  // End Date
+                        3: { cellWidth: 25 },  // Duration
+                        4: { cellWidth: 40 },  // Latitude, Longitude
+                        5: { cellWidth: 80 }   // Location
                     },
                     didDrawPage: function(data) {
                         // Add footer with timestamp and page number
@@ -847,8 +838,9 @@
                         doc.setFont("helvetica", "italic");
                         
                         // Add generation timestamp
+                        const timestamp = new Date().toLocaleString();
                         doc.text(
-                            `Generated on: ${new Date().toLocaleString()}`, 
+                            `Generated on: ${timestamp}`, 
                             doc.internal.pageSize.width - 15, 
                             doc.internal.pageSize.height - 10, 
                             { align: 'right' }
@@ -865,20 +857,19 @@
                     }
                 });
 
-                // Get current date and time for filename
+                // Generate filename with timestamp
                 const now = new Date();
-                const dateStr = now.toLocaleDateString().replace(/\//g, '-');
-                const timeStr = now.toLocaleTimeString().replace(/:/g, '-');
+                const dateStr = now.toISOString().split('T')[0];
+                const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
                 
                 // Save the PDF
-                doc.save(`trip_report_${vehicleSelect}_${dateStr}_${timeStr}.pdf`);
+                doc.save(`stoppage_report_${vehicleName}_${dateStr}_${timeStr}.pdf`);
 
             } catch (error) {
                 console.error('Error generating PDF:', error);
-                // More detailed error message
-                alert(`Error generating PDF: ${error.message}\nPlease check the console for more details.`);
+                alert('Error generating PDF. Please check the console for details.');
             }
-        }    
+        }  
     
     </script>
 </body>
