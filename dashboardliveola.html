@@ -357,6 +357,119 @@
           min-height: 30px; /* Ensure consistent height */
       }
 
+
+      /* Button Styles */
+      .viewAllBtn {
+          position: absolute;
+          top: 10px;
+          right: 200px;
+          z-index: 1000;
+      }
+
+      .table-btn {
+          padding: 8px 16px;
+          background-color: #fff;
+          border: none;
+          border-radius: 6px;
+          color: #2c3e50;
+          font-size: 13px;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          transition: all 0.3s ease;
+      }
+
+      .table-btn:hover {
+          background-color: #f8f9fa;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+
+      /* Table Popup Styles */
+      .table-popup {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.5);
+          z-index: 2000;
+      }
+
+      .table-popup-content {
+          position: relative;
+          background-color: white;
+          margin: 50px auto;
+          padding: 20px;
+          width: 90%;
+          max-width: 1200px;
+          max-height: 80vh;
+          border-radius: 8px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .table-close-btn {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          font-size: 24px;
+          cursor: pointer;
+          color: #666;
+          transition: color 0.3s ease;
+      }
+
+      .table-close-btn:hover {
+          color: #333;
+      }
+
+      .table-container {
+          margin-top: 20px;
+          overflow-x: auto;
+          max-height: calc(80vh - 100px);
+      }
+
+      #deviceDataTable {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 10px;
+          background-color: white;
+      }
+
+      #deviceDataTable th,
+      #deviceDataTable td {
+          padding: 12px;
+          text-align: left;
+          border-bottom: 1px solid #eee;
+          font-size: 13px;
+      }
+
+      #deviceDataTable th {
+          background-color: #f8f9fa;
+          font-weight: 600;
+          color: #2c3e50;
+          position: sticky;
+          top: 0;
+      }
+
+      #deviceDataTable tr:hover {
+          background-color: #f8f9fa;
+      }
+
+      .status-cell {
+          display: inline-block;
+          padding: 4px 8px;
+          border-radius: 12px;
+          font-size: 12px;
+      }
+
+      .status-online {
+          background-color: #4ade80;
+          color: #14532d;
+      }
+
+      .status-offline {
+          background-color: #f87171;
+          color: #7f1d1d;
+      }
     </style>
   </head>
   <body>
@@ -392,6 +505,39 @@
             <div id="popupTitle" class="popup-title"></div>
             <div id="popupContent"></div>
         </div>
+        </div>
+        <div class="viewAllBtn">
+          <button onclick="showDeviceTable()" class="table-btn">View All Devices</button>
+      </div>
+
+      <!-- Add this new popup div for the table -->
+        <div id="tablePopup" class="table-popup">
+          <div class="table-popup-content">
+              <span class="table-close-btn" onclick="hideDeviceTable()">✖</span>
+              <h2>All Devices Status</h2>
+              <div class="table-container">
+                  <table id="deviceDataTable">
+                      <thead>
+                          <tr>
+                              <th>Device Name</th>
+                              <th>Last Updated</th>
+                              <th>Status</th>
+                              <th>Battery</th>
+                              <th>Ac</th>
+                              <th>Gps</th>
+                              <th>Power</th>
+                              <th>Ignition</th>
+                              <th>Speed</th>
+                              <th>Hold Time</th>
+                              <th>Location</th>
+                          </tr>
+                      </thead>
+                      <tbody id="deviceTableBody">
+                          <!-- Data will be populated here -->
+                      </tbody>
+                  </table>
+              </div>
+          </div>
         </div>
       </div>
     </div>
@@ -468,6 +614,9 @@
                 holdtime: formatHoldTime(parseInt(item.holdtime)),
                 battery: item.Battery,
                 ignition: item.ignition,
+                ac: item.ac,
+                gps: item.gps,
+                power: item.power,
               };
             });
             createDeviceList();
@@ -808,6 +957,52 @@
             }
         });
     }
+
+    // Add these functions to your existing JavaScript
+    function showDeviceTable() {
+        const tablePopup = document.getElementById('tablePopup');
+        const tableBody = document.getElementById('deviceTableBody');
+        tableBody.innerHTML = ''; // Clear existing data
+
+        // Populate table with device data
+        devices.forEach(device => {
+            const row = document.createElement('tr');
+            const currentDate = new Date();
+            const deviceDate = new Date(device.date);
+            const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+            
+            const status = hoursDifference > 2 ? 'Offline' : 'Online';
+            const statusClass = status === 'Online' ? 'status-online' : 'status-offline';
+
+            row.innerHTML = `
+                <td>${device.name}</td>
+                <td>${device.date}</td>
+                <td><span class="status-cell ${statusClass}">${status}</span></td>
+                <td>${device.battery}V</td>
+                <td>${device.ac === "true" ? 'On' : 'Off'}</td>
+                <td>${device.gps === true ? 'On' : 'Off'}</td>
+                <td>${device.power === "true" ? 'On' : 'Off'}</td>
+                <td>${device.ignition === "true" ? 'On' : 'Off'}</td>
+                <td>${device.speed} km/h</td>
+                <td>${device.holdtime}</td>
+                <td>${device.location}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        tablePopup.style.display = 'block';
+    }
+
+    function hideDeviceTable() {
+        document.getElementById('tablePopup').style.display = 'none';
+    }
+
+    // Close popup when clicking outside
+    document.getElementById('tablePopup').addEventListener('click', function(event) {
+        if (event.target === this) {
+            hideDeviceTable();
+        }
+    });
 
     </script>
   </body>
