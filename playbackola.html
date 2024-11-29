@@ -718,6 +718,35 @@
           outline: none;
           border-color: #4a90e2;
       }
+
+      /* Add these styles to your existing CSS */
+      .polyline-popup {
+          display: none;
+          position: absolute;
+          background: white;
+          padding: 8px 12px;
+          border-radius: 4px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+          font-size: 12px;
+          pointer-events: none;
+          z-index: 1000;
+          color: #333;
+          max-width: 200px;
+          border: 1px solid rgba(0,0,0,0.1);
+      }
+
+      .polyline-popup::after {
+          content: '';
+          position: absolute;
+          bottom: -5px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 5px solid white;
+      }
     </style>
   </head>
   <body>
@@ -812,6 +841,10 @@
           <span class="close-btn" onclick="hidePopup(true)">✖</span>
           <div id="popupContent"></div>
         </div>
+
+        <div id="polylinePopup" class="polyline-popup">
+          <div id="polylinePopupContent"></div>
+      </div>
       </div>
     </div>
 
@@ -1082,82 +1115,120 @@
 
       // Update polyline dynamically
       function updatePolyline() {
-          // Remove existing polylines first
-          try {
-              if (myMap.getLayer(polylineId)) {
-                  myMap.removeLayer(polylineId);
-              }
-              if (myMap.getSource(polylineId)) {
-                  myMap.removeSource(polylineId);
-              }
-          } catch (error) {
-              console.log("Error removing existing layers:", error);
-          }
+    try {
+        if (myMap.getLayer(polylineId)) {
+            myMap.removeLayer(polylineId);
+        }
+        if (myMap.getSource(polylineId)) {
+            myMap.removeSource(polylineId);
+        }
+    } catch (error) {
+        console.log("Error removing existing layers:", error);
+    }
 
-          if (!dynamicPlaybackData || dynamicPlaybackData.length < 2) return;
+    if (!dynamicPlaybackData || dynamicPlaybackData.length < 2) return;
 
-          try {
-              // Create an array of line segments with speed information
-              let lineFeatures = [];
-              
-              for (let i = 0; i < dynamicPlaybackData.length - 1; i++) {
-                  const currentPoint = dynamicPlaybackData[i];
-                  const nextPoint = dynamicPlaybackData[i + 1];
-                  
-                  // Get speed and determine if it's over threshold
-                  const speed = parseFloat(currentPoint.speed);
-                  const isOverSpeed = speed > speedThreshold;
-                  
-                  // Create a line segment between current and next point
-                  lineFeatures.push({
-                      type: 'Feature',
-                      properties: {
-                          isOverSpeed: isOverSpeed
-                      },
-                      geometry: {
-                          type: 'LineString',
-                          coordinates: [
-                              currentPoint.coordinates,
-                              nextPoint.coordinates
-                          ]
-                      }
-                  });
-              }
+    try {
+        let lineFeatures = [];
+        let cumulativeDistance = 0;
+        
+        for (let i = 0; i < dynamicPlaybackData.length - 1; i++) {
+            const currentPoint = dynamicPlaybackData[i];
+            const nextPoint = dynamicPlaybackData[i + 1];
+            
+            // Calculate segment distance
+            const segmentDistance = calculateDistance(
+                currentPoint.coordinates[1],
+                currentPoint.coordinates[0],
+                nextPoint.coordinates[1],
+                nextPoint.coordinates[0]
+            );
+            cumulativeDistance += segmentDistance;
+            
+            const speed = parseFloat(currentPoint.speed);
+            const isOverSpeed = speed > speedThreshold;
+            
+            lineFeatures.push({
+                type: 'Feature',
+                properties: {
+                    isOverSpeed: isOverSpeed,
+                    date: currentPoint.date,
+                    distance: cumulativeDistance.toFixed(2),
+                    speed: speed.toFixed(1)
+                },
+                geometry: {
+                    type: 'LineString',
+                    coordinates: [
+                        currentPoint.coordinates,
+                        nextPoint.coordinates
+                    ]
+                }
+            });
+        }
 
-              // Add source
-              myMap.addSource(polylineId, {
-                  type: 'geojson',
-                  data: {
-                      type: 'FeatureCollection',
-                      features: lineFeatures
-                  }
-              });
+        myMap.addSource(polylineId, {
+            type: 'geojson',
+            data: {
+                type: 'FeatureCollection',
+                features: lineFeatures
+            }
+        });
 
-              // Add layer with speed-based coloring
-              myMap.addLayer({
-                  id: polylineId,
-                  type: 'line',
-                  source: polylineId,
-                  layout: {
-                      'line-join': 'round',
-                      'line-cap': 'round',
-                      visibility: 'visible'
-                  },
-                  paint: {
-                      'line-color': [
-                          'case',
-                          ['get', 'isOverSpeed'],
-                          '#FF0000',  // Red for over speed
-                          '#00FF00'   // Green for normal speed
-                      ],
-                      'line-width': 4
-                  }
-              });
+        myMap.addLayer({
+            id: polylineId,
+            type: 'line',
+            source: polylineId,
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round',
+                visibility: 'visible'
+            },
+            paint: {
+                'line-color': [
+                    'case',
+                    ['get', 'isOverSpeed'],
+                    '#FF0000',
+                    '#00FF00'
+                ],
+                'line-width': 4
+            }
+        });
 
-          } catch (error) {
-              console.error("Error updating polyline:", error);
-          }
-      }
+        // Add hover interactions
+        const popup = document.getElementById('polylinePopup');
+        const popupContent = document.getElementById('polylinePopupContent');
+
+        // Mouse enter event
+        myMap.on('mousemove', polylineId, (e) => {
+            myMap.getCanvas().style.cursor = 'pointer';
+            
+            if (e.features.length > 0) {
+                const feature = e.features[0];
+                popupContent.innerHTML = `
+                    <div style="font-weight: 500; margin-bottom: 4px">
+                        ${feature.properties.date}
+                    </div>
+                    <div>
+                        Distance: ${feature.properties.distance} km<br>
+                        Speed: ${feature.properties.speed} km/h
+                    </div>
+                `;
+                
+                popup.style.display = 'block';
+                updatePolylinePopupPosition(e);
+            }
+        });
+
+        // Mouse leave event
+        myMap.on('mouseleave', polylineId, () => {
+            myMap.getCanvas().style.cursor = '';
+            popup.style.display = 'none';
+        });
+
+    } catch (error) {
+        console.error("Error updating polyline:", error);
+    }
+}
 
       // Add event listener for speed threshold changes
       document.getElementById('overSpeedingThreshold').addEventListener('change', function() {
@@ -1231,6 +1302,8 @@
 
       // Modify your startPlayback function to account for speed
       function startPlayback(isSpeedUpdate = false) {
+
+        cleanupPolylineEvents()
 
         if (fetching) {
         console.log("Data is still being fetched...");
@@ -1398,6 +1471,28 @@
           isPaused = true;
         }
       }
+
+      // Function to update hover popup position
+      function updatePolylinePopupPosition(e) {
+          const popup = document.getElementById('polylinePopup');
+          popup.style.left = `${e.point.x - 70}px`;
+          popup.style.top = `${e.point.y + 20}px`; // Position above the cursor
+      }
+
+      
+      function cleanupPolylineEvents() {
+          if (myMap.getLayer(polylineId)) {
+              myMap.off('mousemove', polylineId);
+              myMap.off('mouseleave', polylineId);
+          }
+      }
+
+      const originalStopPlayback = stopPlayback;
+      stopPlayback = function() {
+          cleanupPolylineEvents();
+          originalStopPlayback();
+      };
+
 
       // function stopPlayback() {
       //   clearInterval(playbackInterval);
