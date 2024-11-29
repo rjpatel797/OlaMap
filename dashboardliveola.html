@@ -603,12 +603,18 @@
                 );
               }
 
+            const currentDate = new Date();
+            const deviceDate = new Date(item.ddate);
+            const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+            
+            const status = hoursDifference > 6 ? 'Offline' : 'Online';
+
               return {
                 name: item.dname,
                 coordinates: coordinates,
                 speed: parseFloat(item.speed),
                 angle: parseFloat(item.angle) || 0,
-                status: item.gps ? "Online" : "Offline",
+                status: status,
                 date: item.ddate,
                 location: item.location,
                 holdtime: formatHoldTime(parseInt(item.holdtime)),
@@ -967,17 +973,12 @@
         // Populate table with device data
         devices.forEach(device => {
             const row = document.createElement('tr');
-            const currentDate = new Date();
-            const deviceDate = new Date(device.date);
-            const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-            
-            const status = hoursDifference > 2 ? 'Offline' : 'Online';
-            const statusClass = status === 'Online' ? 'status-online' : 'status-offline';
+            const statusClass = device.status === 'Online' ? 'status-online' : 'status-offline';
 
             row.innerHTML = `
                 <td>${device.name}</td>
                 <td>${device.date}</td>
-                <td><span class="status-cell ${statusClass}">${status}</span></td>
+                <td><span class="status-cell ${statusClass}">${device.status}</span></td>
                 <td>${device.battery}V</td>
                 <td>${device.ac === "true" ? 'On' : 'Off'}</td>
                 <td>${device.gps === true ? 'On' : 'Off'}</td>
