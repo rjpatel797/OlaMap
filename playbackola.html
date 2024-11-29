@@ -842,6 +842,7 @@
       let isPopupClosedManually = false;
       let deviceData = [];
       let speedThreshold = 30;
+      let fetching = false;
 
       const ANGLE_OFFSET = 90;
       const popup = document.getElementById("customPopup");
@@ -933,9 +934,25 @@
         });
       } // Fetch playback data from API
 
+      function updateStartButtonState() {
+          const startButton = document.getElementById('startPlayback');
+          startButton.disabled = fetching;
+          
+          // Optionally update button appearance when disabled
+          if (fetching) {
+              startButton.style.opacity = '0.6';
+              startButton.style.cursor = 'not-allowed';
+          } else {
+              startButton.style.opacity = '1';
+              startButton.style.cursor = 'pointer';
+          }
+      }
+
       function fetchPlaybackData(did) {
         stopPlayback();
         console.log("Fetching playback data...");
+        fetching = true;
+        updateStartButtonState();
 
         // Get values from date inputs
         const fromDate = document.getElementById("fromDate").value;
@@ -944,6 +961,8 @@
         // Validate dates
         if (!fromDate || !toDate) {
           alert("Please select both From and To dates");
+          fetching = false;
+        updateStartButtonState();
           return;
         }
 
@@ -954,6 +973,8 @@
         // Validate date range
         if (new Date(toDate) < new Date(fromDate)) {
           alert("'To Date' cannot be earlier than 'From Date'");
+          fetching = false;
+        updateStartButtonState();
           return;
         }
 
@@ -981,12 +1002,18 @@
                     : null;
                 })
                 .filter(Boolean);
+                fetching = false;
+        updateStartButtonState();
               console.log("Playback Data Loaded:", playbackData);
             } else {
+              fetching = false;
+        updateStartButtonState();
               console.error("Unexpected data format: response is not an array");
             }
           })
           .catch((error) => {
+            fetching = false;
+        updateStartButtonState();
             console.error("Error fetching playback data:", error);
           });
       }
@@ -1193,6 +1220,10 @@
         updateSpeed(playbackSpeed);
       }
 
+      document.addEventListener('DOMContentLoaded', function() {
+          updateStartButtonState(); // Set initial button state
+      });
+
       // Playback control functions
       let startLat = null; // To store the starting position latitude
       let startLon = null; // To store the starting position longitude
@@ -1200,6 +1231,12 @@
 
       // Modify your startPlayback function to account for speed
       function startPlayback(isSpeedUpdate = false) {
+
+        if (fetching) {
+        console.log("Data is still being fetched...");
+        return;
+    }
+
         if (playbackData.length === 0) {
           console.error("Playback data is empty.");
           alert("Playback data is empty");
