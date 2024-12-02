@@ -492,6 +492,27 @@
     min-width: 120px;
     text-align: center;
 }
+
+.distance-btn {
+    margin-top: 10px;
+    padding: 6px 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.3s;
+}
+
+.distance-btn:hover {
+    background-color: #45a049;
+}
+
+#distance-value {
+    display: inline-block;
+    min-width: 60px;
+}
     </style>
   </head>
   <body>
@@ -634,6 +655,7 @@
 
               return {
                 name: item.dname,
+                deviceId: item.did,
                 coordinates: coordinates,
                 speed: parseFloat(item.speed),
                 angle: parseFloat(item.angle) || 0,
@@ -735,13 +757,15 @@
         currentMarker = marker;
         const device = devices[index];
         popupTitle.innerHTML = device.name;
+        const distanceButton = `<button onclick="updateDistance('${device.deviceId}')" class="distance-btn">Get Today's Distance</button>`;
         popupContent.innerHTML = `
         <b>Date:</b> ${device.date} <br/>
         <b>Speed:</b> ${device.speed} km/h <br/>
         <b>Hold Time:</b> ${device.holdtime} <br/>
         <b>Status:</b> ${device.status} <br/>
         <b>Battery:</b> ${device.battery}V <br/>
-        <b>Location:</b> ${device.location}
+        <b>Location:</b> ${device.location} <br />
+        <b>Distance:</b> <span id="distance-value">${distanceButton}</span> <br/>
     `;
         popup.style.display = "block";
         if (marker) updatePopupPosition(marker); // Update position if marker is provided
@@ -754,6 +778,14 @@
         popup.style.left = `${mapPos.x}px`;
         popup.style.top = `${mapPos.y - 50}px`;
       }
+
+      async function updateDistance(deviceId) {
+    const distanceSpan = document.getElementById('distance-value');
+    distanceSpan.innerHTML = 'Loading...';
+    
+    const distance = await fetchDistance(deviceId);
+    distanceSpan.innerHTML = `${distance} km`;
+}
 
       function initializeMarkers() {
     // Remove existing markers
@@ -1054,6 +1086,28 @@ function viewTodayTrip(deviceName) {
     
     // Redirect to playback page with parameters
     window.location.href = `drawableplayback.html?${params.toString()}`;
+}
+
+async function fetchDistance(deviceId) {
+    // Get today's date
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    
+    try {
+        const response = await fetch(
+            `${API}getandrojsonfortts.jsp?opr=fleetsummaryreport&fromdate=${formattedDate} 00:00&todate=${formattedDate} 23:59&did=${deviceId}`
+        );
+        const data = await response.json();
+        
+        // Get the distance from the response
+        if (data && data.length > 0) {
+            return data[0].distance || '0';
+        }
+        return '0';
+    } catch (error) {
+        console.error('Error fetching distance:', error);
+        return '0';
+    }
 }
 
     </script>
