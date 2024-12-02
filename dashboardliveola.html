@@ -470,6 +470,28 @@
           background-color: #f87171;
           color: #7f1d1d;
       }
+
+      /* Add these styles to your CSS */
+.view-trip-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.view-trip-btn:hover {
+    background-color: #45a049;
+}
+
+/* Ensure the table column has enough width */
+.table-container table th:last-child,
+.table-container table td:last-child {
+    min-width: 120px;
+    text-align: center;
+}
     </style>
   </head>
   <body>
@@ -530,6 +552,7 @@
                               <th>Speed</th>
                               <th>Hold Time</th>
                               <th>Location</th>
+                              <th>View Today's Trip</th>
                           </tr>
                       </thead>
                       <tbody id="deviceTableBody">
@@ -987,6 +1010,11 @@
                 <td>${device.speed} km/h</td>
                 <td>${device.holdtime}</td>
                 <td>${device.location}</td>
+                <td>
+                <button onclick="viewTodayTrip('${device.name}')" class="view-trip-btn">
+                    View Trip
+                </button>
+                </td>
             `;
             tableBody.appendChild(row);
         });
@@ -1004,6 +1032,29 @@
             hideDeviceTable();
         }
     });
+
+    // Add this function to handle the redirection
+function viewTodayTrip(deviceName) {
+    // Get today's date
+    const today = new Date();
+    const startDate = new Date(today);
+    const endDate = new Date(today);
+    
+    // Format dates for URL parameters
+    function formatDate(date) {
+    return date.toISOString().split('T')[0];
+}
+    
+    // Construct URL with parameters
+    const params = new URLSearchParams({
+        device: deviceName,
+        from: formatDate(startDate),
+        to: formatDate(endDate)
+    });
+    
+    // Redirect to playback page with parameters
+    window.location.href = `drawableplayback.html?${params.toString()}`;
+}
 
     </script>
   </body>
