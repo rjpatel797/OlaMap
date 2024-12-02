@@ -1292,6 +1292,7 @@
       }
 
       document.addEventListener('DOMContentLoaded', function() {
+        setupDateValidation
           updateStartButtonState(); // Set initial button state
       });
 
@@ -1642,6 +1643,76 @@ function calculateCumulativeDistance(currentIndex) {
       //   }
       // }
 
+      function setupDateValidation() {
+        const fromDateInput = document.getElementById('fromDate');
+        const toDateInput = document.getElementById('toDate');
+
+        // Get current date in YYYY-MM-DD format
+        function getCurrentDate() {
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const yyyy = today.getFullYear();
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Set default values and max dates
+        const currentDate = getCurrentDate();
+        
+        // Force set the values
+        fromDateInput.value = currentDate;
+        toDateInput.value = currentDate;
+        
+        // Set max attribute
+        fromDateInput.max = currentDate;
+        toDateInput.max = currentDate;
+
+        // Validate From Date
+        fromDateInput.addEventListener('input', function() {
+            const fromDate = new Date(this.value);
+            const toDate = new Date(toDateInput.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (fromDate > today) {
+                alert('From date cannot be in the future');
+                this.value = currentDate;
+                return;
+            }
+
+            if (toDateInput.value && fromDate > toDate) {
+                alert('From date cannot be after To date');
+                this.value = toDateInput.value;
+                return;
+            }
+
+            toDateInput.min = this.value;
+        });
+
+        // Validate To Date
+        toDateInput.addEventListener('input', function() {
+            const fromDate = new Date(fromDateInput.value);
+            const toDate = new Date(this.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (toDate > today) {
+                alert('To date cannot be in the future');
+                this.value = currentDate;
+                return;
+            }
+
+            if (fromDateInput.value && toDate < fromDate) {
+                alert('To date cannot be before From date');
+                this.value = fromDateInput.value;
+                return;
+            }
+
+            fromDateInput.max = this.value;
+        });
+    }
+
+
       $(document).ready(function () {
         // Load navbar from external file
         $("#navbar-container").load("navbarola.html", function () {
@@ -1653,6 +1724,8 @@ function calculateCumulativeDistance(currentIndex) {
           // Redirect to login page if 'mid' is not found
           window.location.href = "/index.html";
         }
+
+        setupDateValidation();
       });
       // Rest of the initialization code
 
@@ -1664,6 +1737,7 @@ function calculateCumulativeDistance(currentIndex) {
       // Add speed control event listeners
       $("#speedSlider").on("input", function () {
         updateSpeed(this.value);
+
       });
 
       $("#increaseSpeed").on("click", increaseSpeed);
