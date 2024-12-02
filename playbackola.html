@@ -1301,139 +1301,270 @@
       let totalDistance = 0; // To accumulate the distance
 
       // Modify your startPlayback function to account for speed
-      function startPlayback(isSpeedUpdate = false) {
+    //   function startPlayback(isSpeedUpdate = false) {
 
-        cleanupPolylineEvents()
+    //     cleanupPolylineEvents()
 
-        if (fetching) {
+    //     if (fetching) {
+    //     console.log("Data is still being fetched...");
+    //     return;
+    // }
+
+    //     if (playbackData.length === 0) {
+    //       console.error("Playback data is empty.");
+    //       alert("Playback data is empty");
+    //       return;
+    //     }
+
+    //     // Remove existing marker if not paused and not a speed update
+    //     if (vehicleMarker && !isPaused && !isSpeedUpdate) {
+    //       vehicleMarker.remove();
+    //       vehicleMarker = null;
+    //       dynamicPlaybackData = [];
+    //       index = 0;
+    //       totalDistance = 0;
+    //     }
+
+    //     // Create new marker if it doesn't exist
+    //     if (!vehicleMarker) {
+    //       const customMarker = document.createElement("div");
+    //       customMarker.classList.add("customMarkerClass");
+
+    //       const carImage = document.createElement("img");
+    //       carImage.classList.add("carImage");
+    //       carImage.src = "/images/truck1.png";
+    //       customMarker.appendChild(carImage);
+
+    //       vehicleMarker = olaMaps
+    //         .addMarker({
+    //           element: customMarker,
+    //           offset: [0, -10],
+    //           anchor: "center",
+    //         })
+    //         .setLngLat(playbackData[index].coordinates)
+    //         .addTo(myMap);
+
+    //       // Set the starting location marker (only once at the beginning)
+    //       if (!startingMarker) {
+    //         const startCoordinates = playbackData[0].coordinates; // Get the starting coordinates
+
+    //         // Create the div element
+    //         const markerElement = document.createElement("div");
+    //         markerElement.innerHTML = "S"; // Add the "S" text
+
+    //         startingMarker = olaMaps
+    //           .addMarker({
+    //             element: markerElement,
+    //             offset: [0, -10],
+    //             anchor: "center",
+    //           })
+    //           .setLngLat(startCoordinates)
+    //           .addTo(myMap);
+
+    //         // Style both the container and the text
+    //         const element = startingMarker.getElement();
+    //         element.style.backgroundColor = "green";
+    //         element.style.width = "20px";
+    //         element.style.height = "20px";
+    //         element.style.borderRadius = "50%";
+    //         element.style.border = "2px solid white"; // Made border thicker
+    //         element.style.boxShadow = "0 0 3px rgba(0,0,0,0.3)"; // Added shadow for better visibility
+
+    //         // Additional styles for the text
+    //         element.style.color = "white";
+    //         element.style.fontWeight = "bold";
+    //         element.style.display = "flex";
+    //         element.style.alignItems = "center";
+    //         element.style.justifyContent = "center";
+    //         element.style.fontSize = "12px";
+    //       }
+
+    //       vehicleMarker.getElement().addEventListener("click", () => {
+    //         isPopupClosedManually = false;
+    //         const content = createPopupContent(
+    //           playbackData[index],
+    //           totalDistance
+    //         );
+    //         showPopup(content, playbackData[index].coordinates);
+    //       });
+
+    //       startLat = playbackData[index].coordinates[1];
+    //       startLon = playbackData[index].coordinates[0];
+    //     }
+
+    //     // Start playback interval with speed control
+    //     isPaused = false;
+    //     clearInterval(playbackInterval); // Clear any existing interval
+    //     playbackInterval = setInterval(() => {
+    //       if (index < playbackData.length) {
+    //         const { coordinates, angle } = playbackData[index];
+    //         vehicleMarker.setLngLat(coordinates);
+    //         myMap.setCenter(coordinates);
+
+    //         const markerElement = vehicleMarker
+    //           .getElement()
+    //           .querySelector("img");
+    //         const adjustedAngle = angle + ANGLE_OFFSET;
+    //         markerElement.style.transform = `rotate(${adjustedAngle}deg)`;
+
+    //         dynamicPlaybackData.push(playbackData[index]);
+    //         updatePolyline();
+    //         let finaldist = 0;
+    //         if (startLat !== null && startLon !== null) {
+    //           const currentLat = coordinates[1];
+    //           const currentLon = coordinates[0];
+    //           totalDistance = calculateDistance(
+    //             startLat,
+    //             startLon,
+    //             currentLat,
+    //             currentLon
+    //           );
+    //           finaldist += totalDistance
+    //         }
+
+
+    //         const content = createPopupContent(
+    //           playbackData[index],
+    //           finaldist
+    //         );
+    //         showPopup(content);
+
+    //         index++;
+    //       } else {
+    //         clearInterval(playbackInterval);
+    //         hidePopup();
+    //       }
+    //     }, 1000 / playbackSpeed); // Adjust interval based on speed
+    //   }
+
+    function startPlayback(isSpeedUpdate = false) {
+    cleanupPolylineEvents();
+
+    if (fetching) {
         console.log("Data is still being fetched...");
         return;
     }
 
-        if (playbackData.length === 0) {
-          console.error("Playback data is empty.");
-          alert("Playback data is empty");
-          return;
-        }
+    if (playbackData.length === 0) {
+        console.error("Playback data is empty.");
+        alert("Playback data is empty");
+        return;
+    }
 
-        // Remove existing marker if not paused and not a speed update
-        if (vehicleMarker && !isPaused && !isSpeedUpdate) {
-          vehicleMarker.remove();
-          vehicleMarker = null;
-          dynamicPlaybackData = [];
-          index = 0;
-          totalDistance = 0;
-        }
+    // Remove existing marker if not paused and not a speed update
+    if (vehicleMarker && !isPaused && !isSpeedUpdate) {
+        vehicleMarker.remove();
+        vehicleMarker = null;
+        dynamicPlaybackData = [];
+        index = 0;
+        totalDistance = 0;
+    }
 
-        // Create new marker if it doesn't exist
-        if (!vehicleMarker) {
-          const customMarker = document.createElement("div");
-          customMarker.classList.add("customMarkerClass");
+    // Create new marker if it doesn't exist
+    if (!vehicleMarker) {
+        const customMarker = document.createElement("div");
+        customMarker.classList.add("customMarkerClass");
 
-          const carImage = document.createElement("img");
-          carImage.classList.add("carImage");
-          carImage.src = "/images/truck1.png";
-          customMarker.appendChild(carImage);
+        const carImage = document.createElement("img");
+        carImage.classList.add("carImage");
+        carImage.src = "/images/truck1.png";
+        customMarker.appendChild(carImage);
 
-          vehicleMarker = olaMaps
+        vehicleMarker = olaMaps
             .addMarker({
-              element: customMarker,
-              offset: [0, -10],
-              anchor: "center",
+                element: customMarker,
+                offset: [0, -10],
+                anchor: "center",
             })
             .setLngLat(playbackData[index].coordinates)
             .addTo(myMap);
 
-          // Set the starting location marker (only once at the beginning)
-          if (!startingMarker) {
-            const startCoordinates = playbackData[0].coordinates; // Get the starting coordinates
-
-            // Create the div element
+        // Set the starting location marker
+        if (!startingMarker) {
+            const startCoordinates = playbackData[0].coordinates;
             const markerElement = document.createElement("div");
-            markerElement.innerHTML = "S"; // Add the "S" text
+            markerElement.innerHTML = "S";
 
             startingMarker = olaMaps
-              .addMarker({
-                element: markerElement,
-                offset: [0, -10],
-                anchor: "center",
-              })
-              .setLngLat(startCoordinates)
-              .addTo(myMap);
+                .addMarker({
+                    element: markerElement,
+                    offset: [0, -10],
+                    anchor: "center",
+                })
+                .setLngLat(startCoordinates)
+                .addTo(myMap);
 
-            // Style both the container and the text
             const element = startingMarker.getElement();
             element.style.backgroundColor = "green";
             element.style.width = "20px";
             element.style.height = "20px";
             element.style.borderRadius = "50%";
-            element.style.border = "2px solid white"; // Made border thicker
-            element.style.boxShadow = "0 0 3px rgba(0,0,0,0.3)"; // Added shadow for better visibility
-
-            // Additional styles for the text
+            element.style.border = "2px solid white";
+            element.style.boxShadow = "0 0 3px rgba(0,0,0,0.3)";
             element.style.color = "white";
             element.style.fontWeight = "bold";
             element.style.display = "flex";
             element.style.alignItems = "center";
             element.style.justifyContent = "center";
             element.style.fontSize = "12px";
-          }
-
-          vehicleMarker.getElement().addEventListener("click", () => {
-            isPopupClosedManually = false;
-            const content = createPopupContent(
-              playbackData[index],
-              totalDistance
-            );
-            showPopup(content, playbackData[index].coordinates);
-          });
-
-          startLat = playbackData[index].coordinates[1];
-          startLon = playbackData[index].coordinates[0];
         }
 
-        // Start playback interval with speed control
-        isPaused = false;
-        clearInterval(playbackInterval); // Clear any existing interval
-        playbackInterval = setInterval(() => {
-          if (index < playbackData.length) {
+        vehicleMarker.getElement().addEventListener("click", () => {
+            isPopupClosedManually = false;
+            const cumulativeDistance = calculateCumulativeDistance(index);
+            const content = createPopupContent(playbackData[index], cumulativeDistance);
+            showPopup(content, playbackData[index].coordinates);
+        });
+    }
+
+    // Start playback interval with speed control
+    isPaused = false;
+    clearInterval(playbackInterval);
+    playbackInterval = setInterval(() => {
+        if (index < playbackData.length) {
             const { coordinates, angle } = playbackData[index];
             vehicleMarker.setLngLat(coordinates);
             myMap.setCenter(coordinates);
 
-            const markerElement = vehicleMarker
-              .getElement()
-              .querySelector("img");
+            const markerElement = vehicleMarker.getElement().querySelector("img");
             const adjustedAngle = angle + ANGLE_OFFSET;
             markerElement.style.transform = `rotate(${adjustedAngle}deg)`;
 
             dynamicPlaybackData.push(playbackData[index]);
             updatePolyline();
 
-            if (startLat !== null && startLon !== null) {
-              const currentLat = coordinates[1];
-              const currentLon = coordinates[0];
-              totalDistance = calculateDistance(
-                startLat,
-                startLon,
-                currentLat,
-                currentLon
-              );
-            }
-
-            const content = createPopupContent(
-              playbackData[index],
-              totalDistance
-            );
+            // Calculate cumulative distance up to current index
+            const cumulativeDistance = calculateCumulativeDistance(index);
+            
+            const content = createPopupContent(playbackData[index], cumulativeDistance);
             showPopup(content);
 
             index++;
-          } else {
+        } else {
             clearInterval(playbackInterval);
             hidePopup();
-          }
-        }, 1000 / playbackSpeed); // Adjust interval based on speed
-      }
+        }
+    }, 1000 / playbackSpeed);
+}
+
+// Add this helper function to calculate cumulative distance
+function calculateCumulativeDistance(currentIndex) {
+    let cumulativeDistance = 0;
+    
+    for (let i = 0; i < currentIndex; i++) {
+        const currentPoint = playbackData[i];
+        const nextPoint = playbackData[i + 1];
+        
+        cumulativeDistance += calculateDistance(
+            currentPoint.coordinates[1],
+            currentPoint.coordinates[0],
+            nextPoint.coordinates[1],
+            nextPoint.coordinates[0]
+        );
+    }
+    
+    return cumulativeDistance;
+}
 
       function stopPlayback() {
         clearInterval(playbackInterval);
