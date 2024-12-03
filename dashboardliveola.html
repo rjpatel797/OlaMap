@@ -235,7 +235,7 @@
         box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
         display: none;
         z-index: 1000;
-        min-width: 280px;
+        max-width: 500px;
         text-align: left;
         transform: translate(-50%, -100%);
       }
@@ -290,6 +290,13 @@
           font-size: 12px;
           font-weight: 500;
           margin-left: 5px;
+      }
+      .status-indicator-status {
+          display: inline-block;
+          padding: .2px 5px;
+          border-radius: 4px;
+          font-size: 12px;
+          font-weight: 500;
       }
 
       .status-on {
@@ -493,6 +500,20 @@
     text-align: center;
 }
 
+.button-two{
+  display: flex;
+}
+
+.distance-btn, .nearby-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    min-width: 60px;
+}
+
+#distance-value {
+    display: inline-block;
+}
+
 .distance-btn {
     margin-top: 10px;
     padding: 6px 12px;
@@ -510,14 +531,13 @@
 }
 
 #distance-value {
-    display: inline-block;
     min-width: 60px;
 }
 
 .button-container {
-    margin-top: 10px;
     display: flex;
-    gap: 10px;
+    gap: 5px;
+    align-items: center;
 }
 
 .nearby-btn {
@@ -533,6 +553,31 @@
 
 .nearby-btn:hover {
     background-color: #2980b9;
+}
+
+.status{
+  display: flex;
+}
+
+.status b{
+  font-size: 10px;
+  margin-top: auto;
+  margin-left: 2px;
+}
+
+.status-indicator {
+        display: inline-block;
+        margin-top: auto;
+        padding: 2px 6px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 500;
+        margin-left: 5px;
+      }
+.title {
+  display: flex;
+  padding-right: 10px;
+  justify-content: space-between
 }
 
     </style>
@@ -932,23 +977,41 @@ const clusterer = new MarkerClusterer(myMap, {
       function showPopup(index, marker) {
     currentMarker = marker;
     const device = devices[index];
-    popupTitle.innerHTML = device.name;
+
+    popupTitle.innerHTML = `<div class="title">${device.name}<div class="status"><b>GPS:</b> <span class="status-indicator ${
+                device.gps == true ? "status-on" : "status-off"
+              }">
+                  ${device.gps == true ? "ON" : "OFF"}
+              </span><br/>
+              <b>Engine:</b> <span class="status-indicator ${
+                device.ignition == "true" ? "status-on" : "status-off"
+              }">
+                  ${device.ignition == "true" ? "ON" : "OFF"}
+              </span><br/>
+              <b>Power:</b> <span class="status-indicator ${
+                device.power === "true" ? "status-on" : "status-off"
+              }">
+                  ${device.power === "true" ? "ON" : "OFF"}
+              </span><br/>
+              </div></div>`;
     const distanceButton = `<button onclick="updateDistance('${device.deviceId}')" class="distance-btn">Get Today's Distance</button>`;
     const nearbyButton = `<button onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[1]}, ${device.coordinates[0]})" class="nearby-btn">View Nearby Vehicles</button>`;
     
     popupContent.innerHTML = `
-        <b>Date:</b> ${device.date} <br/>
-        <b>Speed:</b> ${device.speed} km/h <br/>
-        <b>Hold Time:</b> ${device.holdtime} <br/>
-        <b>Status:</b> ${device.status} <br/>
-        <b>Battery:</b> ${device.battery}V <br/>
-        <b>Location:</b> ${device.location} <br/>
-        <b>Distance:</b> <span id="distance-value">${distanceButton}</span> <br/>
-        <div class="button-container">
-            ${nearbyButton}
-        </div>
-    `;
-    
+    <b>Date:</b> ${device.date} <br/>
+    <b>Speed:</b> ${device.speed} km/h <br/>
+    <b>Hold Time:</b> ${device.holdtime} <br/>
+    <b>Status:</b> <span class="status-indicator-status ${device.status == "Online" ? "status-on" : "status-off"}">${device.status}</span> <br/>
+    <b>Battery:</b> ${device.battery}V <br/>
+    <b>Location:</b> ${device.location} <br/>
+    <div style="display: flex; align-items: center; gap: 5px;">
+        <b>Distance:</b> <span id="distance-value">0 km</span>
+    </div>
+    <div class="button-container" style="margin-top: 5px; gap: 5px;">
+        <button onclick="updateDistance('${device.deviceId}')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 8px;">Get Distance</button>
+        <button onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[1]}, ${device.coordinates[0]})" class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">View Nearby</button>
+    </div>
+`;    
     popup.style.display = "block";
     if (marker) updatePopupPosition(marker);
 }
@@ -963,11 +1026,20 @@ const clusterer = new MarkerClusterer(myMap, {
 
       async function updateDistance(deviceId) {
     const distanceSpan = document.getElementById('distance-value');
-    distanceSpan.innerHTML = 'Loading...';
+    if (!distanceSpan) return; // Guard clause in case element isn't found
+
+    // Show loading state
+    distanceSpan.innerHTML = '<span style="color: #666;">Loading...</span>';
     
-    const distance = await fetchDistance(deviceId);
-    distanceSpan.innerHTML = `${distance} km`;
+    try {
+        const distance = await fetchDistance(deviceId);
+        distanceSpan.innerHTML = `${distance} km`;
+    } catch (error) {
+        console.error('Error updating distance:', error);
+        distanceSpan.innerHTML = '0 km';
+    }
 }
+
 
 function initializeMarkers() {
   // Remove existing markers
