@@ -513,6 +513,28 @@
     display: inline-block;
     min-width: 60px;
 }
+
+.button-container {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.nearby-btn {
+    padding: 6px 12px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.3s;
+}
+
+.nearby-btn:hover {
+    background-color: #2980b9;
+}
+
     </style>
   </head>
   <body>
@@ -754,22 +776,28 @@
       }
 
       function showPopup(index, marker) {
-        currentMarker = marker;
-        const device = devices[index];
-        popupTitle.innerHTML = device.name;
-        const distanceButton = `<button onclick="updateDistance('${device.deviceId}')" class="distance-btn">Get Today's Distance</button>`;
-        popupContent.innerHTML = `
+    currentMarker = marker;
+    const device = devices[index];
+    popupTitle.innerHTML = device.name;
+    const distanceButton = `<button onclick="updateDistance('${device.deviceId}')" class="distance-btn">Get Today's Distance</button>`;
+    const nearbyButton = `<button onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[1]}, ${device.coordinates[0]})" class="nearby-btn">View Nearby Vehicles</button>`;
+    
+    popupContent.innerHTML = `
         <b>Date:</b> ${device.date} <br/>
         <b>Speed:</b> ${device.speed} km/h <br/>
         <b>Hold Time:</b> ${device.holdtime} <br/>
         <b>Status:</b> ${device.status} <br/>
         <b>Battery:</b> ${device.battery}V <br/>
-        <b>Location:</b> ${device.location} <br />
+        <b>Location:</b> ${device.location} <br/>
         <b>Distance:</b> <span id="distance-value">${distanceButton}</span> <br/>
+        <div class="button-container">
+            ${nearbyButton}
+        </div>
     `;
-        popup.style.display = "block";
-        if (marker) updatePopupPosition(marker); // Update position if marker is provided
-      }
+    
+    popup.style.display = "block";
+    if (marker) updatePopupPosition(marker);
+}
 
       function updatePopupPosition(marker) {
         if (!marker) return;
@@ -1110,6 +1138,17 @@ async function fetchDistance(deviceId) {
     }
 }
 
+function viewNearbyVehicles(deviceId, lat, lng) {
+    // Default radius is 12 km - can be modified as needed
+    const radius = 12;
+    const params = new URLSearchParams({
+        deviceId: deviceId,
+        lat: lat,
+        lng: lng,
+        radius: radius
+    });
+    window.location.href = `viewnearby.html?${params.toString()}`;
+}
     </script>
   </body>
 </html>
