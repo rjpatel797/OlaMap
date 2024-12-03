@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nearby Vehicles</title>
+    <link href="olamap/style.css" rel="stylesheet" />
+    <script src="olamap/olamaps-js-sdk.umd.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 93vh;
+        }
+
+        #navbar-container {
+            width: 100%;
+            background-color: #333;
+            color: white;
+        }
+
+        .controls {
+            padding: 10px;
+            background: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .radius-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .radius-control label {
+            color: white;
+            font-size: 13px;
+        }
+
+        .radius-control input {
+            width: 200px;
+        }
+
+        .radius-value {
+            color: white;
+            min-width: 50px;
+        }
+
+        #map {
+            flex: 1;
+        }
+
+        .customMarkerClass {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.popup {
+        position: fixed; /* Changed from absolute to fixed */
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        min-width: 120px;
+        transition: all 0.3s ease;
+        transform: translate(-50%, -100%); /* Center horizontally and position above */
+        pointer-events: auto;
+    }
+
+    .popup:hover {
+        transform: translate(-50%, -100%) scale(1.05);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+.popup h3 {
+    color: #2c3e50;
+    font-size: 16px;
+}
+
+.popup p {
+    margin: 5px 0;
+    color: #34495e;
+    font-size: 13px;
+}
+
+.view-trip-btn {
+    margin-top: 10px;
+    padding: 6px 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.3s;
+}
+
+.view-trip-btn:hover {
+    background-color: #45a049;
+}
+
+</style>
+</head>
+<body>
+    <div class="container">
+        <div id="navbar-container"></div>
+        <div class="controls">
+            <div class="radius-control">
+                <label>Radius:</label>
+                <input type="range" id="radiusSlider" min="1" max="50" value="12">
+                <span class="radius-value" id="radiusValue">12 km</span>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+    <script src="js/api.js"></script>
+    <script>
+        const olaMaps = new OlaMapsSDK.OlaMaps({
+            apiKey: "0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9"
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const deviceId = urlParams.get('deviceId');
+        const centerLat = parseFloat(urlParams.get('lat'));
+        const centerLng = parseFloat(urlParams.get('lng'));
+        let radius = parseFloat(urlParams.get('radius')) || 12;
+
+        const myMap = olaMaps.init({
+            style: "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
+            container: "map",
+            center: [centerLng, centerLat],
+            zoom: 10.7
+        });
+
+        // Update radius circle when slider changes
+        const radiusSlider = document.getElementById('radiusSlider');
+        const radiusValue = document.getElementById('radiusValue');
+
+        radiusSlider.value = radius;
+        radiusValue.textContent = `${radius} km`;
+
+        radiusSlider.addEventListener('input', function() {
+            radius = parseInt(this.value);
+            radiusValue.textContent = `${radius} km`;
+            updateNearbyVehicles();
+        });
+
+        function updateNearbyVehicles() {
+    const mid = localStorage.getItem("mid");
+    if (!mid) {
+        console.error("No mid found in localStorage");
+        return;
+    }
+
+    fetch(`${API}getandrojsonfortts.jsp?opr=getVehileByMid&mid=${mid}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!Array.isArray(data)) {
+                console.warn("Received non-array data:", data);
+                return;
+            }
+
+            console.log(`Found ${data.length} total vehicles`);
+            const nearbyVehicles = data.filter(vehicle => {
+                if (!vehicle.latlang) {
+                    console.warn(`Vehicle ${vehicle.dname} has no latlang data`);
+                    return false;
+                }
+                const [lat, lng] = vehicle.latlang.split(',').map(Number);
+                if (isNaN(lat) || isNaN(lng)) {
+                    console.warn(`Invalid coordinates for vehicle ${vehicle.dname}: ${vehicle.latlang}`);
+                    return false;
+                }
+                const distance = calculateDistance(centerLat, centerLng, lat, lng);
+                return distance <= radius;
+            });
+
+            console.log(`Found ${nearbyVehicles.length} vehicles within ${radius}km radius`);
+            displayNearbyVehicles(nearbyVehicles);
+        })
+        .catch(error => {
+            console.error("Error fetching nearby vehicles:", error);
+        });
+}
+
+if (typeof API === 'undefined') {
+    console.error('API variable is not defined. Make sure api.js is loaded correctly.');
+}
+
+window.addEventListener('load', function() {
+    if (!localStorage.getItem("mid")) {
+        window.location.href = "index.html";
+        return;
+    }
+});
+
+function displayNearbyVehicles(vehicles) {
+    // Clear existing markers and popups
+    if (window.markers) {
+        window.markers.forEach(marker => marker.remove());
+    }
+    window.markers = [];
+    document.querySelectorAll('.popup').forEach(popup => popup.remove());
+
+    // Draw radius circle
+    drawRadiusCircle([centerLng, centerLat], radius);
+
+    // Get the deviceId from URL and ensure it's a string for comparison
+    const urlDeviceId = deviceId.toString();
+    
+    // Log the first vehicle to see its structure
+    console.log('Sample vehicle structure:', vehicles[0]);
+
+    // Find the selected vehicle - try different possible property names
+    const selectedVehicle = vehicles.find(v => 
+        (v.did?.toString() === urlDeviceId) || 
+        (v.deviceid?.toString() === urlDeviceId) ||
+        (v.id?.toString() === urlDeviceId) ||
+        (v.dname?.toString() === urlDeviceId)
+    );
+
+    console.log('URL DeviceId:', urlDeviceId);
+    console.log('Selected Vehicle:', selectedVehicle);
+
+    // Find nearest vehicle to the selected vehicle
+    const nearestToSelected = selectedVehicle ? findNearestToSelected(vehicles, selectedVehicle) : null;
+
+    // If we have a selected vehicle, adjust map to show it
+    if (selectedVehicle && selectedVehicle.latlang) {
+        const [selectedLat, selectedLng] = selectedVehicle.latlang.split(',').map(Number);
+        // Pan and zoom map to selected vehicle
+        myMap.flyTo({
+            center: [selectedLng, selectedLat],
+            zoom: 13,
+            essential: true
+        });
+    }
+
+    vehicles.forEach(vehicle => {
+        if (!vehicle.latlang) return;
+
+        const [vlat, vlng] = vehicle.latlang.split(',').map(Number);
+        if (isNaN(vlat) || isNaN(vlng)) return;
+
+        // Create custom marker element
+        const markerElement = document.createElement('div');
+        markerElement.className = 'customMarkerClass';
+        
+        // Add vehicle icon
+        const carImage = document.createElement('img');
+        carImage.style.width = '30px';
+        carImage.style.height = '30px';
+        
+        // Determine vehicle status and set appropriate icon
+        const currentDate = new Date();
+        const deviceDate = new Date(vehicle.ddate);
+        const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+        const ignitionStatus = vehicle.ignition?.toLowerCase() === 'true';
+        
+        if (hoursDifference > 2) {
+            carImage.src = '/deviceTracking/images/blackcar1.png';
+        } else if (!ignitionStatus) {
+            carImage.src = '/images/icon/red/car0.png';
+        } else if (ignitionStatus && parseFloat(vehicle.speed) > 0) {
+            carImage.src = '/deviceTracking/images/green.png';
+        } else {
+            carImage.src = '/deviceTracking/images/yellow.png';
+        }
+
+        markerElement.appendChild(carImage);
+
+        // Create and add marker
+        const marker = olaMaps.addMarker({
+            element: markerElement,
+            anchor: 'center',
+        })
+        .setLngLat([vlng, vlat])
+        .addTo(myMap);
+
+        // Show popup for selected vehicle and its nearest neighbor
+        const isSelected = 
+            (vehicle.did?.toString() === urlDeviceId) || 
+            (vehicle.deviceid?.toString() === urlDeviceId) ||
+            (vehicle.id?.toString() === urlDeviceId) ||
+            (vehicle.dname?.toString() === urlDeviceId);
+            
+        const isNearest = nearestToSelected && vehicle.dname === nearestToSelected.dname;
+
+        // Ensure popups are shown for both selected and nearest vehicles
+        if (isSelected) {
+            setTimeout(() => {
+                showVehiclePopup(vehicle, marker, 'selected');
+            }, 500);
+        }
+        if (isNearest) {
+            setTimeout(() => {
+                showVehiclePopup(nearestToSelected, marker, 'nearest');
+            }, 500);
+        }
+
+        // Handle click events
+        marker.getElement().addEventListener('click', () => {
+            // Update popups based on new selection
+            const newNearest = findNearestToSelected(vehicles, vehicle);
+            
+            // Remove all existing popups
+            document.querySelectorAll('.popup').forEach(popup => popup.remove());
+            
+            // Show popup for clicked vehicle
+            showVehiclePopup(vehicle, marker, 'selected');
+            
+            // Show popup for its nearest neighbor
+            if (newNearest) {
+                const nearestMarker = window.markers.find(m => {
+                    const [lat, lng] = newNearest.latlang.split(',').map(Number);
+                    const pos = m.getLngLat();
+                    return pos.lat === lat && pos.lng === lng;
+                });
+                if (nearestMarker) {
+                    showVehiclePopup(newNearest, nearestMarker, 'nearest');
+                }
+            }
+        });
+
+        window.markers.push(marker);
+    });
+
+    // Add console log to show all properties of the first vehicle
+    if (vehicles.length > 0) {
+        console.log('Available vehicle properties:', Object.keys(vehicles[0]));
+    }
+}
+
+
+function findNearestToSelected(vehicles, selectedVehicle) {
+    let nearestVehicle = null;
+    let minDistance = Infinity;
+
+    if (!selectedVehicle || !selectedVehicle.latlang) return null;
+    const [selectedLat, selectedLng] = selectedVehicle.latlang.split(',').map(Number);
+
+    vehicles.forEach(vehicle => {
+        if (!vehicle.latlang || vehicle.dname === selectedVehicle.dname) return;
+        const [vlat, vlng] = vehicle.latlang.split(',').map(Number);
+        if (isNaN(vlat) || isNaN(vlng)) return;
+        
+        const distance = calculateDistance(selectedLat, selectedLng, vlat, vlng);
+        if (distance < minDistance) {
+            minDistance = distance;
+            nearestVehicle = { ...vehicle, distance };
+        }
+    });
+
+    return nearestVehicle;
+}
+
+
+function showVehiclePopup(vehicle, marker, type = 'normal') {
+    const existingPopup = document.querySelector('.popup-' + vehicle.dname?.replace(/\s+/g, '-'));
+    if (existingPopup) {
+        existingPopup.remove();
+    }
+
+    const popup = document.createElement('div');
+    popup.className = 'popup popup-' + vehicle.dname?.replace(/\s+/g, '-');
+    
+    // Style based on type
+    switch(type) {
+        case 'selected':
+            popup.style.border = '2px solid #FF4444';
+            popup.innerHTML = `
+                <h3>${vehicle.dname}</h3>
+                <p style="color: #FF4444; font-weight: bold">Selected Vehicle</p>
+            `;
+            break;
+        case 'nearest':
+            popup.style.border = '2px solid #4CAF50';
+            popup.innerHTML = `
+                <h3>${vehicle.dname}</h3>
+                <p style="color: #4CAF50; font-weight: bold">Nearest Vehicle</p>
+                <p>Distance: ${vehicle.distance?.toFixed(2)} km</p>
+            `;
+            break;
+        default:
+            popup.innerHTML = `<h3>${vehicle.dname}</h3>`;
+    }
+
+    document.body.appendChild(popup);
+
+    // Position popup above marker using the map's project method
+    function updatePopupPosition() {
+        if (!vehicle.latlang) return;
+        const [lat, lng] = vehicle.latlang.split(',').map(Number);
+        const point = myMap.project([lng, lat]);
+        
+        // Get map container position
+        const mapContainer = document.getElementById('map');
+        const mapRect = mapContainer.getBoundingClientRect();
+        
+        // Calculate position relative to map container
+        const left = point.x + mapRect.left + 60;
+        const top = point.y + mapRect.top - 15; // 10px above marker
+        
+        popup.style.left = `${left - (popup.offsetWidth / 2)}px`; // Center horizontally
+        popup.style.top = `${top}px`;
+    }
+
+    // Initial positioning
+    updatePopupPosition();
+
+    // Update position when map moves
+    myMap.on('move', updatePopupPosition);
+    myMap.on('zoom', updatePopupPosition);
+
+    return popup;
+}
+
+function viewTodayTrip(deviceName) {
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    
+    const params = new URLSearchParams({
+        device: deviceName,
+        from: formattedDate,
+        to: formattedDate
+    });
+    
+    window.location.href = `drawableplayback.html?${params.toString()}`;
+}
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.popup') && !e.target.closest('.customMarkerClass')) {
+        // Remove all non-nearest popups
+        document.querySelectorAll('.popup').forEach(popup => {
+            if (!popup.querySelector('p[style*="color: #4CAF50"]')) {
+                popup.remove();
+            }
+        });
+    }
+});
+
+function drawRadiusCircle(center, radiusKm) {
+    // Remove existing circle layer and source
+    if (myMap.getLayer('radius-circle')) {
+        myMap.removeLayer('radius-circle');
+    }
+    if (myMap.getSource('radius-circle')) {
+        myMap.removeSource('radius-circle');
+    }
+
+    // Create a circle feature
+    const points = 64;
+    const coords = {
+        latitude: center[1],
+        longitude: center[0]
+    };
+    
+    const km = radiusKm;
+    const ret = [];
+    const distanceX = km/(111.320*Math.cos(coords.latitude*Math.PI/180));
+    const distanceY = km/110.574;
+
+    let theta, x, y;
+    for(let i=0; i<points; i++) {
+        theta = (i/points)*(2*Math.PI);
+        x = distanceX*Math.cos(theta);
+        y = distanceY*Math.sin(theta);
+        ret.push([coords.longitude+x, coords.latitude+y]);
+    }
+    ret.push(ret[0]);
+
+    // Add the circle source and layer
+    myMap.addSource('radius-circle', {
+        type: 'geojson',
+        data: {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+                type: 'Polygon',
+                coordinates: [ret]
+            }
+        }
+    });
+
+    myMap.addLayer({
+        id: 'radius-circle',
+        type: 'fill',
+        source: 'radius-circle',
+        paint: {
+            'fill-color': '#3498db',
+            'fill-opacity': 0.1,
+            'fill-outline-color': '#2980b9'
+        }
+    });
+}
+
+        // Initialize map and load nearby vehicles
+        myMap.on('load', () => {
+            updateNearbyVehicles();
+        });
+
+        // Add your existing helper functions (calculateDistance, etc.)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of the earth in km
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2); 
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            return R * c;
+        }
+
+        function deg2rad(deg) {
+            return deg * (Math.PI/180);
+        }
+
+        // Load navbar
+        $(document).ready(() => {
+            $("#navbar-container").load("navbarola.html");
+        });
+    </script>
+</body>
+</html>
