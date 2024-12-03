@@ -62,26 +62,50 @@
 }
 
 .popup {
-        position: fixed; /* Changed from absolute to fixed */
-        background: white;
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
-        z-index: 1000;
-        min-width: 120px;
-        transition: all 0.3s ease;
-        transform: translate(-50%, -100%); /* Center horizontally and position above */
-        pointer-events: auto;
-    }
+    position: fixed; /* Keep only this position property */
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    min-width: 120px;
+    transition: all 0.3s ease;
+    transform: translate(-50%, -100%);
+    pointer-events: auto;
+}
+
+.popup-close {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: #f1f1f1;
+    border-radius: 50%;
+    font-size: 14px;
+    line-height: 1;
+    color: #666;
+    transition: all 0.2s ease;
+}
+
+.popup-close:hover {
+    background: #e1e1e1;
+    color: #333;
+}
+
+.popup h3 {
+    margin-right: 20px;
+    margin-top: 5px;
+}
 
     .popup:hover {
         transform: translate(-50%, -100%) scale(1.05);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     }
-.popup h3 {
-    color: #2c3e50;
-    font-size: 16px;
-}
 
 .popup p {
     margin: 5px 0;
@@ -374,6 +398,14 @@ function showVehiclePopup(vehicle, marker, type = 'normal') {
 
     const popup = document.createElement('div');
     popup.className = 'popup popup-' + vehicle.dname?.replace(/\s+/g, '-');
+
+    const closeButton = document.createElement('span');
+    closeButton.className = 'popup-close';
+    closeButton.innerHTML = '×';
+    closeButton.onclick = (e) => {
+        e.stopPropagation();
+        popup.remove();
+    };
     
     // Style based on type
     switch(type) {
@@ -395,6 +427,8 @@ function showVehiclePopup(vehicle, marker, type = 'normal') {
         default:
             popup.innerHTML = `<h3>${vehicle.dname}</h3>`;
     }
+
+    popup.insertBefore(closeButton, popup.firstChild);
 
     document.body.appendChild(popup);
 
