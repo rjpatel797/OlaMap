@@ -235,24 +235,22 @@
             },
             success: function (msg) {
               console.log("success::::" + msg);
-
-              //store mid as localStorage
-              localStorage.setItem("mid", msg);
-
+              
               var error = geterrorcode(msg);
-
-              if ((error) => 0) {
-                window.location = " dashboardliveola.html";
-              } else if (msg == 2) {
-                $("#uid").val("");
-                $("#password").val("");
-                showError("Please enter valid ID/Password.");
+              if (msg === "-1") {
+                  $("#uid").val("");
+                  $("#password").val("");
+                  showError("Please enter valid ID/Password.");
+              } else if (error === "Unknown Error") {
+                  localStorage.setItem("mid", msg);
+                  window.location = "dashboardliveola.html";
               } else {
-                $("#uid").val("");
-                $("#password").val("");
-                showError("Please enter valid ID/Password.");
+                console.log(error + "2")
+                  $("#uid").val("");
+                  $("#password").val("");
+                  showError("Please enter valid ID/Password.");
               }
-            },
+          }
           });
         }
       }
