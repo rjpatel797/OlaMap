@@ -618,9 +618,163 @@
         style:
           "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
         container: "map",
-        center: [72.5714, 23.0225],
-        zoom: 14,
+        center: [72.5714, 22.0225],
+        zoom: 6,
       });
+
+      class MarkerClusterer {
+  constructor(map, options = {}) {
+    this.map = map;
+    this.markers = [];
+    this.clusters = [];
+    this.options = {
+      radius: options.radius || 500,
+      maxZoom: options.maxZoom || 14,
+      minPoints: options.minPoints || 2
+    };
+
+    // Bind event handlers
+    this.map.on('zoom', () => this.updateClusters());
+    this.map.on('moveend', () => this.updateClusters());
+  }
+
+  // Add markers to the clusterer
+  addMarkers(markers) {
+    this.markers = markers;
+    this.updateClusters();
+  }
+
+  // Calculate clusters based on current zoom and viewport
+  updateClusters() {
+    // Clear existing clusters
+    this.clusters.forEach(cluster => cluster.remove());
+    this.clusters = [];
+
+    if (this.map.getZoom() >= this.options.maxZoom) {
+      // Show individual markers at high zoom levels
+      this.markers.forEach(marker => marker.addTo(this.map));
+      return;
+    }
+
+    // Group nearby markers
+    const groups = this.groupMarkers();
+    
+    groups.forEach(group => {
+      if (group.length >= this.options.minPoints) {
+        this.createCluster(group);
+      } else {
+        group.forEach(marker => marker.addTo(this.map));
+      }
+    });
+  }
+
+  // Group markers based on proximity
+  groupMarkers() {
+    const groups = [];
+    const marked = new Set();
+
+    this.markers.forEach((marker, i) => {
+      if (marked.has(i)) return;
+
+      const group = [marker];
+      marked.add(i);
+
+      this.markers.forEach((otherMarker, j) => {
+        if (i !== j && !marked.has(j)) {
+          const distance = this.calculateDistance(
+            marker.getLngLat(),
+            otherMarker.getLngLat()
+          );
+          
+          if (distance <= this.options.radius * Math.pow(2, -this.map.getZoom())) {
+            group.push(otherMarker);
+            marked.add(j);
+          }
+        }
+      });
+
+      groups.push(group);
+    });
+
+    return groups;
+  }
+
+  // Create a visual cluster representation
+  createCluster(markers) {
+    // Remove individual markers
+    markers.forEach(marker => marker.remove());
+
+    // Calculate cluster center
+    const center = this.calculateClusterCenter(markers);
+    
+    // Create cluster element
+    const clusterElement = document.createElement('div');
+    clusterElement.className = 'marker-cluster';
+    clusterElement.style.cssText = getClusterStyle(markers.length);
+    clusterElement.addEventListener('mouseenter', () => {
+      // clusterElement.style.transform = 'scale(1.1)';
+    });
+
+    clusterElement.addEventListener('mouseleave', () => {
+      // clusterElement.style.transform = 'scale(1)';
+    });
+    clusterElement.innerHTML = markers.length;
+
+    // Add click handler to zoom in
+    clusterElement.addEventListener('click', () => {
+      this.map.flyTo({
+        center: center,
+        zoom: Math.min(this.map.getZoom() + 2, this.options.maxZoom),
+        speed: 1.5
+      });
+    });
+
+    // Create and add cluster marker
+    const cluster = olaMaps
+      .addMarker({
+        element: clusterElement,
+        anchor: 'center',
+      })
+      .setLngLat(center)
+      .addTo(this.map);
+
+    this.clusters.push(cluster);
+  }
+
+  // Calculate distance between two points
+  calculateDistance(lngLat1, lngLat2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lngLat2.lat - lngLat1.lat) * Math.PI / 180;
+    const dLon = (lngLat2.lng - lngLat1.lng) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lngLat1.lat * Math.PI / 180) * Math.cos(lngLat2.lat * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+  // Calculate center point of a cluster
+  calculateClusterCenter(markers) {
+    const coords = markers.map(m => m.getLngLat());
+    const center = coords.reduce((acc, curr) => ({
+      lng: acc.lng + curr.lng,
+      lat: acc.lat + curr.lat
+    }), { lng: 0, lat: 0 });
+    
+    return {
+      lng: center.lng / coords.length,
+      lat: center.lat / coords.length
+    };
+  }
+}
+
+// Initialize clusterer after map loads
+const clusterer = new MarkerClusterer(myMap, {
+  radius: 5000,
+  maxZoom: 14,
+  minPoints: 2
+});
 
       myMap.on("styleimagemissing", function (e) {
         if (e.id === "pedestrian_polygon") {
@@ -815,98 +969,72 @@
     distanceSpan.innerHTML = `${distance} km`;
 }
 
-      function initializeMarkers() {
-    // Remove existing markers
-    markers.forEach((marker) => marker.remove());
-    markers = [];
+function initializeMarkers() {
+  // Remove existing markers
+  markers.forEach((marker) => marker.remove());
+  markers = [];
 
-    devices.forEach((device, index) => {
-        if (device.coordinates[0] !== 0 || device.coordinates[1] !== 0) {
-            // Create a custom marker element
-            const customMarker = document.createElement("div");
-            customMarker.classList.add("customMarkerClass");
+  devices.forEach((device, index) => {
+    if (device.coordinates[0] !== 0 || device.coordinates[1] !== 0) {
+      const customMarker = document.createElement("div");
+      customMarker.classList.add("customMarkerClass");
 
-            // Add the car image
-            const carImage = document.createElement("img");
+      const carImage = document.createElement("img");
+      const currentDate = new Date();
+      const deviceDate = new Date(device.date);
+      const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+      const ignitionStatus = typeof device.ignition === 'string' 
+          ? device.ignition.toLowerCase() === 'true'
+          : Boolean(device.ignition);
 
-            // Get current date and device date for comparison
-            const currentDate = new Date();
-            const deviceDate = new Date(device.date);
-            const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+      // Set marker icon based on status
+      if (hoursDifference > 2) {
+        carImage.src = "/deviceTracking/images/blackcar1.png";
+        carImage.style.width = "20px";
+        carImage.style.height = "27px";
+      } else if (!ignitionStatus) {
+        carImage.src = "/images/icon/red/car0.png";
+        carImage.style.width = "27px";
+        carImage.style.height = "27px";
+      } else if (ignitionStatus && device.speed > 0) {
+        carImage.src = "/deviceTracking/images/green.png";
+        carImage.style.width = "20px";
+        carImage.style.height = "40px";
+      } else if (ignitionStatus && device.speed === 0) {
+        carImage.src = "/deviceTracking/images/yellow.png";
+      } else {
+        carImage.src = "/deviceTracking/images/blackcar1.png";
+        carImage.style.width = "20px";
+        carImage.style.height = "27px";
+      }
 
-            // Convert ignition string to boolean if necessary
-            const ignitionStatus = typeof device.ignition === 'string' 
-                ? device.ignition.toLowerCase() === 'true'
-                : Boolean(device.ignition);
+      carImage.style.transform = `rotate(${device.angle || 0}deg)`;
+      carImage.style.transformOrigin = "center center";
 
-            // Initialize image style variables
-            let imageWidth = "";
-            let imageHeight = "";
-            let imagerotate = "";
-            
-            // Determine which image to use based on conditions
-            let imagePath;
-            if (hoursDifference > 2) {
-                // If device date is more than 2 hours old
-                imagePath = "/deviceTracking/images/blackcar1.png";
-                imageHeight = "27px";
-                imageWidth = "20px";
-                imagerotate = "90";
+      customMarker.appendChild(carImage);
 
-            } else if (ignitionStatus === false) {
-                // Ignition off
-                imagePath = "/images/icon/red/car0.png";
-                imageHeight = "27px";
-                imageWidth = "27px";
-            } else if (ignitionStatus === true && device.speed > 0) {
-                // Ignition on and moving
-                imagePath = "/deviceTracking/images/green.png";
-                imageWidth = "20px";
-                imageHeight = "40px";
-            } else if (ignitionStatus === true && device.speed === 0) {
-                // Ignition on but not moving
-                imagePath = "/deviceTracking/images/yellow.png";
-            } else {
-                // Default case
-                imagePath = "/deviceTracking/images/blackcar1.png";
-                imageHeight = "27px";
-                imageWidth = "20px";
-                imagerotate = "90";
-            }
+      const marker = olaMaps
+        .addMarker({
+          element: customMarker,
+          offset: [0, -20],
+          anchor: "center",
+        })
+        .setLngLat(device.coordinates);
 
-            carImage.src = imagePath;
+      marker.getElement().addEventListener("click", () => showPopup(index, marker));
+      markers.push(marker);
+    }
+  });
 
-            // Apply width and height if they are set
-            if (imageWidth) carImage.style.width = imageWidth;
-            if (imageHeight) carImage.style.height = imageHeight;
+  // Add markers to clusterer
+  clusterer.addMarkers(markers);
+}
 
-            // Rotate the marker based on the angle
-            const angle = device.angle || 0;
-                  carImage.style.transform = `rotate(${angle}deg)`;
-            carImage.style.transformOrigin = "center center";
-
-            customMarker.appendChild(carImage);
-
-            // Add the marker to the map
-            const marker = olaMaps
-                .addMarker({
-                    element: customMarker,
-                    offset: [0, -20],
-                    anchor: "center",
-                })
-                .setLngLat(device.coordinates)
-                .addTo(myMap);
-
-            markers.push(marker);
-
-            // Add a click event listener for the marker
-            marker.getElement().addEventListener("click", () => showPopup(index, marker));
-        } else {
-            console.warn(
-                `Skipping marker for device ${device.name} due to invalid coordinates.`
-            );
-        }
-    });
+function createMarkerElement(device) {
+  const customMarker = document.createElement("div");
+  customMarker.classList.add("customMarkerClass");
+  // ... rest of your existing marker creation code ...
+  return customMarker;
 }
 
 
@@ -1149,6 +1277,139 @@ function viewNearbyVehicles(deviceId, lat, lng) {
     });
     window.location.href = `viewnearby.html?${params.toString()}`;
 }
+
+const clusterOptions = {
+  maxZoom: 14, // Maximum zoom level for clustering
+  radius: 500,  // Cluster radius in pixels
+  minPoints: 2 // Minimum points to form a cluster
+};
+
+// Create a source for the clustered data
+
+// Add a layer for clusters
+// const clusterLayer = olaMaps.layer.create({
+//   id: 'device-clusters',
+//   type: 'circle',
+//   source: clusterSource,
+//   cluster: true,
+//   clusterOptions: clusterOptions,
+//   paint: {
+//     'circle-color': [
+//       'case',
+//       ['>=', ['get', 'point_count'], 100], '#f28cb1', // Large clusters
+//       ['>=', ['get', 'point_count'], 20], '#f1f075',  // Medium clusters
+//       '#51bbd6' // Small clusters
+//     ],
+//     'circle-radius': [
+//       'case',
+//       ['>=', ['get', 'point_count'], 100], 40,  // Large clusters
+//       ['>=', ['get', 'point_count'], 20], 30,   // Medium clusters
+//       20 // Small clusters
+//     ]
+//   }
+// });
+
+// myMap.addLayer(clusterLayer);
+
+
+// myMap.addLayer({
+//   id: 'cluster-count',
+//   type: 'symbol',
+//   source: 'clusters',
+//   filter: ['has', 'point_count'],
+//   layout: {
+//     'text-field': '{point_count_abbreviated}',
+//     'text-font': ['Arial Unicode MS Bold'],
+//     'text-size': 12
+//   },
+//   paint: {
+//     'text-color': '#ffffff'
+//   }
+// });
+
+myMap.on('click', 'device-clusters', (e) => {
+  const features = e.features;
+  if (!features) return;
+
+  const clusterId = features[0].properties.cluster_id;
+  const zoom = Math.max(
+    myMap.getZoom() + 2,
+    myMap.getMaxZoom()
+  );
+
+  myMap.flyTo({
+    center: features[0].geometry.coordinates,
+    zoom: zoom,
+    speed: 1.5
+  });
+});
+
+// Add click handlers for clusters
+// myMap.on('click', 'clusters', (e) => {
+//   const features = myMap.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+//   const clusterId = features[0].properties.cluster_id;
+  
+//   myMap.getSource('clusters').getClusterExpansionZoom(
+//     clusterId,
+//     (err, zoom) => {
+//       if (err) return;
+
+//       myMap.easeTo({
+//         center: features[0].geometry.coordinates,
+//         zoom: zoom
+//       });
+//     }
+//   );
+// });
+
+// Change cursor on hover
+myMap.on('mouseenter', 'device-clusters', () => {
+  myMap.getCanvas().style.cursor = 'pointer';
+});
+
+myMap.on('mouseleave', 'device-clusters', () => {
+  myMap.getCanvas().style.cursor = '';
+});
+
+function getClusterStyle(count) {
+  let backgroundColor;
+  let size;
+
+  if (count >= 100) {
+    backgroundColor = 'rgba(241, 128, 23, 0.9)';  // Orange for large clusters
+    size = '50px';
+  } else if (count >= 50) {
+    backgroundColor = 'rgba(240, 52, 52, 0.9)';   // Red for medium-large clusters
+    size = '45px';
+  } else if (count >= 20) {
+    backgroundColor = 'rgba(156, 39, 176, 0.9)';  // Purple for medium clusters
+    size = '40px';
+  } else if (count >= 10) {
+    backgroundColor = 'rgba(33, 150, 243, 0.9)';  // Blue for small-medium clusters
+    size = '35px';
+  } else {
+    backgroundColor = 'rgba(76, 175, 80, 0.9)';   // Green for small clusters
+    size = '30px';
+  }
+
+  return `
+    background-color: ${backgroundColor};
+    color: white;
+    border-radius: 50%;
+    width: ${size};
+    height: ${size};
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: ${count >= 100 ? '16px' : '14px'};
+    border: 2px solid white;
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  `;
+}
+
     </script>
   </body>
 </html>
