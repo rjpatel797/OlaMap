@@ -69,7 +69,6 @@
     box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
     z-index: 1000;
     min-width: 120px;
-    transition: all 0.3s ease;
     transform: translate(-50%, -100%);
     pointer-events: auto;
 }
@@ -443,7 +442,7 @@ function showVehiclePopup(vehicle, marker, type = 'normal') {
         const mapRect = mapContainer.getBoundingClientRect();
         
         // Calculate position relative to map container
-        const left = point.x + mapRect.left + 60;
+        const left = point.x + mapRect.left + 75;
         const top = point.y + mapRect.top - 15; // 10px above marker
         
         popup.style.left = `${left - (popup.offsetWidth / 2)}px`; // Center horizontally

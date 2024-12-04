@@ -750,7 +750,6 @@
         .then((response) => response.json())
         .then((data) => {
           if (!isTracking) return; // Check if still tracking
-          console.log("Vehicle Data:", data);
           updateVehicleMarker(data);
           showVehicleInfo(data);
         })
@@ -857,12 +856,25 @@ myMap.on('drag', () => {
   isAnimating = true;
 
   const startTime = performance.now();
-  const duration = 2000;
+  const SPEED = 0.00000015; // Speed in coordinates per millisecond
+  
+  // Calculate total distance to travel
+  const dx = to[0] - from[0];
+  const dy = to[1] - from[1];
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  // Calculate duration based on distance and speed
+  const duration = distance / SPEED;
+  
   const startAngle = parseFloat(
     currentMarker.getElement().querySelector("img").style.transform
       .replace("rotate(", "")
       .replace("deg)", "")
   ) || 0;
+
+  // Normalize angles to prevent spinning
+  let angleDiff = ((finalAngle - startAngle + 180) % 360) - 180;
+  if (angleDiff < -180) angleDiff += 360;
 
   function animate(currentTime) {
     if (isMapDragging) {
@@ -879,7 +891,8 @@ myMap.on('drag', () => {
       from[1] + (to[1] - from[1]) * easeProgress
     ];
 
-    const currentAngle = startAngle + (finalAngle - startAngle) * easeProgress;
+    // Calculate the current angle using the normalized difference
+    const currentAngle = startAngle + (angleDiff * easeProgress);
 
     currentMarker.setLngLat(currentPosition);
     rotateMarker(currentAngle);
@@ -893,7 +906,6 @@ myMap.on('drag', () => {
 
   requestAnimationFrame(animate);
 }
-
 
 
 // Add event listeners to handle map interaction
