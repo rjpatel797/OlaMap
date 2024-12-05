@@ -1,1 +1,1 @@
-var API="http://ttsgps.in/";
+var API="https://ttsgps.in/getandrojsonforNewIphone.jsp?";

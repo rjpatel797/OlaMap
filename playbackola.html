@@ -914,20 +914,20 @@
       });
     }
 
-    function fetchDeviceData() {
-      const mid = localStorage.getItem("mid");
-      fetch(`${API}getandrojsonfortts.jsp?opr=getVehileByMid&mid=${mid}`)
-        .then((response) => response.json())
-        .then((data) => {
-          devices = data.map((item) => ({
-            name: item.dname,
-            did: item.did,
-          }));
-          populateVehicleList(devices);
-          deviceData = devices;
-        })
-        .catch((error) => console.error("Error fetching devices:", error));
-    }
+      function fetchDeviceData() {
+        const mid = localStorage.getItem("mid");
+        fetch(`${API}opr=getVehileByMid&mid=${mid}`)
+          .then((response) => response.json())
+          .then((data) => {
+            devices = data.map((item) => ({
+              name: item.dname,
+              did: item.did,
+            }));
+            populateVehicleList(devices);
+            deviceData = devices;
+          })
+          .catch((error) => console.error("Error fetching devices:", error));
+      }
 
     document.addEventListener("click", function (event) {
       const dropdown = document.getElementById("deviceDropdown");
@@ -1005,45 +1005,45 @@
         return;
       }
 
-      return fetch(
-        `${API}getandrojsonfortts.jsp?opr=getplaybacktest&sdate=${formattedFromDate}&edate=${formattedToDate}&did=${did}`
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          if (Array.isArray(data)) {
-            playbackData = data
-              .map((item) => {
-                const lng = parseFloat(item.langitude);
-                const lat = parseFloat(item.latitude);
-                const angle = parseFloat(item.angle);
-                return !isNaN(lng) && !isNaN(lat) && !isNaN(angle)
-                  ? {
-                    coordinates: [lng, lat],
-                    angle: angle,
-                    deviceId: item.deviceId,
-                    speed: item.speed,
-                    gps: item.digital_2,
-                    engine: item.digital_2,
-                    date: item.DeviceDate,
-                  }
-                  : null;
-              })
-              .filter(Boolean);
+        return fetch(
+          `${API}getandrojsonfortts.jsp?opr=getplaybacktest&sdate=${formattedFromDate}&edate=${formattedToDate}&did=${did}`
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            if (Array.isArray(data)) {
+              playbackData = data
+                .map((item) => {
+                  const lng = parseFloat(item.langitude);
+                  const lat = parseFloat(item.latitude);
+                  const angle = parseFloat(item.angle);
+                  return !isNaN(lng) && !isNaN(lat) && !isNaN(angle)
+                    ? {
+                        coordinates: [lng, lat],
+                        angle: angle,
+                        deviceId: item.deviceId,
+                        speed: item.speed,
+                        gps: item.digital_2,
+                        engine: item.digital_2,
+                        date: item.DeviceDate,
+                      }
+                    : null;
+                })
+                .filter(Boolean);
+                fetching = false;
+        updateStartButtonState();
+              console.log("Playback Data Loaded:", playbackData);
+            } else {
+              fetching = false;
+        updateStartButtonState();
+              console.error("Unexpected data format: response is not an array");
+            }
+          })
+          .catch((error) => {
             fetching = false;
-            updateStartButtonState();
-            console.log("Playback Data Loaded:", playbackData);
-          } else {
-            fetching = false;
-            updateStartButtonState();
-            console.error("Unexpected data format: response is not an array");
-          }
-        })
-        .catch((error) => {
-          fetching = false;
-          updateStartButtonState();
-          console.error("Error fetching playback data:", error);
-        });
-    }
+        updateStartButtonState();
+            console.error("Error fetching playback data:", error);
+          });
+      }
 
     // Helper function to format date as YYYY-MM-DD
     function formatDate(dateString) {

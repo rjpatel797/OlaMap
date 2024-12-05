@@ -846,7 +846,7 @@ const clusterer = new MarkerClusterer(myMap, {
       function fetchDeviceData() {
         const mid = localStorage.getItem("mid");
         fetch(
-          `${API}getandrojsonfortts.jsp?opr=getVehileByMid&mid=${mid}`
+          `${API}opr=getVehileByMid&mid=${mid}`
         )
           .then((response) => response.json())
           .then((data) => {
@@ -1345,7 +1345,7 @@ async function fetchDistance(deviceId) {
     
     try {
         const response = await fetch(
-            `${API}getandrojsonfortts.jsp?opr=fleetsummaryreport&fromdate=${formattedDate} 00:00&todate=${formattedDate} 23:59&did=${deviceId}`
+            `${API}opr=fleetsummaryreport&fromdate=${formattedDate} 00:00&todate=${formattedDate} 23:59&did=${deviceId}`
         );
         const data = await response.json();
         

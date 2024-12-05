@@ -621,7 +621,7 @@
 
       function fetchDeviceData() {
         const mid = localStorage.getItem("mid");
-        fetch(`${API}getandrojsonfortts.jsp?opr=getVehileByMid&mid=${mid}`)
+        fetch(`${API}opr=getVehileByMid&mid=${mid}`)
           .then((response) => response.json())
           .then((data) => {
             console.log("Original Data:", data);
@@ -686,7 +686,7 @@
         }
 
         return fetch(
-          `${API}getandrojsonfortts.jsp?opr=getplaybacktest&sdate=${formattedFromDate}&edate=${formattedToDate}&did=${did}`
+          `${API}opr=getplaybacktest&sdate=${formattedFromDate}&edate=${formattedToDate}&did=${did}`
         )
           .then((response) => response.json())
           .then((data) => {
