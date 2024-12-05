@@ -916,7 +916,7 @@
           return;
         }
 
-        const apiUrl = `${API}getandrojsonfortts.jsp?opr=getVehileByMid&mid=${mid}`;
+        const apiUrl = `${API}opr=getVehileByMid&mid=${mid}`;
 
         return fetch(apiUrl)
           .then((response) => {
@@ -1020,7 +1020,7 @@
         );
 
         return fetch(
-          `${API}getandrojsonfortts.jsp?opr=getplaybacktest&sdate=${formattedFromDate}&edate=${formattedToDate}&did=${did}`
+          `${API}opr=getplaybacktest&sdate=${formattedFromDate}&edate=${formattedToDate}&did=${did}`
         )
           .then((response) => response.json())
           .then((data) => {

@@ -378,7 +378,7 @@
       function fetchDeviceData() {
         const mid = localStorage.getItem("mid");
         fetch(
-          `${API}getandrojsonfortts.jsp?opr=getVehileByMid&mid=${mid}`
+          `${API}opr=getVehileByMid&mid=${mid}`
         )
           .then((response) => response.json())
           .then((data) => {

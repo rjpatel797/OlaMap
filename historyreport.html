@@ -289,7 +289,7 @@
         function fetchDeviceData() {
             const mid = localStorage.getItem("mid");
             
-            fetch(`${API}getandrojsonfortts.jsp?opr=getVehileByMid&mid=${mid}`)
+            fetch(`${API}opr=getVehileByMid&mid=${mid}`)
                 .then(response => response.json())
                 .then(data => {
                     if (Array.isArray(data)) {
@@ -345,7 +345,7 @@
             const formattedFromDate = formatDateForAPI(fromdate);
             const formattedToDate = formatDateForAPI(todate);
 
-            const url = `https://ttsgps.in/getandrojsonfortts.jsp?opr=gethistoryreport&fromdate=${formattedFromDate}&todate=${formattedToDate}&did=${did}&interval=${interval}`;
+            const url = `${API}opr=gethistoryreport&fromdate=${formattedFromDate}&todate=${formattedToDate}&did=${did}&interval=${interval}`;
 
             fetch(url)
                 .then(response => response.json())
