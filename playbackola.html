@@ -857,6 +857,22 @@
       white-space: nowrap;
       /* Keeps date and time on same line */
     }
+
+    .start-time-popup {
+    position: fixed;
+    top: 70px;  /* Adjust this value to position it where you want */
+    right: 20px;
+    background: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 1000;
+    font-size: 14px;
+}
+
+.start-time-content {
+    white-space: nowrap;
+}
   </style>
 </head>
 
@@ -1614,6 +1630,16 @@
     //     }, 1000 / playbackSpeed); // Adjust interval based on speed
     //   }
 
+
+    function updateStartTimeDisplay(startDateTime) {
+      const startTimeDisplay = document.getElementById('startTimeDisplay');
+      if (startTimeDisplay) {
+          // Remove milliseconds if present
+          const formattedTime = startDateTime.split('.')[0];
+          startTimeDisplay.textContent = formattedTime;
+      }
+    }
+
     function startPlayback(isSpeedUpdate = false) {
       cleanupPolylineEvents();
 
@@ -1635,6 +1661,11 @@
         dynamicPlaybackData = [];
         index = 0;
         totalDistance = 0;
+      }
+
+      // In your playback start function or where you initialize the playback:
+      if (playbackData && playbackData.length > 0) {
+          updateStartTimeDisplay(playbackData[0].date);
       }
 
       // Create new marker if it doesn't exist
@@ -1766,8 +1797,16 @@
       // Clear the polyline
       dynamicPlaybackData = [];
       if (myMap.getSource(polylineId)) {
-        updatePolyline(); // Update with empty data
+        myMap.getSource(polylineId).setData({
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: []
+          }
+        });
       }
+
 
       // Reset map to initial position if there's data
       if (playbackData.length > 0) {
