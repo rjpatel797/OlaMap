@@ -301,12 +301,12 @@
         font-weight: 500;
       }
       .status-indicator-list {
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 12px;
-          font-weight: 500;
-          min-width: 45px;
-          text-align: center;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        min-width: 45px;
+        text-align: center;
       }
 
       #deviceDataTable td:nth-child(4),  /* Battery */
@@ -344,7 +344,6 @@
       }
 
       /* status box css */
-
 
       .status-box {
         position: absolute;
@@ -471,11 +470,11 @@
       }
 
       #deviceDataTable td {
-          text-align: left;
-          border-bottom: 1px solid #eee;
-          font-size: 13px;
-          padding: 12px;
-          vertical-align: middle;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        font-size: 13px;
+        padding: 12px;
+        vertical-align: middle;
       }
 
       #deviceDataTable th,
@@ -500,11 +499,11 @@
       }
 
       .status-cell {
-          display: flex;
-          gap: 4px;
-          align-items: center;
-          justify-content: center;
-          border-radius: 4px;
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
       }
 
       .status-online {
@@ -529,6 +528,19 @@
       }
 
       .view-trip-btn:hover {
+        background-color: #45a049;
+      }
+      .view-live-btn {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        padding: 6px 6px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+      }
+
+      .view-live-btn:hover {
         background-color: #45a049;
       }
 
@@ -605,7 +617,7 @@
         margin-left: 2px;
         display: flex;
         align-items: center;
-        height: 100%; 
+        height: 100%;
       }
 
       .status-indicator {
@@ -693,6 +705,8 @@
                     <th>Hold Time</th>
                     <th>Location</th>
                     <th>View Today's Trip</th>
+                    <th>View Live Tracking</th>
+                    <th>View PLayback</th>
                   </tr>
                 </thead>
                 <tbody id="deviceTableBody">
@@ -919,7 +933,9 @@
       }
 
       async function updateLocationPopup(deviceId, latlang) {
-        const locationCell = document.getElementById(`location-popup-${deviceId}`);
+        const locationCell = document.getElementById(
+          `location-popup-${deviceId}`
+        );
         if (!locationCell) return;
 
         locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
@@ -937,8 +953,10 @@
         try {
           // Check if latlang is valid
           if (!latlang) return "Location not available";
-          
-          const [lat, lng] = latlang.split(",").map(coord => parseFloat(coord));
+
+          const [lat, lng] = latlang
+            .split(",")
+            .map((coord) => parseFloat(coord));
           if (isNaN(lat) || isNaN(lng)) return "Invalid coordinates";
           const response = await fetch(
             `${API}opr=getLoc&lat=${lat}&lang=${lng}`
@@ -1148,7 +1166,11 @@
     }">${device.status}</span> <br/>
     <b>Battery:</b> ${device.battery}V <br/>
     <div style="display: flex; align-items: center; gap: 5px;">
-        <b>Location:</b> <span id="location-popup-${device.deviceId}"><button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" 
+        <b>Location:</b> <span id="location-popup-${
+          device.deviceId
+        }"><button onclick="updateLocationPopup('${device.deviceId}', '${
+          device.latlang
+        }')" 
         style="background: none; 
                border: none; 
                padding: 0;
@@ -1422,26 +1444,51 @@
 
         devices.forEach((device) => {
           const row = document.createElement("tr");
-          const statusClass = device.status === "Online" ? "status-online" : "status-offline";
-          
+          const statusClass =
+            device.status === "Online" ? "status-online" : "status-offline";
+
           row.innerHTML = `
             <td>${device.name}</td>
             <td>${device.date}</td>
-            <td><span class="status-cell ${statusClass}">${device.status}</span></td>
+            <td><span class="status-cell ${statusClass}">${
+            device.status
+          }</span></td>
             <td>${device.battery}V</td>
-            <td><span class="status-cell"><span class="status-indicator-list ${device.ac == "true" ? "status-on" : "status-off"}">${device.ac === "true" ? 'On' : 'Off'}</span></span></td>
-            <td><span class="status-cell"><span class="status-indicator-list ${device.gps === true ? "status-on" : "status-off"}">${device.gps === true ? 'On' : 'Off'}</span></span></td>
-            <td><span class="status-cell"><span class="status-indicator-list ${device.power == "true" ? "status-on" : "status-off"}">${device.power === "true" ? 'On' : 'Off'}</span></span></td>
-            <td><span class="status-cell"><span class="status-indicator-list ${device.ignition == "true" ? "status-on" : "status-off"}">${device.ignition === "true" ? 'On' : 'Off'}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${
+              device.ac == "true" ? "status-on" : "status-off"
+            }">${device.ac === "true" ? "On" : "Off"}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${
+              device.gps === true ? "status-on" : "status-off"
+            }">${device.gps === true ? "On" : "Off"}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${
+              device.power == "true" ? "status-on" : "status-off"
+            }">${device.power === "true" ? "On" : "Off"}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${
+              device.ignition == "true" ? "status-on" : "status-off"
+            }">${device.ignition === "true" ? "On" : "Off"}</span></span></td>
             <td>${device.speed} km/h</td>
             <td>${device.holdtime}</td>
             <td id="location-${device.deviceId}">
-              <button onclick="updateLocation('${device.deviceId}', '${device.latlang}')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 8px;">
+              <button onclick="updateLocation('${device.deviceId}', '${
+            device.latlang
+          }')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 8px;">
                 Get Location
               </button>
             </td>
             <td>
-              <button onclick="viewTodayTrip('${device.name}')" class="view-trip-btn">View Trip</button>
+              <button onclick="viewTodayTrip('${
+                device.name
+              }')" class="view-trip-btn">View Trip</button>
+            </td>
+            <td>
+              <button onclick="viewLiveTracking('${
+                device.name
+              }')" class="view-live-btn">View Live Tracking</button>
+            </td>
+            <td>
+              <button onclick="viewPlaybackTrip('${
+                device.name
+              }')" class="view-live-btn">View Playback</button>
             </td>
           `;
           tableBody.appendChild(row);
@@ -1484,6 +1531,39 @@
 
         // Redirect to playback page with parameters
         window.location.href = `drawableplayback.html?${params.toString()}`;
+      }
+
+      function viewPlaybackTrip(deviceName) {
+        // Get today's date
+        const today = new Date();
+        const startDate = new Date(today);
+        const endDate = new Date(today);
+
+        // Format dates for URL parameters
+        function formatDate(date) {
+          return date.toISOString().split("T")[0];
+        }
+
+        // Construct URL with parameters
+        const params = new URLSearchParams({
+          device: deviceName,
+          from: formatDate(startDate),
+          to: formatDate(endDate),
+        });
+
+        // Redirect to playback page with parameters
+        window.location.href = `playbackola.html?${params.toString()}`;
+      }
+
+
+      function viewLiveTracking(deviceName) {
+        // Construct URL with parameters
+        const params = new URLSearchParams({
+          device: deviceName,
+        });
+
+        // Redirect to playback page with parameters
+        window.location.href = `livetrackingola.html?${params.toString()}`;
       }
 
       async function fetchDistance(deviceId) {
@@ -1645,9 +1725,7 @@
     box-shadow: 0 0 5px rgba(0,0,0,0.3);
     cursor: pointer;
   `;
-}
-
-
+      }
     </script>
   </body>
 </html>

@@ -682,7 +682,7 @@
 
     function fetchDeviceData() {
       const mid = localStorage.getItem("mid");
-      fetch(`${API}opr=getVehileByMid&mid=${mid}`)
+      fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
         .then((response) => response.json())
         .then((data) => {
           devices = data.map((item) => ({
@@ -959,6 +959,39 @@ myMap.on('drag', () => {
       }
     }
 
+    async function updateLocationPopup(deviceId, latlang) {
+        const locationCell = document.getElementById(`location-popup-${deviceId}`);
+        if (!locationCell) return;
+
+        locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
+
+        try {
+          const location = await fetchLocation(latlang);
+          locationCell.innerHTML = location;
+        } catch (error) {
+          console.error("Error updating location:", error);
+          locationCell.innerHTML = "Error fetching location";
+        }
+      }
+
+      async function fetchLocation(latlang) {
+        try {
+          // Check if latlang is valid
+          if (!latlang) return "Location not available";
+          
+          const [lat, lng] = latlang.split(",").map(coord => parseFloat(coord));
+          if (isNaN(lat) || isNaN(lng)) return "Invalid coordinates";
+          const response = await fetch(
+            `${API}opr=getLoc&lat=${lat}&lang=${lng}`
+          );
+          const data = await response.json();
+          return data[0].location || "Location not available";
+        } catch (error) {
+          console.error("Error fetching location:", error);
+          return "Error fetching location";
+        }
+      }
+
     function showVehicleInfo(vehicleData, showPopup = false) {
       if (!vehicleData || vehicleData.length === 0) return;
 
@@ -983,9 +1016,20 @@ myMap.on('drag', () => {
                         ${data.power === "true" ? "ON" : "OFF"}
                     </span><br/>
                     <b>Date-Time:</b> ${data.ddate}<br/>
-                    <b>Location:</b> ${data.location || "Not available"}
-                </div>
-            `;
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                      <b>Location:</b> <span id="location-popup-${data.deviceId}"><button
+                          onclick="updateLocationPopup('${data.deviceId}', '${data.latlang}')" style="background: none; 
+               border: none; 
+               padding: 0;
+               color: #3498db; 
+               text-decoration: underline;
+               cursor: pointer;
+               font-size: 11px;">
+                          Get Location
+                        </button></span>
+                    </div>
+                    </div>
+                    `;
 
       if (showPopup) {
         popup.style.display = "block";
@@ -1148,6 +1192,37 @@ myMap.on('drag', () => {
       }
 
     });
+
+    document.addEventListener('DOMContentLoaded', function() {
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const deviceName = urlParams.get('device');
+    const trackButton = document.getElementById('trackButton');
+    
+    if (deviceName) {
+
+        // Wait for the vehicle list to be populated
+        const checkVehicleList = setInterval(() => {
+            const vehicleList = document.getElementById('vehicleList');
+            if (vehicleList && vehicleList.children.length > 0) {
+                clearInterval(checkVehicleList);
+                
+                // Find and click the matching device in the list
+                const deviceElements = vehicleList.querySelectorAll('.dropdown-item');
+                for (const element of deviceElements) {
+                    if (element.textContent.trim() === deviceName) {
+                        element.click();
+                        trackButton.click();
+                        break;
+                    }
+                }
+            }
+        }, 100);
+        
+        // Add a timeout to prevent infinite checking
+        setTimeout(() => clearInterval(checkVehicleList), 10000);
+    }
+});
   </script>
 </body>
 
