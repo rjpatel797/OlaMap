@@ -131,6 +131,32 @@
       box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
     }
 
+    .datetime-wrapper {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.date-input input[type="time"] {
+    padding: 5px 8px;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #2c3e50;
+    background-color: white;
+    cursor: pointer;
+    outline: none;
+    height: 31px;
+}
+
+.date-input input[type="time"]:hover {
+    background-color: #f8f9fa;
+}
+
+.date-input input[type="time"]:focus {
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+}
+
     .device-selector select {
       padding: 5px 25px 5px 10px;
       font-size: 13px;
@@ -885,12 +911,18 @@
         <div class="datetime-selector">
           <div class="date-input">
             <label>From:</label>
-            <input type="date" id="fromDate" placeholder="dd/mm/yyyy" />
-          </div>
-          <div class="date-input">
+            <div class="datetime-wrapper">
+                <input type="date" id="fromDate" placeholder="dd/mm/yyyy" />
+                <input type="time" id="fromTime" value="00:00" />
+            </div>
+        </div>
+        <div class="date-input">
             <label>To:</label>
-            <input type="date" id="toDate" placeholder="dd/mm/yyyy" />
-          </div>
+            <div class="datetime-wrapper">
+                <input type="date" id="toDate" placeholder="dd/mm/yyyy" />
+                <input type="time" id="toTime" value="23:59" />
+            </div>
+        </div>
           <div class="device-selector">
             <div class="dropdown-container">
               <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
@@ -1107,6 +1139,10 @@
       }
     }
 
+    function formatTime(timeString) {
+    return timeString.replace(':', '') + '00';
+}
+
     function fetchPlaybackData(did) {
       stopPlayback();
       console.log("Fetching playback data...");
@@ -1115,8 +1151,9 @@
 
       // Get values from date inputs
       const fromDate = document.getElementById("fromDate").value;
-      const toDate = document.getElementById("toDate").value;
-
+    const toDate = document.getElementById("toDate").value;
+    const fromTime = document.getElementById("fromTime").value || "00:00";
+    const toTime = document.getElementById("toTime").value || "23:59";
       // Validate dates
       if (!fromDate || !toDate) {
         alert("Please select both From and To dates");
@@ -1126,8 +1163,8 @@
       }
 
       // Format dates to match your API requirement
-      const formattedFromDate = formatDate(fromDate);
-      const formattedToDate = formatDate(toDate);
+      const formattedFromDateTime = `${formatDate(fromDate)}${formatTime(fromTime)}`;
+      const formattedToDateTime = `${formatDate(toDate)}${formatTime(toTime)}`;
 
       // Validate date range
       if (new Date(toDate) < new Date(fromDate)) {
@@ -1138,7 +1175,7 @@
       }
 
       return fetch(
-        `${API}opr=getplaybacktest&sdate=${formattedFromDate}&edate=${formattedToDate}&did=${did}`
+        `${API}opr=getplaybacktest&sdate=${formattedFromDateTime}&edate=${formattedToDateTime}&did=${did}`
       )
         .then((response) => response.json())
         .then((data) => {
@@ -1892,19 +1929,15 @@
 
     function setupDateValidation() {
       const fromDateInput = document.getElementById('fromDate');
-      const toDateInput = document.getElementById('toDate');
-
+    const toDateInput = document.getElementById('toDate');
+    const fromTimeInput = document.getElementById('fromTime');
+    const toTimeInput = document.getElementById('toTime');
       // Get current date in YYYY-MM-DD format
-      function getCurrentDate() {
-        const today = new Date();
-        const dd = String(today.getDate()).padStart(2, '0');
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const yyyy = today.getFullYear();
-        return `${yyyy}-${mm}-${dd}`;
-      }
-
-      // Set default values and max dates
       const currentDate = getCurrentDate();
+    fromDateInput.value = currentDate;
+    toDateInput.value = currentDate;
+    fromTimeInput.value = "00:00";
+    toTimeInput.value = "23:59";
 
       // Force set the values
       fromDateInput.value = currentDate;
@@ -1913,6 +1946,21 @@
       // Set max attribute
       fromDateInput.max = currentDate;
       toDateInput.max = currentDate;
+
+      function validateTimes() {
+        if (fromDateInput.value === toDateInput.value) {
+            const fromTime = fromTimeInput.value;
+            const toTime = toTimeInput.value;
+            
+            if (fromTime > toTime) {
+                alert('Start time cannot be after end time on the same day');
+                toTimeInput.value = fromTime;
+            }
+        }
+    }
+
+    fromTimeInput.addEventListener('change', validateTimes);
+    toTimeInput.addEventListener('change', validateTimes);
 
       // Validate From Date
       fromDateInput.addEventListener('input', function () {
@@ -1958,6 +2006,51 @@
         fromDateInput.max = this.value;
       });
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const deviceName = urlParams.get('device');
+    const fromDate = urlParams.get('from');
+    const toDate = urlParams.get('to');
+    const fromTime = urlParams.get('fromTime') || "00:00";
+    const toTime = urlParams.get('toTime') || "23:59";
+
+    const start = document.getElementById("startPlayback")    
+    if (deviceName && fromDate && toDate) {
+      document.getElementById('fromDate').value = fromDate;
+        document.getElementById('toDate').value = toDate;
+        document.getElementById('fromTime').value = fromTime;
+        document.getElementById('toTime').value = toTime;
+
+      const dateInputs = document.querySelectorAll('.date-input input');
+                    if (dateInputs.length >= 2) {
+                        dateInputs[0].value = fromDate;
+                        dateInputs[1].value = toDate;
+                    }
+        // Wait for the vehicle list to be populated
+        const checkVehicleList = setInterval(() => {
+            const vehicleList = document.getElementById('vehicleList');
+            if (vehicleList && vehicleList.children.length > 0) {
+                clearInterval(checkVehicleList);
+                
+                // Find and click the matching device in the list
+                const deviceElements = vehicleList.querySelectorAll('.dropdown-item');
+                for (const element of deviceElements) {
+                    if (element.textContent.trim() === deviceName) {
+                        element.click();
+                        break;
+                    }
+                }
+                // Click the start button after all the things are added
+                fetchPlaybackData(deviceName).then(() => start.click());
+            }
+        }, 100);
+        
+        // Add a timeout to prevent infinite checking
+        setTimeout(() => clearInterval(checkVehicleList), 10000);
+    }
+});
 
 
     $(document).ready(function () {

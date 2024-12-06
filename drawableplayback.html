@@ -127,6 +127,32 @@
         box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
       }
 
+
+      .datetime-wrapper {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.date-input input[type="time"] {
+    padding: 5px 8px;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #2c3e50;
+    background-color: white;
+    cursor: pointer;
+    outline: none;
+}
+
+.date-input input[type="time"]:hover {
+    background-color: #f8f9fa;
+}
+
+.date-input input[type="time"]:focus {
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+}
+
       .device-selector select {
         padding: 5px 25px 5px 10px;
         font-size: 13px;
@@ -675,12 +701,18 @@
           <div class="datetime-selector">
             <div class="date-input">
               <label>From:</label>
-              <input type="date" id="fromDate" placeholder="dd/mm/yyyy" />
-            </div>
-            <div class="date-input">
+              <div class="datetime-wrapper">
+                  <input type="date" id="fromDate" placeholder="dd/mm/yyyy" />
+                  <input type="time" id="fromTime" value="00:00" />
+              </div>
+          </div>
+          <div class="date-input">
               <label>To:</label>
-              <input type="date" id="toDate" placeholder="dd/mm/yyyy" />
-            </div>
+              <div class="datetime-wrapper">
+                  <input type="date" id="toDate" placeholder="dd/mm/yyyy" />
+                  <input type="time" id="toTime" value="23:59" />
+              </div>
+          </div>
             <div class="device-selector">
               <div class="dropdown-container">
                 <!-- Dropdown Button (Selected Vehicle) -->
@@ -995,7 +1027,9 @@
 
       // Rest of your JavaScript functions (fetchPlaybackData, createPopupContent, etc.)
       // [Previous JavaScript code for playback controls and functionality remains the same]
-
+      function formatTime(timeString) {
+    return timeString.replace(':', '') + '00';
+}
       // Function to fetch playback data from the API
       function fetchPlaybackData(did) {
         console.log("did.........." + did);
@@ -1005,22 +1039,23 @@
         }
 
         const fromDate = document.getElementById("fromDate").value;
-        const toDate = document.getElementById("toDate").value;
-
+    const toDate = document.getElementById("toDate").value;
+    const fromTime = document.getElementById("fromTime").value;
+    const toTime = document.getElementById("toTime").value;
         if (!fromDate || !toDate) {
           alert("Please select both From and To dates");
           return Promise.reject("Date selection required");
         }
 
-        const formattedFromDate = formatDate(fromDate);
-        const formattedToDate = formatDate(toDate);
+        const formattedFromDateTime = `${formatDate(fromDate)}${formatTime(fromTime)}`;
+    const formattedToDateTime = `${formatDate(toDate)}${formatTime(toTime)}`;
 
         console.log(
-          `Fetching data for device ${did} from ${formattedFromDate} to ${formattedToDate}`
+          `Fetching data for device ${did} from ${formattedFromDateTime} to ${formattedToDateTime}`
         );
 
         return fetch(
-          `${API}opr=getplaybacktest&sdate=${formattedFromDate}&edate=${formattedToDate}&did=${did}`
+          `${API}opr=getplaybacktest&sdate=${formattedFromDateTime}&edate=${formattedToDateTime}&did=${did}`
         )
           .then((response) => response.json())
           .then((data) => {
@@ -1477,19 +1512,15 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
       function setupDateValidation() {
         const fromDateInput = document.getElementById('fromDate');
-        const toDateInput = document.getElementById('toDate');
-
+    const toDateInput = document.getElementById('toDate');
+    const fromTimeInput = document.getElementById('fromTime');
+    const toTimeInput = document.getElementById('toTime');
         // Get current date in YYYY-MM-DD format
-        function getCurrentDate() {
-            const today = new Date();
-            const dd = String(today.getDate()).padStart(2, '0');
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const yyyy = today.getFullYear();
-            return `${yyyy}-${mm}-${dd}`;
-        }
-
-        // Set default values and max dates
         const currentDate = getCurrentDate();
+    fromDateInput.value = currentDate;
+    toDateInput.value = currentDate;
+    fromTimeInput.value = '00:00';
+    toTimeInput.value = '23:59';  
         
         // Force set the values
         fromDateInput.value = currentDate;
@@ -1498,6 +1529,21 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
         // Set max attribute
         fromDateInput.max = currentDate;
         toDateInput.max = currentDate;
+
+        function validateTimes() {
+        if (fromDateInput.value === toDateInput.value) {
+            const fromTime = fromTimeInput.value;
+            const toTime = toTimeInput.value;
+            
+            if (fromTime > toTime) {
+                alert('From time cannot be after To time on the same day');
+                toTimeInput.value = fromTime;
+            }
+        }
+    }
+
+    fromTimeInput.addEventListener('change', validateTimes);
+    toTimeInput.addEventListener('change', validateTimes);
 
         // Validate From Date
         fromDateInput.addEventListener('input', function() {
@@ -1587,12 +1633,15 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     const toDate = urlParams.get('to');
     
     if (deviceName && fromDate && toDate) {
-
-      const dateInputs = document.querySelectorAll('.date-input input');
-                    if (dateInputs.length >= 2) {
-                        dateInputs[0].value = fromDate;
-                        dateInputs[1].value = toDate;
-                    }
+        const dateInputs = document.querySelectorAll('.date-input input[type="date"]');
+        const timeInputs = document.querySelectorAll('.date-input input[type="time"]');
+        
+        if (dateInputs.length >= 2) {
+            dateInputs[0].value = fromDate;
+            dateInputs[1].value = toDate;
+            timeInputs[0].value = '00:00';
+            timeInputs[1].value = '23:59';
+        }
         // Wait for the vehicle list to be populated
         const checkVehicleList = setInterval(() => {
             const vehicleList = document.getElementById('vehicleList');
