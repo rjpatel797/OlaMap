@@ -1007,6 +1007,7 @@
                 angle: parseFloat(item.angle) || 0,
                 status: status,
                 date: item.ddate,
+                dateNew: item.ddatenew,
                 // location: item.location,
                 holdtime: formatHoldTime(parseInt(item.holdtime)),
                 battery: item.Battery,
@@ -1157,7 +1158,7 @@
 
         popupContent.innerHTML = `
     <b>Date:</b> ${
-      device.date
+      device.dateNew
     } <span style="color: #666; font-size: 12px;">(${timeAgo})</span><br/>
     <b>Speed:</b> ${device.speed} km/h <br/>
     <b>Hold Time:</b> ${device.holdtime} <br/>
@@ -1449,7 +1450,7 @@
 
           row.innerHTML = `
             <td>${device.name}</td>
-            <td>${device.date}</td>
+            <td>${device.dateNew}</td>
             <td><span class="status-cell ${statusClass}">${
             device.status
           }</span></td>
