@@ -699,34 +699,86 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      margin: 0px 0;
-      padding: 5px;
+      background: linear-gradient(145deg, #1e242c, #1a1f25);
+      padding: 12px 15px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      width: fit-content;
+      color: #e6edf3;
+      font-size: 13px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
-    .speed-threshold-container label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: normal;
-      color: white;
-      font-size: 13px;
+    .icon-speedometer {
+      display: inline-flex;
+      width: 32px;
+      height: 32px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2.5"/><path d="M3.34 19.66A10 10 0 1 0 19.66 3.34"/></svg>') no-repeat center center;
+      background-size: 18px;
+      background-color: #3b82f6;
+      border-radius: 8px;
+      padding: 6px;
+      transition: all 0.3s ease;
     }
 
     .speed-dropdown {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 13px;
+      padding: 8px 35px 8px 12px;
       width: 120px;
-      padding: 5px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background-color: white;
-      font-size: 12px;
+      appearance: none;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(8px);
+      background: linear-gradient(145deg, rgba(29, 36, 44, 0.8), rgba(25, 31, 37, 0.8));
+    }
+
+    .speed-dropdown::after {
+      content: '';
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      width: 10px;
+      height: 10px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>') no-repeat;
+      background-size: contain;
+      transform: translateY(-50%);
+      pointer-events: none;
     }
 
     .speed-dropdown:hover {
-      border-color: #888;
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(59, 130, 246, 0.5);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     .speed-dropdown:focus {
       outline: none;
-      border-color: #4a90e2;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+
+    .speed-dropdown option {
+      background-color: #1a1f25;
+      color: #fff;
+      padding: 10px;
+    }
+
+    /* Firefox specific styles */
+    .speed-dropdown {
+      -moz-appearance: none;
+      text-indent: 0.01px;
+      text-overflow: '';
+    }
+
+    /* Edge specific styles */
+    .speed-dropdown::-ms-expand {
+      display: none;
     }
 
     /* Add these styles to your existing CSS */
@@ -756,6 +808,54 @@
       border-left: 5px solid transparent;
       border-right: 5px solid transparent;
       border-top: 5px solid white;
+    }
+
+    /* pop-up display righ-side*/
+    .vehicle-info-popup {
+      position: fixed;
+      top: 200px;
+      right: 20px;
+      background: white;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      width: 250px;
+      z-index: 9999;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      align-items: center;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      color: #555;
+      font-weight: bold;
+    }
+
+    .info-value {
+      color: #333;
+    }
+
+    /* New styles for metric values */
+    .info-value.metric {
+      background-color: #f1f5f9;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.95em;
+    }
+
+    /* Keep date-time clean without background */
+    #dateTimeDisplay {
+      white-space: nowrap;
+      /* Keeps date and time on same line */
     }
   </style>
 </head>
@@ -803,22 +903,23 @@
 
         <!-- Add this inside your controls section, near other controls -->
         <div class="speed-threshold-container">
-          <label for="overSpeedingThreshold">Over Speeding:</label>
+          <i class="icon-speedometer"></i>
+          Over Speeding:
           <select id="overSpeedingThreshold" class="speed-dropdown">
-            <option value="30">>30 KM/H</option>
-            <option value="40">>40 KM/H</option>
-            <option value="45">>45 KM/H</option>
-            <option value="50">>50 KM/H</option>
-            <option value="60">>60 KM/H</option>
-            <option value="65">>65 KM/H</option>
-            <option value="70">>70 KM/H</option>
-            <option value="75">>75 KM/H</option>
-            <option value="80">>80 KM/H</option>
-            <option value="85">>85 KM/H</option>
-            <option value="90">>90 KM/H</option>
-            <option value="95">>95 KM/H</option>
-            <option value="100">>100 KM/H</option>
-            <option value="120">>120 KM/H</option>
+            <option value="30">30 KM/H</option>
+            <option value="40">40 KM/H</option>
+            <option value="45">45 KM/H</option>
+            <option value="50">50 KM/H</option>
+            <option value="60">60 KM/H</option>
+            <option value="65">65 KM/H</option>
+            <option value="70">70 KM/H</option>
+            <option value="75">75 KM/H</option>
+            <option value="80">80 KM/H</option>
+            <option value="85">85 KM/H</option>
+            <option value="90">90 KM/H</option>
+            <option value="95">95 KM/H</option>
+            <option value="100">100 KM/H</option>
+            <option value="120">120 KM/H</option>
           </select>
         </div>
 
@@ -838,6 +939,21 @@
 
       <div id="polylinePopup" class="polyline-popup">
         <div id="polylinePopupContent"></div>
+      </div>
+    </div>
+
+    <div id="vehicleInfoPopup" class="vehicle-info-popup">
+      <div class="info-row">
+        <span class="info-label">Speed:</span>
+        <span class="info-value metric" id="speedDisplay">0 km/h</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Date-Time:</span>
+        <span class="info-value" id="dateTimeDisplay">--</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Distance:</span>
+        <span class="info-value metric" id="distanceDisplay">0 km</span>
       </div>
     </div>
   </div>
@@ -914,20 +1030,20 @@
       });
     }
 
-      function fetchDeviceData() {
-        const mid = localStorage.getItem("mid");
-        fetch(`${API}opr=getVehileByMid&mid=${mid}`)
-          .then((response) => response.json())
-          .then((data) => {
-            devices = data.map((item) => ({
-              name: item.dname,
-              did: item.did,
-            }));
-            populateVehicleList(devices);
-            deviceData = devices;
-          })
-          .catch((error) => console.error("Error fetching devices:", error));
-      }
+    function fetchDeviceData() {
+      const mid = localStorage.getItem("mid");
+      fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+        .then((response) => response.json())
+        .then((data) => {
+          devices = data.map((item) => ({
+            name: item.dname,
+            did: item.did,
+          }));
+          populateVehicleList(devices);
+          deviceData = devices;
+        })
+        .catch((error) => console.error("Error fetching devices:", error));
+    }
 
     document.addEventListener("click", function (event) {
       const dropdown = document.getElementById("deviceDropdown");
@@ -1005,45 +1121,60 @@
         return;
       }
 
-        return fetch(
-          `${API}getandrojsonfortts.jsp?opr=getplaybacktest&sdate=${formattedFromDate}&edate=${formattedToDate}&did=${did}`
-        )
-          .then((response) => response.json())
-          .then((data) => {
-            if (Array.isArray(data)) {
-              playbackData = data
-                .map((item) => {
-                  const lng = parseFloat(item.langitude);
-                  const lat = parseFloat(item.latitude);
-                  const angle = parseFloat(item.angle);
-                  return !isNaN(lng) && !isNaN(lat) && !isNaN(angle)
-                    ? {
-                        coordinates: [lng, lat],
-                        angle: angle,
-                        deviceId: item.deviceId,
-                        speed: item.speed,
-                        gps: item.digital_2,
-                        engine: item.digital_2,
-                        date: item.DeviceDate,
-                      }
-                    : null;
-                })
-                .filter(Boolean);
-                fetching = false;
-        updateStartButtonState();
-              console.log("Playback Data Loaded:", playbackData);
-            } else {
-              fetching = false;
-        updateStartButtonState();
-              console.error("Unexpected data format: response is not an array");
-            }
-          })
-          .catch((error) => {
+      return fetch(
+        `${API}opr=getplaybacktest&sdate=${formattedFromDate}&edate=${formattedToDate}&did=${did}`
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            playbackData = data
+              .map((item) => {
+                const lng = parseFloat(item.langitude);
+                const lat = parseFloat(item.latitude);
+                const angle = parseFloat(item.angle);
+                return !isNaN(lng) && !isNaN(lat) && !isNaN(angle)
+                  ? {
+                    coordinates: [lng, lat],
+                    angle: angle,
+                    deviceId: item.deviceId,
+                    speed: item.speed,
+                    gps: item.digital_2,
+                    engine: item.digital_2,
+                    date: item.DeviceDate,
+                  }
+                  : null;
+              })
+              .filter(Boolean);
             fetching = false;
-        updateStartButtonState();
-            console.error("Error fetching playback data:", error);
-          });
-      }
+            updateStartButtonState();
+            console.log("Playback Data Loaded:", playbackData);
+          } else {
+            fetching = false;
+            updateStartButtonState();
+            console.error("Unexpected data format: response is not an array");
+          }
+        })
+        .catch((error) => {
+          fetching = false;
+          updateStartButtonState();
+          console.error("Error fetching playback data:", error);
+        });
+    }
+
+    //right-side set pop-up
+    function updateVehicleInfo(data, totalDistance) {
+      // Update speed
+      document.getElementById('speedDisplay').textContent = `${Math.round(data.speed)} km/h`;
+
+      // Update date-time - format to show in single line
+      const dateTime = data.date.split(".")[0];
+      const [date, time] = dateTime.split(" ");
+      document.getElementById('dateTimeDisplay').textContent = `${date} ${time}`;
+
+      // Update distance
+      document.getElementById('distanceDisplay').textContent = `${totalDistance.toFixed(2)} km`;
+    }
+
 
     // Helper function to format date as YYYY-MM-DD
     function formatDate(dateString) {
@@ -1559,6 +1690,7 @@
           isPopupClosedManually = false;
           const cumulativeDistance = calculateCumulativeDistance(index);
           const content = createPopupContent(playbackData[index], cumulativeDistance);
+          const content1 = updateVehicleInfo(playbackData[index], cumulativeDistance);
           showPopup(content, playbackData[index].coordinates);
         });
       }
@@ -1583,6 +1715,7 @@
           const cumulativeDistance = calculateCumulativeDistance(index);
 
           const content = createPopupContent(playbackData[index], cumulativeDistance);
+          const content1 = updateVehicleInfo(playbackData[index], cumulativeDistance);
           showPopup(content);
 
           index++;
