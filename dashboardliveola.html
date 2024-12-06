@@ -21,7 +21,8 @@
         box-sizing: border-box;
       }
 
-      body, html {
+      body,
+      html {
         height: 100%;
         font-family: Arial, sans-serif;
       }
@@ -57,7 +58,7 @@
         overflow-y: auto;
       }
 
-      .nav-item{
+      .nav-item {
         position: relative;
         display: flex;
         padding: 8px 15px;
@@ -68,7 +69,7 @@
         align-items: baseline;
       }
 
-      .welcome-text{
+      .welcome-text {
         display: none;
       }
 
@@ -95,16 +96,16 @@
         border: 1px solid #ccc;
       }
       .deviceItem {
-          display: flex;
-          align-items: center;
-          cursor: pointer;
-          padding: 8px;
-          margin: 5px 0;
-          background-color: #e6e6e6;
-          border-radius: 4px;
-          text-align: left;
-          font-size: 14px;
-          min-height: 40px; /* Ensure consistent height for all items */
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 8px;
+        margin: 5px 0;
+        background-color: #e6e6e6;
+        border-radius: 4px;
+        text-align: left;
+        font-size: 14px;
+        min-height: 40px; /* Ensure consistent height for all items */
       }
       .deviceItem:hover {
         background-color: #d4d4d4;
@@ -126,63 +127,63 @@
         height: 100%;
       }
       .refreshDropdown {
-          position: absolute;
-          top: 10px;
-          right: 10px;
-          z-index: 1000;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
       }
 
       .refreshDropdown select {
-          padding: 8px 12px;
-          font-size: 13px;
-          color: #2c3e50;
-          background-color: #fff;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          appearance: none;
-          -webkit-appearance: none;
-          -moz-appearance: none;
-          padding-right: 30px;
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          transition: all 0.3s ease;
-          min-width: 160px;
+        padding: 8px 12px;
+        font-size: 13px;
+        color: #2c3e50;
+        background-color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        padding-right: 30px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        transition: all 0.3s ease;
+        min-width: 160px;
       }
 
       /* Custom dropdown arrow */
       .refreshDropdown::after {
-          content: '▼';
-          font-size: 10px;
-          color: #2c3e50;
-          position: absolute;
-          right: 12px;
-          top: 50%;
-          transform: translateY(-50%);
-          pointer-events: none;
+        content: "▼";
+        font-size: 10px;
+        color: #2c3e50;
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
       }
 
       /* Hover and focus states */
       .refreshDropdown select:hover {
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-          background-color: #f8f9fa;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        background-color: #f8f9fa;
       }
 
       .refreshDropdown select:focus {
-          outline: none;
-          box-shadow: 0 0 0 2px #3498db40;
+        outline: none;
+        box-shadow: 0 0 0 2px #3498db40;
       }
 
       /* Option styling */
       .refreshDropdown select option {
-          padding: 10px;
-          background-color: white;
-          color: #2c3e50;
-          font-size: 13px;
+        padding: 10px;
+        background-color: white;
+        color: #2c3e50;
+        font-size: 13px;
       }
 
       .refreshDropdown select option:hover {
-          background-color: #f8f9fa;
+        background-color: #f8f9fa;
       }
       .customMarkerClass {
         height: 40px;
@@ -198,32 +199,32 @@
 
       /* Popup styling for vehicle details */
       #customPopup {
-          position: absolute;
-          background: #fff;
-          padding: 15px 20px;
-          border: none;
-          border-radius: 8px;
-          box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
-          display: none;
-          z-index: 1000;
-          min-width: 280px;
-          text-align: left;
-          transform: translate(-50%, -100%);
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          margin-top: 10px;
+        position: absolute;
+        background: #fff;
+        padding: 15px 20px;
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
+        display: none;
+        z-index: 1000;
+        min-width: 280px;
+        text-align: left;
+        transform: translate(-50%, -100%);
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin-top: 10px;
       }
 
       #popupContent {
-          line-height: 1.8;
-          color: #2c3e50;
-          font-size: 13px;
+        line-height: 1.8;
+        color: #2c3e50;
+        font-size: 13px;
       }
 
       #popupContent b {
-          color: #34495e;
-          width: 100px;
-          display: inline-block;
-          font-weight: 600;
+        color: #34495e;
+        width: 100px;
+        display: inline-block;
+        font-weight: 600;
       }
 
       .popup {
@@ -241,80 +242,110 @@
       }
       /* Close button */
       .popup .close-btn {
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          cursor: pointer;
-          color: #95a5a6;
-          font-size: 16px;
-          transition: color 0.2s ease;
-          width: 20px;
-          height: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 50%;
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        cursor: pointer;
+        color: #95a5a6;
+        font-size: 16px;
+        transition: color 0.2s ease;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
       }
 
       .popup .close-btn:hover {
-          color: #34495e;
-          background: #f5f6f7;
+        color: #34495e;
+        background: #f5f6f7;
       }
 
       /* Arrow indicator */
       .popup::after {
-          content: "";
-          position: absolute;
-          bottom: -8px;
-          left: 50%;
-          transform: translateX(-50%);
-          border-left: 8px solid transparent;
-          border-right: 8px solid transparent;
-          border-top: 8px solid #fff;
-          filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
+        content: "";
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-top: 8px solid #fff;
+        filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
       }
       .popup-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 10px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid #eee;
-        }
+        font-size: 16px;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #eee;
+      }
 
       /* Status indicators */
       .status-indicator {
-          display: inline-block;
-          padding: 2px 8px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 500;
-          margin-left: 5px;
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-left: 5px;
       }
+
       .status-indicator-status {
-          display: inline-block;
-          padding: .2px 5px;
+        display: inline-block;
+        padding: 0.2px 5px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+      .status-indicator-list {
+          padding: 4px 8px;
           border-radius: 4px;
           font-size: 12px;
           font-weight: 500;
+          min-width: 45px;
+          text-align: center;
+      }
+
+      #deviceDataTable td:nth-child(4),  /* Battery */
+      #deviceDataTable td:nth-child(5),  /* Ac */
+      #deviceDataTable td:nth-child(6),  /* Gps */
+      #deviceDataTable td:nth-child(7),  /* Power */
+      #deviceDataTable td:nth-child(8)   /* Ignition */ {
+        text-align: center;
+        padding: 8px 4px;
+        min-width: 60px;
+      }
+
+      #deviceDataTable td:nth-child(3) {
+        min-width: 80px;
+      }
+
+      /* Make table cells non-wrapping */
+      #deviceDataTable td > div {
+        display: inline-block;
       }
 
       .status-on {
-          background-color: #2ecc71;
-          color: white;
+        background-color: #2ecc71;
+        color: white;
       }
 
       .status-off {
-          background-color: #e74c3c;
-          color: white;
+        background-color: #e74c3c;
+        color: white;
       }
 
       .car-emoji {
-          display: inline-block;
-          font-size: 1.25rem;
+        display: inline-block;
+        font-size: 1.25rem;
       }
 
       /* status box css */
+
+
       .status-box {
         position: absolute;
         top: 5px;
@@ -327,9 +358,9 @@
         display: flex;
         gap: 15px;
         font-size: 14px;
-    }
+      }
 
-    .status-count {
+      .status-count {
         font-weight: bold;
         color: #f8f9fa;
         background-color: #2c3e50;
@@ -338,248 +369,263 @@
         min-width: 24px;
         text-align: center;
         transition: transform 0.3s ease;
-    }
+      }
 
-    .status-count.updating {
+      .status-count.updating {
         transform: scale(1.2);
         background-color: #34495e;
-    }
+      }
 
       .status-icon {
-          width: 20px;
-          height: 20px;
-          object-fit: contain;
-          vertical-align: middle;
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+        vertical-align: middle;
       }
 
       .status-icon[src*="green.png"] {
-          width: 30px;
-          height: 30px;
+        width: 30px;
+        height: 30px;
       }
 
       .status-item {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          min-height: 30px; /* Ensure consistent height */
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        min-height: 30px; /* Ensure consistent height */
       }
-
 
       /* Button Styles */
       .viewAllBtn {
-          position: absolute;
-          top: 7.5px;
-          right: 350px;
-          z-index: 1000;
+        position: absolute;
+        top: 7.5px;
+        right: 350px;
+        z-index: 1000;
       }
 
       .table-btn {
-          padding: 8px 16px;
-          background-color: #fff;
-          border: none;
-          border-radius: 6px;
-          color: #2c3e50;
-          font-size: 13px;
-          cursor: pointer;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          transition: all 0.3s ease;
+        padding: 8px 16px;
+        background-color: #fff;
+        border: none;
+        border-radius: 6px;
+        color: #2c3e50;
+        font-size: 13px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
       }
 
       .table-btn:hover {
-          background-color: #f8f9fa;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        background-color: #f8f9fa;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       }
 
       /* Table Popup Styles */
       .table-popup {
-          display: none;
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background-color: rgba(0, 0, 0, 0.5);
-          z-index: 2000;
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 2000;
       }
 
       .table-popup-content {
-          position: relative;
-          background-color: white;
-          margin: 50px auto;
-          padding: 20px;
-          width: 90%;
-          max-width: 1200px;
-          max-height: 80vh;
-          border-radius: 8px;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        position: relative;
+        background-color: white;
+        margin: 50px auto;
+        padding: 20px;
+        width: 90%;
+        max-width: 1200px;
+        max-height: 80vh;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
       }
 
       .table-close-btn {
-          position: absolute;
-          top: 10px;
-          right: 10px;
-          font-size: 24px;
-          cursor: pointer;
-          color: #666;
-          transition: color 0.3s ease;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+        transition: color 0.3s ease;
       }
 
       .table-close-btn:hover {
-          color: #333;
+        color: #333;
       }
 
       .table-container {
-          margin-top: 20px;
-          overflow-x: auto;
-          max-height: calc(80vh - 100px);
+        margin-top: 20px;
+        overflow-x: auto;
+        max-height: calc(80vh - 100px);
       }
 
       #deviceDataTable {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 10px;
-          background-color: white;
+        width: 100%;
+        border-collapse: collapse; /* This removes spacing between cells */
+        background-color: white;
+      }
+
+      #deviceDataTable td {
+          text-align: left;
+          border-bottom: 1px solid #eee;
+          font-size: 13px;
+          padding: 12px;
+          vertical-align: middle;
       }
 
       #deviceDataTable th,
       #deviceDataTable td {
-          padding: 12px;
-          text-align: left;
-          border-bottom: 1px solid #eee;
-          font-size: 13px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        font-size: 13px;
       }
 
       #deviceDataTable th {
-          background-color: #f8f9fa;
-          font-weight: 600;
-          color: #2c3e50;
-          position: sticky;
-          top: 0;
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: #2c3e50;
+        position: sticky;
+        top: 0;
+        text-align: center;
+        padding: 10px;
       }
 
       #deviceDataTable tr:hover {
-          background-color: #f8f9fa;
+        background-color: #f8f9fa;
       }
 
       .status-cell {
-          display: inline-block;
-          padding: 4px 8px;
-          border-radius: 12px;
-          font-size: 12px;
+          display: flex;
+          gap: 4px;
+          align-items: center;
+          justify-content: center;
+          border-radius: 4px;
       }
 
       .status-online {
-          background-color: #4ade80;
-          color: #14532d;
+        background-color: #4ade80;
+        color: #14532d;
       }
 
       .status-offline {
-          background-color: #f87171;
-          color: #7f1d1d;
+        background-color: #f87171;
+        color: #7f1d1d;
       }
 
       /* Add these styles to your CSS */
-.view-trip-btn {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-}
+      .view-trip-btn {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
 
-.view-trip-btn:hover {
-    background-color: #45a049;
-}
+      .view-trip-btn:hover {
+        background-color: #45a049;
+      }
 
-/* Ensure the table column has enough width */
-.table-container table th:last-child,
-.table-container table td:last-child {
-    min-width: 120px;
-    text-align: center;
-}
+      /* Ensure the table column has enough width */
+      .table-container table th:last-child,
+      .table-container table td:last-child {
+        min-width: 120px;
+        text-align: center;
+      }
 
-.button-two{
-  display: flex;
-}
+      .button-two {
+        display: flex;
+      }
 
-.distance-btn, .nearby-btn {
-    padding: 4px 8px;
-    font-size: 11px;
-    min-width: 60px;
-}
+      .distance-btn,
+      .nearby-btn {
+        padding: 4px 8px;
+        font-size: 11px;
+        min-width: 60px;
+      }
 
-#distance-value {
-    display: inline-block;
-}
-
-.distance-btn {
-    margin-top: 10px;
-    padding: 6px 12px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    transition: background-color 0.3s;
-}
-
-.distance-btn:hover {
-    background-color: #45a049;
-}
-
-#distance-value {
-    min-width: 60px;
-}
-
-.button-container {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-}
-
-.nearby-btn {
-    padding: 6px 12px;
-    background-color: #3498db;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    transition: background-color 0.3s;
-}
-
-.nearby-btn:hover {
-    background-color: #2980b9;
-}
-
-.status{
-  display: flex;
-}
-
-.status b{
-  font-size: 10px;
-  margin-top: auto;
-  margin-left: 2px;
-}
-
-.status-indicator {
+      #distance-value {
         display: inline-block;
-        margin-top: auto;
-        padding: 2px 6px;
-        border-radius: 12px;
-        font-size: 10px;
-        font-weight: 500;
+      }
+
+      .distance-btn {
+        margin-top: 10px;
+        padding: 6px 12px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: background-color 0.3s;
+      }
+
+      .distance-btn:hover {
+        background-color: #45a049;
+      }
+
+      #distance-value {
+        min-width: 60px;
+      }
+
+      .button-container {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+      }
+
+      .nearby-btn {
+        padding: 6px 12px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: background-color 0.3s;
+      }
+
+      .nearby-btn:hover {
+        background-color: #2980b9;
+      }
+
+      .status {
+        display: flex;
         margin-left: 5px;
       }
-.title {
-  display: flex;
-  padding-right: 10px;
-  justify-content: space-between
-}
 
+      .status b {
+        font-size: 10px;
+        margin-left: 2px;
+        display: flex;
+        align-items: center;
+        height: 100%; 
+      }
+
+      .status-indicator {
+        display: inline-block;
+        padding: 1px 4px;
+        border-radius: 7px;
+        font-size: 8px;
+        font-weight: 500;
+        margin-left: 5px;
+        padding-top: 3px;
+        margin-bottom: 3px;
+        margin-top: 2px;
+      }
+
+      .title {
+        display: flex;
+        padding-bottom: auto;
+        padding-right: 10px;
+        justify-content: space-between;
+      }
     </style>
   </head>
   <body>
@@ -592,7 +638,11 @@
         <!-- Device List -->
         <div id="deviceList">
           <h3>Device List</h3>
-          <input type="text" id="searchInput" placeholder="Search Vehicle Here" />
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search Vehicle Here"
+          />
           <div id="deviceContainer"></div>
         </div>
 
@@ -600,54 +650,56 @@
         <div id="mapContainer">
           <div class="refreshDropdown">
             <select id="refreshRate">
-                <option value="5000">⟳ Refresh - 5 sec</option>
-                <option value="10000">⟳ Refresh - 10 sec</option>
-                <option value="20000">⟳ Refresh - 20 sec</option>
-                <option value="30000">⟳ Refresh - 30 sec</option>
-                <option value="60000" selected>⟳ Refresh - 1 minute</option>
-                <option value="300000">⟳ Refresh - 5 minute</option>
-                <option value="600000">⟳ Refresh - 10 minute</option>
+              <option value="5000">⟳ Refresh - 5 sec</option>
+              <option value="10000">⟳ Refresh - 10 sec</option>
+              <option value="20000">⟳ Refresh - 20 sec</option>
+              <option value="30000">⟳ Refresh - 30 sec</option>
+              <option value="60000" selected>⟳ Refresh - 1 minute</option>
+              <option value="300000">⟳ Refresh - 5 minute</option>
+              <option value="600000">⟳ Refresh - 10 minute</option>
             </select>
-        </div>
+          </div>
           <div id="map"></div>
           <div id="customPopup" class="popup">
             <span class="close-btn" onclick="hidePopup()">✖</span>
             <div id="popupTitle" class="popup-title"></div>
             <div id="popupContent"></div>
-        </div>
+          </div>
         </div>
         <div class="viewAllBtn">
-          <button onclick="showDeviceTable()" class="table-btn">View All Devices</button>
-      </div>
+          <button onclick="showDeviceTable()" class="table-btn">
+            View All Devices
+          </button>
+        </div>
 
-      <!-- Add this new popup div for the table -->
+        <!-- Add this new popup div for the table -->
         <div id="tablePopup" class="table-popup">
           <div class="table-popup-content">
-              <span class="table-close-btn" onclick="hideDeviceTable()">✖</span>
-              <h2>All Devices Status</h2>
-              <div class="table-container">
-                  <table id="deviceDataTable">
-                      <thead>
-                          <tr>
-                              <th>Device Name</th>
-                              <th>Last Updated</th>
-                              <th>Status</th>
-                              <th>Battery</th>
-                              <th>Ac</th>
-                              <th>Gps</th>
-                              <th>Power</th>
-                              <th>Ignition</th>
-                              <th>Speed</th>
-                              <th>Hold Time</th>
-                              <th>Location</th>
-                              <th>View Today's Trip</th>
-                          </tr>
-                      </thead>
-                      <tbody id="deviceTableBody">
-                          <!-- Data will be populated here -->
-                      </tbody>
-                  </table>
-              </div>
+            <span class="table-close-btn" onclick="hideDeviceTable()">✖</span>
+            <h2>All Devices Status</h2>
+            <div class="table-container">
+              <table id="deviceDataTable">
+                <thead>
+                  <tr>
+                    <th>Device Name</th>
+                    <th>Last Updated</th>
+                    <th>Status</th>
+                    <th>Battery</th>
+                    <th>Ac</th>
+                    <th>Gps</th>
+                    <th>Power</th>
+                    <th>Ignition</th>
+                    <th>Speed</th>
+                    <th>Hold Time</th>
+                    <th>Location</th>
+                    <th>View Today's Trip</th>
+                  </tr>
+                </thead>
+                <tbody id="deviceTableBody">
+                  <!-- Data will be populated here -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -655,7 +707,7 @@
 
     <script src="js/api.js"></script>
     <script>
-       const olaMaps = new OlaMapsSDK.OlaMaps({
+      const olaMaps = new OlaMapsSDK.OlaMaps({
         apiKey: "0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9",
       });
 
@@ -668,158 +720,166 @@
       });
 
       class MarkerClusterer {
-  constructor(map, options = {}) {
-    this.map = map;
-    this.markers = [];
-    this.clusters = [];
-    this.options = {
-      radius: options.radius || 500,
-      maxZoom: options.maxZoom || 14,
-      minPoints: options.minPoints || 2
-    };
+        constructor(map, options = {}) {
+          this.map = map;
+          this.markers = [];
+          this.clusters = [];
+          this.options = {
+            radius: options.radius || 500,
+            maxZoom: options.maxZoom || 14,
+            minPoints: options.minPoints || 2,
+          };
 
-    // Bind event handlers
-    this.map.on('zoom', () => this.updateClusters());
-    this.map.on('moveend', () => this.updateClusters());
-  }
-
-  // Add markers to the clusterer
-  addMarkers(markers) {
-    this.markers = markers;
-    this.updateClusters();
-  }
-
-  // Calculate clusters based on current zoom and viewport
-  updateClusters() {
-    // Clear existing clusters
-    this.clusters.forEach(cluster => cluster.remove());
-    this.clusters = [];
-
-    if (this.map.getZoom() >= this.options.maxZoom) {
-      // Show individual markers at high zoom levels
-      this.markers.forEach(marker => marker.addTo(this.map));
-      return;
-    }
-
-    // Group nearby markers
-    const groups = this.groupMarkers();
-    
-    groups.forEach(group => {
-      if (group.length >= this.options.minPoints) {
-        this.createCluster(group);
-      } else {
-        group.forEach(marker => marker.addTo(this.map));
-      }
-    });
-  }
-
-  // Group markers based on proximity
-  groupMarkers() {
-    const groups = [];
-    const marked = new Set();
-
-    this.markers.forEach((marker, i) => {
-      if (marked.has(i)) return;
-
-      const group = [marker];
-      marked.add(i);
-
-      this.markers.forEach((otherMarker, j) => {
-        if (i !== j && !marked.has(j)) {
-          const distance = this.calculateDistance(
-            marker.getLngLat(),
-            otherMarker.getLngLat()
-          );
-          
-          if (distance <= this.options.radius * Math.pow(2, -this.map.getZoom())) {
-            group.push(otherMarker);
-            marked.add(j);
-          }
+          // Bind event handlers
+          this.map.on("zoom", () => this.updateClusters());
+          this.map.on("moveend", () => this.updateClusters());
         }
+
+        // Add markers to the clusterer
+        addMarkers(markers) {
+          this.markers = markers;
+          this.updateClusters();
+        }
+
+        // Calculate clusters based on current zoom and viewport
+        updateClusters() {
+          // Clear existing clusters
+          this.clusters.forEach((cluster) => cluster.remove());
+          this.clusters = [];
+
+          if (this.map.getZoom() >= this.options.maxZoom) {
+            // Show individual markers at high zoom levels
+            this.markers.forEach((marker) => marker.addTo(this.map));
+            return;
+          }
+
+          // Group nearby markers
+          const groups = this.groupMarkers();
+
+          groups.forEach((group) => {
+            if (group.length >= this.options.minPoints) {
+              this.createCluster(group);
+            } else {
+              group.forEach((marker) => marker.addTo(this.map));
+            }
+          });
+        }
+
+        // Group markers based on proximity
+        groupMarkers() {
+          const groups = [];
+          const marked = new Set();
+
+          this.markers.forEach((marker, i) => {
+            if (marked.has(i)) return;
+
+            const group = [marker];
+            marked.add(i);
+
+            this.markers.forEach((otherMarker, j) => {
+              if (i !== j && !marked.has(j)) {
+                const distance = this.calculateDistance(
+                  marker.getLngLat(),
+                  otherMarker.getLngLat()
+                );
+
+                if (
+                  distance <=
+                  this.options.radius * Math.pow(2, -this.map.getZoom())
+                ) {
+                  group.push(otherMarker);
+                  marked.add(j);
+                }
+              }
+            });
+
+            groups.push(group);
+          });
+
+          return groups;
+        }
+
+        // Create a visual cluster representation
+        createCluster(markers) {
+          // Remove individual markers
+          markers.forEach((marker) => marker.remove());
+
+          // Calculate cluster center
+          const center = this.calculateClusterCenter(markers);
+
+          // Create cluster element
+          const clusterElement = document.createElement("div");
+          clusterElement.className = "marker-cluster";
+          clusterElement.style.cssText = getClusterStyle(markers.length);
+          clusterElement.addEventListener("mouseenter", () => {
+            // clusterElement.style.transform = 'scale(1.1)';
+          });
+
+          clusterElement.addEventListener("mouseleave", () => {
+            // clusterElement.style.transform = 'scale(1)';
+          });
+          clusterElement.innerHTML = markers.length;
+
+          // Add click handler to zoom in
+          clusterElement.addEventListener("click", () => {
+            this.map.flyTo({
+              center: center,
+              zoom: Math.min(this.map.getZoom() + 2, this.options.maxZoom),
+              speed: 1.5,
+            });
+          });
+
+          // Create and add cluster marker
+          const cluster = olaMaps
+            .addMarker({
+              element: clusterElement,
+              anchor: "center",
+            })
+            .setLngLat(center)
+            .addTo(this.map);
+
+          this.clusters.push(cluster);
+        }
+
+        // Calculate distance between two points
+        calculateDistance(lngLat1, lngLat2) {
+          const R = 6371; // Earth's radius in km
+          const dLat = ((lngLat2.lat - lngLat1.lat) * Math.PI) / 180;
+          const dLon = ((lngLat2.lng - lngLat1.lng) * Math.PI) / 180;
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos((lngLat1.lat * Math.PI) / 180) *
+              Math.cos((lngLat2.lat * Math.PI) / 180) *
+              Math.sin(dLon / 2) *
+              Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          return R * c;
+        }
+
+        // Calculate center point of a cluster
+        calculateClusterCenter(markers) {
+          const coords = markers.map((m) => m.getLngLat());
+          const center = coords.reduce(
+            (acc, curr) => ({
+              lng: acc.lng + curr.lng,
+              lat: acc.lat + curr.lat,
+            }),
+            { lng: 0, lat: 0 }
+          );
+
+          return {
+            lng: center.lng / coords.length,
+            lat: center.lat / coords.length,
+          };
+        }
+      }
+
+      // Initialize clusterer after map loads
+      const clusterer = new MarkerClusterer(myMap, {
+        radius: 5000,
+        maxZoom: 14,
+        minPoints: 2,
       });
-
-      groups.push(group);
-    });
-
-    return groups;
-  }
-
-  // Create a visual cluster representation
-  createCluster(markers) {
-    // Remove individual markers
-    markers.forEach(marker => marker.remove());
-
-    // Calculate cluster center
-    const center = this.calculateClusterCenter(markers);
-    
-    // Create cluster element
-    const clusterElement = document.createElement('div');
-    clusterElement.className = 'marker-cluster';
-    clusterElement.style.cssText = getClusterStyle(markers.length);
-    clusterElement.addEventListener('mouseenter', () => {
-      // clusterElement.style.transform = 'scale(1.1)';
-    });
-
-    clusterElement.addEventListener('mouseleave', () => {
-      // clusterElement.style.transform = 'scale(1)';
-    });
-    clusterElement.innerHTML = markers.length;
-
-    // Add click handler to zoom in
-    clusterElement.addEventListener('click', () => {
-      this.map.flyTo({
-        center: center,
-        zoom: Math.min(this.map.getZoom() + 2, this.options.maxZoom),
-        speed: 1.5
-      });
-    });
-
-    // Create and add cluster marker
-    const cluster = olaMaps
-      .addMarker({
-        element: clusterElement,
-        anchor: 'center',
-      })
-      .setLngLat(center)
-      .addTo(this.map);
-
-    this.clusters.push(cluster);
-  }
-
-  // Calculate distance between two points
-  calculateDistance(lngLat1, lngLat2) {
-    const R = 6371; // Earth's radius in km
-    const dLat = (lngLat2.lat - lngLat1.lat) * Math.PI / 180;
-    const dLon = (lngLat2.lng - lngLat1.lng) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lngLat1.lat * Math.PI / 180) * Math.cos(lngLat2.lat * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  }
-
-  // Calculate center point of a cluster
-  calculateClusterCenter(markers) {
-    const coords = markers.map(m => m.getLngLat());
-    const center = coords.reduce((acc, curr) => ({
-      lng: acc.lng + curr.lng,
-      lat: acc.lat + curr.lat
-    }), { lng: 0, lat: 0 });
-    
-    return {
-      lng: center.lng / coords.length,
-      lat: center.lat / coords.length
-    };
-  }
-}
-
-// Initialize clusterer after map loads
-const clusterer = new MarkerClusterer(myMap, {
-  radius: 5000,
-  maxZoom: 14,
-  minPoints: 2
-});
 
       myMap.on("styleimagemissing", function (e) {
         if (e.id === "pedestrian_polygon") {
@@ -843,11 +903,57 @@ const clusterer = new MarkerClusterer(myMap, {
         return `${hours}hr ${minutes}min ${seconds}sec`;
       }
 
+      async function updateLocation(deviceId, latlang) {
+        const locationCell = document.getElementById(`location-${deviceId}`);
+        if (!locationCell) return;
+
+        locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
+
+        try {
+          const location = await fetchLocation(latlang);
+          locationCell.innerHTML = location;
+        } catch (error) {
+          console.error("Error updating location:", error);
+          locationCell.innerHTML = "Error fetching location";
+        }
+      }
+
+      async function updateLocationPopup(deviceId, latlang) {
+        const locationCell = document.getElementById(`location-popup-${deviceId}`);
+        if (!locationCell) return;
+
+        locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
+
+        try {
+          const location = await fetchLocation(latlang);
+          locationCell.innerHTML = location;
+        } catch (error) {
+          console.error("Error updating location:", error);
+          locationCell.innerHTML = "Error fetching location";
+        }
+      }
+
+      async function fetchLocation(latlang) {
+        try {
+          // Check if latlang is valid
+          if (!latlang) return "Location not available";
+          
+          const [lat, lng] = latlang.split(",").map(coord => parseFloat(coord));
+          if (isNaN(lat) || isNaN(lng)) return "Invalid coordinates";
+          const response = await fetch(
+            `${API}opr=getLoc&lat=${lat}&lang=${lng}`
+          );
+          const data = await response.json();
+          return data[0].location || "Location not available";
+        } catch (error) {
+          console.error("Error fetching location:", error);
+          return "Error fetching location";
+        }
+      }
+
       function fetchDeviceData() {
         const mid = localStorage.getItem("mid");
-        fetch(
-          `${API}opr=getVehileByMid&mid=${mid}`
-        )
+        fetch(`${API}opr=getVehileByMid&mid=${mid}`)
           .then((response) => response.json())
           .then((data) => {
             devices = data.map((item) => {
@@ -868,11 +974,12 @@ const clusterer = new MarkerClusterer(myMap, {
                 );
               }
 
-            const currentDate = new Date();
-            const deviceDate = new Date(item.ddate);
-            const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-            
-            const status = hoursDifference > 6 ? 'Offline' : 'Online';
+              const currentDate = new Date();
+              const deviceDate = new Date(item.ddate);
+              const hoursDifference =
+                (currentDate - deviceDate) / (1000 * 60 * 60);
+
+              const status = hoursDifference > 6 ? "Offline" : "Online";
 
               return {
                 name: item.dname,
@@ -882,13 +989,14 @@ const clusterer = new MarkerClusterer(myMap, {
                 angle: parseFloat(item.angle) || 0,
                 status: status,
                 date: item.ddate,
-                location: item.location,
+                // location: item.location,
                 holdtime: formatHoldTime(parseInt(item.holdtime)),
                 battery: item.Battery,
                 ignition: item.ignition,
                 ac: item.ac,
                 gps: item.gps,
                 power: item.power,
+                latlang: item.latlang,
               };
             });
             createDeviceList();
@@ -899,67 +1007,73 @@ const clusterer = new MarkerClusterer(myMap, {
       }
 
       function createDeviceList() {
-            const deviceContainer = $("#deviceContainer");
-            deviceContainer.empty();
-            devices.forEach((device, index) => {
-                const item = $(`
-                    <div class="deviceItem" id="device-${device.name.replace(/\s+/g, '-')}">
+        const deviceContainer = $("#deviceContainer");
+        deviceContainer.empty();
+        devices.forEach((device, index) => {
+          const item = $(`
+                    <div class="deviceItem" id="device-${device.name.replace(
+                      /\s+/g,
+                      "-"
+                    )}">
                         <input type="checkbox" class="deviceCheckbox" data-index="${index}" checked />
                         <span class="car-emoji">${getCarEmoji(device)}</span>
                         <span>${device.name}</span>
                     </div>
                 `);
 
-                item.on("click", function() {
-                    if (currentMarker && currentMarker === markers[index]) {
-                        hidePopup();
-                    } else {
-                        showPopup(index, markers[index]);
-                        myMap.flyTo({
-                            center: device.coordinates,
-                            zoom: 14,
-                            speed: 1.5,
-                        });
-                    }
-                });
+          item.on("click", function () {
+            if (currentMarker && currentMarker === markers[index]) {
+              hidePopup();
+            } else {
+              showPopup(index, markers[index]);
+              myMap.flyTo({
+                center: device.coordinates,
+                zoom: 14,
+                speed: 1.5,
+              });
+            }
+          });
 
-                deviceContainer.append(item);
-            });
-        }
+          deviceContainer.append(item);
+        });
+      }
 
       function getCarEmoji(device) {
-    // Convert ignition string to boolean if necessary
-    const ignitionStatus = typeof device.ignition === 'string' 
-        ? device.ignition.toLowerCase() === 'true'
-        : Boolean(device.ignition);
-    
-    // Get current date and device date for comparison
-    const currentDate = new Date();
-    const deviceDate = new Date(device.date);
-    const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+        // Convert ignition string to boolean if necessary
+        const ignitionStatus =
+          typeof device.ignition === "string"
+            ? device.ignition.toLowerCase() === "true"
+            : Boolean(device.ignition);
 
-    // Create image element with common styles
-    const imgStyle = 'width: 20px; height: 20px; object-fit: contain; vertical-align: middle;';
-    // Special style for green image with vertical alignment adjustment
-    const imgStyleGreen = 'width: 30px; height: 30px; object-fit: contain; vertical-align: middle; margin: -10px 0;';
-        
-    if (hoursDifference > 2) {
-        // Offline - Black Car
-        return `<img src="/deviceTracking/images/blackcar1.png" style="${imgStyle}" alt="Offline"/>`;
-    } else if (!ignitionStatus) {
-        // Stopped - Red Car
-        return `<img src="/images/icon/red/car0.png" style="${imgStyle}" alt="Stopped"/>`;
-    } else if (ignitionStatus && device.speed > 0) {
-        // Moving - Green Car
-        return `<img src="/deviceTracking/images/green.png" style="${imgStyleGreen}" alt="Moving"/>`;
-    } else if (ignitionStatus && device.speed === 0) {
-        // Idle - Yellow Car
-        return `<img src="/deviceTracking/images/yellow.png" style="${imgStyle}" alt="Idle"/>`;
-    } else {
-        // Default - Black Car
-        return `<img src="/deviceTracking/images/blackcar1.png" style="${imgStyle}" alt="Default"/>`;
-    }
-}
+        // Get current date and device date for comparison
+        const currentDate = new Date();
+        const deviceDate = new Date(device.date);
+        const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+
+        // Create image element with common styles
+        const imgStyle =
+          "width: 20px; height: 20px; object-fit: contain; vertical-align: middle;";
+        // Special style for green image with vertical alignment adjustment
+        const imgStyleGreen =
+          "width: 30px; height: 30px; object-fit: contain; vertical-align: middle; margin: -10px 0;";
+
+        if (hoursDifference > 2) {
+          // Offline - Black Car
+          return `<img src="/deviceTracking/images/blackcar1.png" style="${imgStyle}" alt="Offline"/>`;
+        } else if (!ignitionStatus) {
+          // Stopped - Red Car
+          return `<img src="/images/icon/red/car0.png" style="${imgStyle}" alt="Stopped"/>`;
+        } else if (ignitionStatus && device.speed > 0) {
+          // Moving - Green Car
+          return `<img src="/deviceTracking/images/green.png" style="${imgStyleGreen}" alt="Moving"/>`;
+        } else if (ignitionStatus && device.speed === 0) {
+          // Idle - Yellow Car
+          return `<img src="/deviceTracking/images/yellow.png" style="${imgStyle}" alt="Idle"/>`;
+        } else {
+          // Default - Black Car
+          return `<img src="/deviceTracking/images/blackcar1.png" style="${imgStyle}" alt="Default"/>`;
+        }
+      }
 
       function hidePopup() {
         popup.style.display = "none";
@@ -975,29 +1089,31 @@ const clusterer = new MarkerClusterer(myMap, {
       }
 
       function formatTimeDifference(minutes) {
-    if (minutes < 1) {
-        return "just now";
-    }
-    if (minutes < 60) {
-        return `${minutes} min ago`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const remainingMins = minutes % 60;
-    if (hours < 24) {
-        return `${hours}h ${remainingMins}m ago`;
-    }
-    const days = Math.floor(hours / 24);
-    const remainingHours = hours % 24;
-    return `${days}d ${remainingHours}h ago`;
-}
+        if (minutes < 1) {
+          return "just now";
+        }
+        if (minutes < 60) {
+          return `${minutes} min ago`;
+        }
+        const hours = Math.floor(minutes / 60);
+        const remainingMins = minutes % 60;
+        if (hours < 24) {
+          return `${hours}h ${remainingMins}m ago`;
+        }
+        const days = Math.floor(hours / 24);
+        const remainingHours = hours % 24;
+        return `${days}d ${remainingHours}h ago`;
+      }
 
       function showPopup(index, marker) {
-    currentMarker = marker;
-    const device = devices[index];
+        currentMarker = marker;
+        const device = devices[index];
 
-    popupTitle.innerHTML = `<div class="title">${device.name}<div class="status"><b>GPS:</b> <span class="status-indicator ${
-                device.gps == true ? "status-on" : "status-off"
-              }">
+        popupTitle.innerHTML = `<div class="title">${
+          device.name
+        }<div class="status"><b>GPS:</b> <span class="status-indicator ${
+          device.gps == true ? "status-on" : "status-off"
+        }">
                   ${device.gps == true ? "ON" : "OFF"}
               </span><br/>
               <b>Engine:</b> <span class="status-indicator ${
@@ -1011,32 +1127,56 @@ const clusterer = new MarkerClusterer(myMap, {
                   ${device.power === "true" ? "ON" : "OFF"}
               </span><br/>
               </div></div>`;
-    const distanceButton = `<button onclick="updateDistance('${device.deviceId}')" class="distance-btn">Get Today's Distance</button>`;
-    const nearbyButton = `<button onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[1]}, ${device.coordinates[0]})" class="nearby-btn">View Nearby Vehicles</button>`;
-    
-    const currentDate = new Date();
-const deviceDate = new Date(device.date);
-const minDifference = Math.floor((currentDate - deviceDate) / (1000 * 60));
-const timeAgo = formatTimeDifference(minDifference);
-    
-popupContent.innerHTML = `
-    <b>Date:</b> ${device.date} <span style="color: #666; font-size: 12px;">(${timeAgo})</span><br/>
+        const distanceButton = `<button onclick="updateDistance('${device.deviceId}')" class="distance-btn">Get Today's Distance</button>`;
+        const nearbyButton = `<button onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[1]}, ${device.coordinates[0]})" class="nearby-btn">View Nearby Vehicles</button>`;
+
+        const currentDate = new Date();
+        const deviceDate = new Date(device.date);
+        const minDifference = Math.floor(
+          (currentDate - deviceDate) / (1000 * 60)
+        );
+        const timeAgo = formatTimeDifference(minDifference);
+
+        popupContent.innerHTML = `
+    <b>Date:</b> ${
+      device.date
+    } <span style="color: #666; font-size: 12px;">(${timeAgo})</span><br/>
     <b>Speed:</b> ${device.speed} km/h <br/>
     <b>Hold Time:</b> ${device.holdtime} <br/>
-    <b>Status:</b> <span class="status-indicator-status ${device.status == "Online" ? "status-on" : "status-off"}">${device.status}</span> <br/>
+    <b>Status:</b> <span class="status-indicator-status ${
+      device.status == "Online" ? "status-on" : "status-off"
+    }">${device.status}</span> <br/>
     <b>Battery:</b> ${device.battery}V <br/>
-    <b>Location:</b> ${device.location} <br/>
+    <div style="display: flex; align-items: center; gap: 5px;">
+        <b>Location:</b> <span id="location-popup-${device.deviceId}"><button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" 
+        style="background: none; 
+               border: none; 
+               padding: 0;
+               color: #3498db; 
+               text-decoration: underline;
+               cursor: pointer;
+               font-size: 11px;">
+        Get Location
+</button></span>
+    </div>
     <div style="display: flex; align-items: center; gap: 5px;">
         <b>Distance:</b> <span id="distance-value">0 km</span>
     </div>
     <div class="button-container" style="margin-top: 5px; gap: 5px;">
-        <button onclick="updateDistance('${device.deviceId}')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 8px;">Get Distance</button>
-        <button onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[1]}, ${device.coordinates[0]})" class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">View Nearby</button>
+        <button onclick="updateDistance('${
+          device.deviceId
+        }')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 8px;">Get Distance</button>
+        
+        <button onclick="viewNearbyVehicles('${device.deviceId}', ${
+          device.coordinates[1]
+        }, ${
+          device.coordinates[0]
+        })" class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">View Nearby</button>
     </div>
 `;
-    popup.style.display = "block";
-    if (marker) updatePopupPosition(marker);
-}
+        popup.style.display = "block";
+        if (marker) updatePopupPosition(marker);
+      }
 
       function updatePopupPosition(marker) {
         if (!marker) return;
@@ -1047,90 +1187,92 @@ popupContent.innerHTML = `
       }
 
       async function updateDistance(deviceId) {
-    const distanceSpan = document.getElementById('distance-value');
-    if (!distanceSpan) return; // Guard clause in case element isn't found
+        const distanceSpan = document.getElementById("distance-value");
+        if (!distanceSpan) return; // Guard clause in case element isn't found
 
-    // Show loading state
-    distanceSpan.innerHTML = '<span style="color: #666;">Loading...</span>';
-    
-    try {
-        const distance = await fetchDistance(deviceId);
-        distanceSpan.innerHTML = `${distance} km`;
-    } catch (error) {
-        console.error('Error updating distance:', error);
-        distanceSpan.innerHTML = '0 km';
-    }
-}
+        // Show loading state
+        distanceSpan.innerHTML = '<span style="color: #666;">Loading...</span>';
 
-
-function initializeMarkers() {
-  // Remove existing markers
-  markers.forEach((marker) => marker.remove());
-  markers = [];
-
-  devices.forEach((device, index) => {
-    if (device.coordinates[0] !== 0 || device.coordinates[1] !== 0) {
-      const customMarker = document.createElement("div");
-      customMarker.classList.add("customMarkerClass");
-
-      const carImage = document.createElement("img");
-      const currentDate = new Date();
-      const deviceDate = new Date(device.date);
-      const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-      const ignitionStatus = typeof device.ignition === 'string' 
-          ? device.ignition.toLowerCase() === 'true'
-          : Boolean(device.ignition);
-
-      // Set marker icon based on status
-      if (hoursDifference > 2) {
-        carImage.src = "/deviceTracking/images/blackcar1.png";
-        carImage.style.width = "20px";
-        carImage.style.height = "27px";
-      } else if (!ignitionStatus) {
-        carImage.src = "/images/icon/red/car0.png";
-        carImage.style.width = "27px";
-        carImage.style.height = "27px";
-      } else if (ignitionStatus && device.speed > 0) {
-        carImage.src = "/deviceTracking/images/green.png";
-        carImage.style.width = "20px";
-        carImage.style.height = "40px";
-      } else if (ignitionStatus && device.speed === 0) {
-        carImage.src = "/deviceTracking/images/yellow.png";
-      } else {
-        carImage.src = "/deviceTracking/images/blackcar1.png";
-        carImage.style.width = "20px";
-        carImage.style.height = "27px";
+        try {
+          const distance = await fetchDistance(deviceId);
+          distanceSpan.innerHTML = `${distance} km`;
+        } catch (error) {
+          console.error("Error updating distance:", error);
+          distanceSpan.innerHTML = "0 km";
+        }
       }
 
-      carImage.style.transform = `rotate(${device.angle || 0}deg)`;
-      carImage.style.transformOrigin = "center center";
+      function initializeMarkers() {
+        // Remove existing markers
+        markers.forEach((marker) => marker.remove());
+        markers = [];
 
-      customMarker.appendChild(carImage);
+        devices.forEach((device, index) => {
+          if (device.coordinates[0] !== 0 || device.coordinates[1] !== 0) {
+            const customMarker = document.createElement("div");
+            customMarker.classList.add("customMarkerClass");
 
-      const marker = olaMaps
-        .addMarker({
-          element: customMarker,
-          offset: [0, -20],
-          anchor: "center",
-        })
-        .setLngLat(device.coordinates);
+            const carImage = document.createElement("img");
+            const currentDate = new Date();
+            const deviceDate = new Date(device.date);
+            const hoursDifference =
+              (currentDate - deviceDate) / (1000 * 60 * 60);
+            const ignitionStatus =
+              typeof device.ignition === "string"
+                ? device.ignition.toLowerCase() === "true"
+                : Boolean(device.ignition);
 
-      marker.getElement().addEventListener("click", () => showPopup(index, marker));
-      markers.push(marker);
-    }
-  });
+            // Set marker icon based on status
+            if (hoursDifference > 2) {
+              carImage.src = "/deviceTracking/images/blackcar1.png";
+              carImage.style.width = "20px";
+              carImage.style.height = "27px";
+            } else if (!ignitionStatus) {
+              carImage.src = "/images/icon/red/car0.png";
+              carImage.style.width = "27px";
+              carImage.style.height = "27px";
+            } else if (ignitionStatus && device.speed > 0) {
+              carImage.src = "/deviceTracking/images/green.png";
+              carImage.style.width = "20px";
+              carImage.style.height = "40px";
+            } else if (ignitionStatus && device.speed === 0) {
+              carImage.src = "/deviceTracking/images/yellow.png";
+            } else {
+              carImage.src = "/deviceTracking/images/blackcar1.png";
+              carImage.style.width = "20px";
+              carImage.style.height = "27px";
+            }
 
-  // Add markers to clusterer
-  clusterer.addMarkers(markers);
-}
+            carImage.style.transform = `rotate(${device.angle || 0}deg)`;
+            carImage.style.transformOrigin = "center center";
 
-function createMarkerElement(device) {
-  const customMarker = document.createElement("div");
-  customMarker.classList.add("customMarkerClass");
-  // ... rest of your existing marker creation code ...
-  return customMarker;
-}
+            customMarker.appendChild(carImage);
 
+            const marker = olaMaps
+              .addMarker({
+                element: customMarker,
+                offset: [0, -20],
+                anchor: "center",
+              })
+              .setLngLat(device.coordinates);
+
+            marker
+              .getElement()
+              .addEventListener("click", () => showPopup(index, marker));
+            markers.push(marker);
+          }
+        });
+
+        // Add markers to clusterer
+        clusterer.addMarkers(markers);
+      }
+
+      function createMarkerElement(device) {
+        const customMarker = document.createElement("div");
+        customMarker.classList.add("customMarkerClass");
+        // ... rest of your existing marker creation code ...
+        return customMarker;
+      }
 
       function filterMarkers() {
         $(".deviceCheckbox").each(function () {
@@ -1171,34 +1313,35 @@ function createMarkerElement(device) {
         setRefreshInterval();
 
         // Check if 'mid' is available in localStorage otherwise ri-direct login page
-          if (!localStorage.getItem('mid')) {
-            // Redirect to login page if 'mid' is not found
-            window.location.href = "index.html";  
-          }
-
+        if (!localStorage.getItem("mid")) {
+          // Redirect to login page if 'mid' is not found
+          window.location.href = "index.html";
+        }
       });
 
       //status box
 
       function animateCount(element, start, end, duration = 1000) {
-          let startTimestamp = null;
-          const step = (timestamp) => {
-              if (!startTimestamp) startTimestamp = timestamp;
-              const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-              const currentCount = Math.floor(progress * (end - start) + start);
-              element.textContent = currentCount;
-              
-              if (progress < 1) {
-                  window.requestAnimationFrame(step);
-              } else {
-                  element.textContent = end;
-              }
-          };
-          window.requestAnimationFrame(step);
+        let startTimestamp = null;
+        const step = (timestamp) => {
+          if (!startTimestamp) startTimestamp = timestamp;
+          const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+          const currentCount = Math.floor(progress * (end - start) + start);
+          element.textContent = currentCount;
+
+          if (progress < 1) {
+            window.requestAnimationFrame(step);
+          } else {
+            element.textContent = end;
+          }
+        };
+        window.requestAnimationFrame(step);
       }
 
       // Add this HTML right after your navbar-container div
-      document.getElementById('navbar-container').insertAdjacentHTML('afterend', `
+      document.getElementById("navbar-container").insertAdjacentHTML(
+        "afterend",
+        `
           <div class="status-box">
               <div class="status-item">
                   <img src="/deviceTracking/images/green.png" class="status-icon" alt="Moving" />
@@ -1217,276 +1360,277 @@ function createMarkerElement(device) {
                   <span class="status-count" id="offlineCount">0</span>
               </div>
           </div>
-      `);
+      `
+      );
 
       // Add the counting function
       function updateStatusCounts() {
         const counts = {
-            moving: 0,
-            stopped: 0,
-            idle: 0,
-            offline: 0
+          moving: 0,
+          stopped: 0,
+          idle: 0,
+          offline: 0,
         };
 
-        devices.forEach(device => {
-            const currentDate = new Date();
-            const deviceDate = new Date(device.date);
-            const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-            const ignitionStatus = typeof device.ignition === 'string' 
-                ? device.ignition.toLowerCase() === 'true'
-                : Boolean(device.ignition);
+        devices.forEach((device) => {
+          const currentDate = new Date();
+          const deviceDate = new Date(device.date);
+          const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+          const ignitionStatus =
+            typeof device.ignition === "string"
+              ? device.ignition.toLowerCase() === "true"
+              : Boolean(device.ignition);
 
-            if (hoursDifference > 2) {
-                counts.offline++;
-            } else if (!ignitionStatus) {
-                counts.stopped++;
-            } else if (ignitionStatus && device.speed > 0) {
-                counts.moving++;
-            } else if (ignitionStatus && device.speed === 0) {
-                counts.idle++;
-            } else {
-                counts.offline++;
-            }
+          if (hoursDifference > 2) {
+            counts.offline++;
+          } else if (!ignitionStatus) {
+            counts.stopped++;
+          } else if (ignitionStatus && device.speed > 0) {
+            counts.moving++;
+          } else if (ignitionStatus && device.speed === 0) {
+            counts.idle++;
+          } else {
+            counts.offline++;
+          }
         });
 
         // Animate each count
-        ['moving', 'stopped', 'idle', 'offline'].forEach(status => {
-            const element = document.getElementById(`${status}Count`);
-            if (element) {
-                const currentCount = parseInt(element.textContent) || 0;
-                const newCount = counts[status];
-                
-                if (currentCount !== newCount) {
-                    element.classList.add('updating');
-                    animateCount(element, currentCount, newCount, 500);
-                    
-                    // Remove the scaling effect after animation
-                    setTimeout(() => {
-                        element.classList.remove('updating');
-                    }, 500);
-                }
+        ["moving", "stopped", "idle", "offline"].forEach((status) => {
+          const element = document.getElementById(`${status}Count`);
+          if (element) {
+            const currentCount = parseInt(element.textContent) || 0;
+            const newCount = counts[status];
+
+            if (currentCount !== newCount) {
+              element.classList.add("updating");
+              animateCount(element, currentCount, newCount, 500);
+
+              // Remove the scaling effect after animation
+              setTimeout(() => {
+                element.classList.remove("updating");
+              }, 500);
             }
+          }
         });
-    }
+      }
 
-    // Add these functions to your existing JavaScript
-    function showDeviceTable() {
-        const tablePopup = document.getElementById('tablePopup');
-        const tableBody = document.getElementById('deviceTableBody');
-        tableBody.innerHTML = ''; // Clear existing data
+      // Add these functions to your existing JavaScript
+      function showDeviceTable() {
+        const tablePopup = document.getElementById("tablePopup");
+        const tableBody = document.getElementById("deviceTableBody");
+        tableBody.innerHTML = "";
 
-        // Populate table with device data
-        devices.forEach(device => {
-            const row = document.createElement('tr');
-            const statusClass = device.status === 'Online' ? 'status-online' : 'status-offline';
-
-            row.innerHTML = `
-                <td>${device.name}</td>
-                <td>${device.date}</td>
-                <td><span class="status-cell ${statusClass}">${device.status}</span></td>
-                <td>${device.battery}V</td>
-                <td>${device.ac === "true" ? 'On' : 'Off'}</td>
-                <td>${device.gps === true ? 'On' : 'Off'}</td>
-                <td>${device.power === "true" ? 'On' : 'Off'}</td>
-                <td>${device.ignition === "true" ? 'On' : 'Off'}</td>
-                <td>${device.speed} km/h</td>
-                <td>${device.holdtime}</td>
-                <td>${device.location}</td>
-                <td>
-                <button onclick="viewTodayTrip('${device.name}')" class="view-trip-btn">
-                    View Trip
-                </button>
-                </td>
-            `;
-            tableBody.appendChild(row);
+        devices.forEach((device) => {
+          const row = document.createElement("tr");
+          const statusClass = device.status === "Online" ? "status-online" : "status-offline";
+          
+          row.innerHTML = `
+            <td>${device.name}</td>
+            <td>${device.date}</td>
+            <td><span class="status-cell ${statusClass}">${device.status}</span></td>
+            <td>${device.battery}V</td>
+            <td><span class="status-cell"><span class="status-indicator-list ${device.ac == "true" ? "status-on" : "status-off"}">${device.ac === "true" ? 'On' : 'Off'}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${device.gps === true ? "status-on" : "status-off"}">${device.gps === true ? 'On' : 'Off'}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${device.power == "true" ? "status-on" : "status-off"}">${device.power === "true" ? 'On' : 'Off'}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${device.ignition == "true" ? "status-on" : "status-off"}">${device.ignition === "true" ? 'On' : 'Off'}</span></span></td>
+            <td>${device.speed} km/h</td>
+            <td>${device.holdtime}</td>
+            <td id="location-${device.deviceId}">
+              <button onclick="updateLocation('${device.deviceId}', '${device.latlang}')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 8px;">
+                Get Location
+              </button>
+            </td>
+            <td>
+              <button onclick="viewTodayTrip('${device.name}')" class="view-trip-btn">View Trip</button>
+            </td>
+          `;
+          tableBody.appendChild(row);
         });
 
-        tablePopup.style.display = 'block';
-    }
+        tablePopup.style.display = "block";
+      }
 
-    function hideDeviceTable() {
-        document.getElementById('tablePopup').style.display = 'none';
-    }
+      function hideDeviceTable() {
+        document.getElementById("tablePopup").style.display = "none";
+      }
 
-    // Close popup when clicking outside
-    document.getElementById('tablePopup').addEventListener('click', function(event) {
-        if (event.target === this) {
+      // Close popup when clicking outside
+      document
+        .getElementById("tablePopup")
+        .addEventListener("click", function (event) {
+          if (event.target === this) {
             hideDeviceTable();
+          }
+        });
+
+      // Add this function to handle the redirection
+      function viewTodayTrip(deviceName) {
+        // Get today's date
+        const today = new Date();
+        const startDate = new Date(today);
+        const endDate = new Date(today);
+
+        // Format dates for URL parameters
+        function formatDate(date) {
+          return date.toISOString().split("T")[0];
         }
-    });
 
-    // Add this function to handle the redirection
-function viewTodayTrip(deviceName) {
-    // Get today's date
-    const today = new Date();
-    const startDate = new Date(today);
-    const endDate = new Date(today);
-    
-    // Format dates for URL parameters
-    function formatDate(date) {
-    return date.toISOString().split('T')[0];
-}
-    
-    // Construct URL with parameters
-    const params = new URLSearchParams({
-        device: deviceName,
-        from: formatDate(startDate),
-        to: formatDate(endDate)
-    });
-    
-    // Redirect to playback page with parameters
-    window.location.href = `drawableplayback.html?${params.toString()}`;
-}
+        // Construct URL with parameters
+        const params = new URLSearchParams({
+          device: deviceName,
+          from: formatDate(startDate),
+          to: formatDate(endDate),
+        });
 
-async function fetchDistance(deviceId) {
-    // Get today's date
-    const today = new Date();
-    const formattedDate = today.toISOString().split('T')[0];
-    
-    try {
-        const response = await fetch(
+        // Redirect to playback page with parameters
+        window.location.href = `drawableplayback.html?${params.toString()}`;
+      }
+
+      async function fetchDistance(deviceId) {
+        // Get today's date
+        const today = new Date();
+        const formattedDate = today.toISOString().split("T")[0];
+
+        try {
+          const response = await fetch(
             `${API}opr=fleetsummaryreport&fromdate=${formattedDate} 00:00&todate=${formattedDate} 23:59&did=${deviceId}`
-        );
-        const data = await response.json();
-        
-        // Get the distance from the response
-        if (data && data.length > 0) {
-            return data[0].distance || '0';
+          );
+          const data = await response.json();
+
+          // Get the distance from the response
+          if (data && data.length > 0) {
+            return data[0].distance || "0";
+          }
+          return "0";
+        } catch (error) {
+          console.error("Error fetching distance:", error);
+          return "0";
         }
-        return '0';
-    } catch (error) {
-        console.error('Error fetching distance:', error);
-        return '0';
-    }
-}
+      }
 
-function viewNearbyVehicles(deviceId, lat, lng) {
-    // Default radius is 12 km - can be modified as needed
-    const radius = 12;
-    const params = new URLSearchParams({
-        deviceId: deviceId,
-        lat: lat,
-        lng: lng,
-        radius: radius
-    });
-    window.location.href = `viewnearby.html?${params.toString()}`;
-}
+      function viewNearbyVehicles(deviceId, lat, lng) {
+        // Default radius is 12 km - can be modified as needed
+        const radius = 12;
+        const params = new URLSearchParams({
+          deviceId: deviceId,
+          lat: lat,
+          lng: lng,
+          radius: radius,
+        });
+        window.location.href = `viewnearby.html?${params.toString()}`;
+      }
 
-const clusterOptions = {
-  maxZoom: 14, // Maximum zoom level for clustering
-  radius: 500,  // Cluster radius in pixels
-  minPoints: 2 // Minimum points to form a cluster
-};
+      const clusterOptions = {
+        maxZoom: 14, // Maximum zoom level for clustering
+        radius: 500, // Cluster radius in pixels
+        minPoints: 2, // Minimum points to form a cluster
+      };
 
-// Create a source for the clustered data
+      // Create a source for the clustered data
 
-// Add a layer for clusters
-// const clusterLayer = olaMaps.layer.create({
-//   id: 'device-clusters',
-//   type: 'circle',
-//   source: clusterSource,
-//   cluster: true,
-//   clusterOptions: clusterOptions,
-//   paint: {
-//     'circle-color': [
-//       'case',
-//       ['>=', ['get', 'point_count'], 100], '#f28cb1', // Large clusters
-//       ['>=', ['get', 'point_count'], 20], '#f1f075',  // Medium clusters
-//       '#51bbd6' // Small clusters
-//     ],
-//     'circle-radius': [
-//       'case',
-//       ['>=', ['get', 'point_count'], 100], 40,  // Large clusters
-//       ['>=', ['get', 'point_count'], 20], 30,   // Medium clusters
-//       20 // Small clusters
-//     ]
-//   }
-// });
+      // Add a layer for clusters
+      // const clusterLayer = olaMaps.layer.create({
+      //   id: 'device-clusters',
+      //   type: 'circle',
+      //   source: clusterSource,
+      //   cluster: true,
+      //   clusterOptions: clusterOptions,
+      //   paint: {
+      //     'circle-color': [
+      //       'case',
+      //       ['>=', ['get', 'point_count'], 100], '#f28cb1', // Large clusters
+      //       ['>=', ['get', 'point_count'], 20], '#f1f075',  // Medium clusters
+      //       '#51bbd6' // Small clusters
+      //     ],
+      //     'circle-radius': [
+      //       'case',
+      //       ['>=', ['get', 'point_count'], 100], 40,  // Large clusters
+      //       ['>=', ['get', 'point_count'], 20], 30,   // Medium clusters
+      //       20 // Small clusters
+      //     ]
+      //   }
+      // });
 
-// myMap.addLayer(clusterLayer);
+      // myMap.addLayer(clusterLayer);
 
+      // myMap.addLayer({
+      //   id: 'cluster-count',
+      //   type: 'symbol',
+      //   source: 'clusters',
+      //   filter: ['has', 'point_count'],
+      //   layout: {
+      //     'text-field': '{point_count_abbreviated}',
+      //     'text-font': ['Arial Unicode MS Bold'],
+      //     'text-size': 12
+      //   },
+      //   paint: {
+      //     'text-color': '#ffffff'
+      //   }
+      // });
 
-// myMap.addLayer({
-//   id: 'cluster-count',
-//   type: 'symbol',
-//   source: 'clusters',
-//   filter: ['has', 'point_count'],
-//   layout: {
-//     'text-field': '{point_count_abbreviated}',
-//     'text-font': ['Arial Unicode MS Bold'],
-//     'text-size': 12
-//   },
-//   paint: {
-//     'text-color': '#ffffff'
-//   }
-// });
+      myMap.on("click", "device-clusters", (e) => {
+        const features = e.features;
+        if (!features) return;
 
-myMap.on('click', 'device-clusters', (e) => {
-  const features = e.features;
-  if (!features) return;
+        const clusterId = features[0].properties.cluster_id;
+        const zoom = Math.max(myMap.getZoom() + 2, myMap.getMaxZoom());
 
-  const clusterId = features[0].properties.cluster_id;
-  const zoom = Math.max(
-    myMap.getZoom() + 2,
-    myMap.getMaxZoom()
-  );
+        myMap.flyTo({
+          center: features[0].geometry.coordinates,
+          zoom: zoom,
+          speed: 1.5,
+        });
+      });
 
-  myMap.flyTo({
-    center: features[0].geometry.coordinates,
-    zoom: zoom,
-    speed: 1.5
-  });
-});
+      // Add click handlers for clusters
+      // myMap.on('click', 'clusters', (e) => {
+      //   const features = myMap.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+      //   const clusterId = features[0].properties.cluster_id;
 
-// Add click handlers for clusters
-// myMap.on('click', 'clusters', (e) => {
-//   const features = myMap.queryRenderedFeatures(e.point, { layers: ['clusters'] });
-//   const clusterId = features[0].properties.cluster_id;
-  
-//   myMap.getSource('clusters').getClusterExpansionZoom(
-//     clusterId,
-//     (err, zoom) => {
-//       if (err) return;
+      //   myMap.getSource('clusters').getClusterExpansionZoom(
+      //     clusterId,
+      //     (err, zoom) => {
+      //       if (err) return;
 
-//       myMap.easeTo({
-//         center: features[0].geometry.coordinates,
-//         zoom: zoom
-//       });
-//     }
-//   );
-// });
+      //       myMap.easeTo({
+      //         center: features[0].geometry.coordinates,
+      //         zoom: zoom
+      //       });
+      //     }
+      //   );
+      // });
 
-// Change cursor on hover
-myMap.on('mouseenter', 'device-clusters', () => {
-  myMap.getCanvas().style.cursor = 'pointer';
-});
+      // Change cursor on hover
+      myMap.on("mouseenter", "device-clusters", () => {
+        myMap.getCanvas().style.cursor = "pointer";
+      });
 
-myMap.on('mouseleave', 'device-clusters', () => {
-  myMap.getCanvas().style.cursor = '';
-});
+      myMap.on("mouseleave", "device-clusters", () => {
+        myMap.getCanvas().style.cursor = "";
+      });
 
-function getClusterStyle(count) {
-  let backgroundColor;
-  let size;
+      function getClusterStyle(count) {
+        let backgroundColor;
+        let size;
 
-  if (count >= 100) {
-    backgroundColor = 'rgba(241, 128, 23, 0.9)';  // Orange for large clusters
-    size = '50px';
-  } else if (count >= 50) {
-    backgroundColor = 'rgba(240, 52, 52, 0.9)';   // Red for medium-large clusters
-    size = '45px';
-  } else if (count >= 20) {
-    backgroundColor = 'rgba(156, 39, 176, 0.9)';  // Purple for medium clusters
-    size = '40px';
-  } else if (count >= 10) {
-    backgroundColor = 'rgba(33, 150, 243, 0.9)';  // Blue for small-medium clusters
-    size = '35px';
-  } else {
-    backgroundColor = 'rgba(76, 175, 80, 0.9)';   // Green for small clusters
-    size = '30px';
-  }
+        if (count >= 100) {
+          backgroundColor = "rgba(241, 128, 23, 0.9)"; // Orange for large clusters
+          size = "50px";
+        } else if (count >= 50) {
+          backgroundColor = "rgba(240, 52, 52, 0.9)"; // Red for medium-large clusters
+          size = "45px";
+        } else if (count >= 20) {
+          backgroundColor = "rgba(156, 39, 176, 0.9)"; // Purple for medium clusters
+          size = "40px";
+        } else if (count >= 10) {
+          backgroundColor = "rgba(33, 150, 243, 0.9)"; // Blue for small-medium clusters
+          size = "35px";
+        } else {
+          backgroundColor = "rgba(76, 175, 80, 0.9)"; // Green for small clusters
+          size = "30px";
+        }
 
-  return `
+        return `
     background-color: ${backgroundColor};
     color: white;
     border-radius: 50%;
@@ -1496,12 +1640,13 @@ function getClusterStyle(count) {
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: ${count >= 100 ? '16px' : '14px'};
+    font-size: ${count >= 100 ? "16px" : "14px"};
     border: 2px solid white;
     box-shadow: 0 0 5px rgba(0,0,0,0.3);
     cursor: pointer;
   `;
 }
+
 
     </script>
   </body>
