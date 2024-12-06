@@ -465,7 +465,7 @@
             const mid = localStorage.getItem("mid");
             console.log("Fetching devices with mid:", mid); // Debug log
 
-            fetch(`${API}opr=getVehileByMid&mid=${mid}`)
+            fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
                 .then(response => response.json())
                 .then(data => {
                     console.log("Device data received:", data); // Debug log

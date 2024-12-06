@@ -1689,33 +1689,59 @@
 
         // Set the starting location marker
         if (!startingMarker) {
-          const startCoordinates = playbackData[0].coordinates;
-          const markerElement = document.createElement("div");
-          markerElement.innerHTML = "S";
+    // Make sure to use the first valid coordinate from your playback data
+    const startCoordinates = dynamicPlaybackData[0]?.coordinates || playbackData[0].coordinates;
+    
+    // Create container div for marker and time
+    const containerElement = document.createElement("div");
+    containerElement.style.position = "relative";
+    
+    // Create marker div with "S"
+    const markerElement = document.createElement("div");
+    markerElement.innerHTML = "S";
+    
+    // Create time display div
+    const timeElement = document.createElement("div");
+    const startDateTime = (dynamicPlaybackData[0]?.date || playbackData[0].date).split('.')[0];
+    timeElement.innerHTML = startDateTime;
+    timeElement.style.position = "absolute";
+    timeElement.style.top = "-25px";
+    timeElement.style.transform = "translateX(-50%)";
+    timeElement.style.backgroundColor = "white";
+    timeElement.style.padding = "2px 6px";
+    timeElement.style.borderRadius = "4px";
+    timeElement.style.fontSize = "10px";
+    timeElement.style.whiteSpace = "nowrap";
+    timeElement.style.boxShadow = "0 1px 3px rgba(0,0,0,0.2)";
+    timeElement.style.color = "#333";
 
-          startingMarker = olaMaps
-            .addMarker({
-              element: markerElement,
-              offset: [0, -10],
-              anchor: "center",
-            })
-            .setLngLat(startCoordinates)
-            .addTo(myMap);
+    containerElement.appendChild(markerElement);
+    containerElement.appendChild(timeElement);
 
-          const element = startingMarker.getElement();
-          element.style.backgroundColor = "green";
-          element.style.width = "20px";
-          element.style.height = "20px";
-          element.style.borderRadius = "50%";
-          element.style.border = "2px solid white";
-          element.style.boxShadow = "0 0 3px rgba(0,0,0,0.3)";
-          element.style.color = "white";
-          element.style.fontWeight = "bold";
-          element.style.display = "flex";
-          element.style.alignItems = "center";
-          element.style.justifyContent = "center";
-          element.style.fontSize = "12px";
-        }
+    startingMarker = olaMaps
+        .addMarker({
+            element: containerElement,
+            offset: [0, -10],
+            anchor: "center",
+        })
+        .setLngLat(startCoordinates)
+        .addTo(myMap);
+
+    // Rest of your styling code...
+    const element = markerElement;
+    element.style.backgroundColor = "green";
+    element.style.width = "20px";
+    element.style.height = "20px";
+    element.style.borderRadius = "50%";
+    element.style.border = "2px solid white";
+    element.style.boxShadow = "0 0 3px rgba(0,0,0,0.3)";
+    element.style.color = "white";
+    element.style.fontWeight = "bold";
+    element.style.display = "flex";
+    element.style.alignItems = "center";
+    element.style.justifyContent = "center";
+    element.style.fontSize = "12px";
+}
 
         vehicleMarker.getElement().addEventListener("click", () => {
           isPopupClosedManually = false;
@@ -1807,11 +1833,15 @@
         });
       }
 
-
       // Reset map to initial position if there's data
       if (playbackData.length > 0) {
         myMap.setCenter(playbackData[0].coordinates);
       }
+
+       // Clear all vehicle info displays using same format as updateVehicleInfo
+      document.getElementById('speedDisplay').textContent = `${Math.round(0)} km/h`;
+      document.getElementById('dateTimeDisplay').textContent = '--';
+      document.getElementById('distanceDisplay').textContent = `${(0).toFixed(2)} km`;
     }
 
     function pausePlayback() {
