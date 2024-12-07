@@ -346,54 +346,113 @@
       /* status box css */
 
       .status-box {
-        position: absolute;
-        top: 5px;
-        right: 500px;
-        background-color: white;
-        padding: 5px 15px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        z-index: 1001;
-        display: flex;
-        gap: 15px;
-        font-size: 14px;
-      }
+  position: absolute;
+  top: 5px;
+  right: 500px;
+  background-color: white;
+  padding: 5px 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  display: flex;
+  gap: 2px;
+  font-size: 13px;
+  align-items: center;
+  transition: box-shadow 0.3s ease;
+}
 
-      .status-count {
-        font-weight: bold;
-        color: #f8f9fa;
-        background-color: #2c3e50;
-        padding: 1px 5px;
-        border-radius: 4px;
-        min-width: 24px;
-        text-align: center;
-        transition: transform 0.3s ease;
-      }
+.status-box:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
 
-      .status-count.updating {
-        transform: scale(1.2);
-        background-color: #34495e;
-      }
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
 
-      .status-icon {
-        width: 20px;
-        height: 20px;
-        object-fit: contain;
-        vertical-align: middle;
-      }
+.status-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
 
-      .status-icon[src*="green.png"] {
-        width: 30px;
-        height: 30px;
-      }
+.status-item:active {
+  background-color: rgba(0, 0, 0, 0.1);
+  transform: translateY(0);
+}
 
-      .status-item {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        min-height: 30px; /* Ensure consistent height */
-      }
+.status-count {
+  font-weight: 600;
+  color: #fff;
+  background-color: #2c3e50;
+  padding: 2px 8px;
+  border-radius: 4px;
+  min-width: 28px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
 
+.status-count.updating {
+  transform: scale(1.1);
+  background-color: #34495e;
+}
+
+.status-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  vertical-align: middle;
+  transition: transform 0.2s ease;
+}
+
+/* Special handling for green icon */
+.status-icon[src*="green.png"] {
+  width: 32px;
+  height: 32px;
+  margin: -4px 0; /* Compensate for larger size */
+}
+
+/* Hover effect for icons */
+.status-item:hover .status-icon {
+  transform: scale(1.1);
+}
+
+/* Active state for icons */
+.status-item:active .status-icon {
+  transform: scale(0.95);
+}
+
+/* Additional styles for better visual hierarchy */
+.status-item.active {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.status-item.active .status-count {
+  background-color: #3498db;
+}
+
+  #selectAllCheckbox {
+    cursor: pointer;
+  }
+
+  .marker-cluster {
+    background-color: #fff;
+    border-radius: 50%;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  }
+  
+  .marker-cluster:hover {
+    transform: scale(1.1);
+  }
       /* Button Styles */
       .viewAllBtn {
         position: absolute;
@@ -1026,38 +1085,45 @@
       }
 
       function createDeviceList() {
-        const deviceContainer = $("#deviceContainer");
-        deviceContainer.empty();
-        devices.forEach((device, index) => {
-          const item = $(`
-                    <div class="deviceItem" id="device-${device.name.replace(
-                      /\s+/g,
-                      "-"
-                    )}">
-                        <input type="checkbox" class="deviceCheckbox" data-index="${index}" checked />
-                        <span class="car-emoji">${getCarEmoji(device)}</span>
-                        <span>${device.name}</span>
-                    </div>
-                `);
-
-          item.on("click", function () {
-            if (currentMarker && currentMarker === markers[index]) {
-              hidePopup();
-            } else {
-              showPopup(index, markers[index]);
-              myMap.flyTo({
-                center: device.coordinates,
-                zoom: 14,
-                speed: 1.5,
-              });
-            }
+  const deviceContainer = $("#deviceContainer");
+  deviceContainer.empty();
+  
+  devices.forEach((device, index) => {
+    const item = $(`
+      <div class="deviceItem" id="device-${device.name.replace(/\s+/g, "-")}">
+        <input type="checkbox" class="deviceCheckbox" data-index="${index}" checked />
+        <span class="car-emoji">${getCarEmoji(device)}</span>
+        <span>${device.name}</span>
+      </div>
+    `);
+    
+    item.on("click", function(e) {
+      if (!e.target.classList.contains('deviceCheckbox')) {
+        if (currentMarker && currentMarker === markers[index]) {
+          hidePopup();
+        } else {
+          showPopup(index, markers[index]);
+          myMap.flyTo({
+            center: device.coordinates,
+            zoom: 14,
+            speed: 1.5
           });
-
-          deviceContainer.append(item);
-        });
+        }
       }
+    });
+    
+    deviceContainer.append(item);
+  });
+  
+  // Add change event listener to device checkboxes
+  $('.deviceCheckbox').on('change', function() {
+    const allChecked = $('.deviceCheckbox').toArray().every(cb => cb.checked);
+    $('#selectAllCheckbox').prop('checked', allChecked);
+    filterMarkers();
+  });
+}
 
-      function getCarEmoji(device) {
+function getCarEmoji(device) {
         // Convert ignition string to boolean if necessary
         const ignitionStatus =
           typeof device.ignition === "string"
@@ -1226,71 +1292,71 @@
       }
 
       function initializeMarkers() {
-        // Remove existing markers
-        markers.forEach((marker) => marker.remove());
-        markers = [];
+  // Remove existing markers
+  markers.forEach(marker => marker.remove());
+  markers = [];
 
-        devices.forEach((device, index) => {
-          if (device.coordinates[0] !== 0 || device.coordinates[1] !== 0) {
-            const customMarker = document.createElement("div");
-            customMarker.classList.add("customMarkerClass");
+  devices.forEach((device, index) => {
+    if (device.coordinates[0] !== 0 || device.coordinates[1] !== 0) {
+      const customMarker = document.createElement('div');
+      customMarker.classList.add('customMarkerClass');
 
-            const carImage = document.createElement("img");
-            const currentDate = new Date();
-            const deviceDate = new Date(device.date);
-            const hoursDifference =
-              (currentDate - deviceDate) / (1000 * 60 * 60);
-            const ignitionStatus =
-              typeof device.ignition === "string"
-                ? device.ignition.toLowerCase() === "true"
-                : Boolean(device.ignition);
+      const carImage = document.createElement('img');
+      const currentDate = new Date();
+      const deviceDate = new Date(device.date);
+      const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+      const ignitionStatus = typeof device.ignition === 'string'
+        ? device.ignition.toLowerCase() === 'true'
+        : Boolean(device.ignition);
 
-            // Set marker icon based on status
-            if (hoursDifference > 2) {
-              carImage.src = "/deviceTracking/images/blackcar1.png";
-              carImage.style.width = "20px";
-              carImage.style.height = "27px";
-            } else if (!ignitionStatus) {
-              carImage.src = "/images/icon/red/car0.png";
-              carImage.style.width = "27px";
-              carImage.style.height = "27px";
-            } else if (ignitionStatus && device.speed > 0) {
-              carImage.src = "/deviceTracking/images/green.png";
-              carImage.style.width = "20px";
-              carImage.style.height = "40px";
-            } else if (ignitionStatus && device.speed === 0) {
-              carImage.src = "/deviceTracking/images/yellow.png";
-            } else {
-              carImage.src = "/deviceTracking/images/blackcar1.png";
-              carImage.style.width = "20px";
-              carImage.style.height = "27px";
-            }
-
-            carImage.style.transform = `rotate(${device.angle || 0}deg)`;
-            carImage.style.transformOrigin = "center center";
-
-            customMarker.appendChild(carImage);
-
-            const marker = olaMaps
-              .addMarker({
-                element: customMarker,
-                offset: [0, -20],
-                anchor: "center",
-              })
-              .setLngLat(device.coordinates);
-
-            marker
-              .getElement()
-              .addEventListener("click", () => showPopup(index, marker));
-            markers.push(marker);
-          }
-        });
-
-        // Add markers to clusterer
-        clusterer.addMarkers(markers);
+      // Set marker icon based on status
+      if (hoursDifference > 2) {
+        carImage.src = '/deviceTracking/images/blackcar1.png';
+        carImage.style.width = '20px';
+        carImage.style.height = '27px';
+      } else if (!ignitionStatus) {
+        carImage.src = '/images/icon/red/car0.png';
+        carImage.style.width = '27px';
+        carImage.style.height = '27px';
+      } else if (ignitionStatus && device.speed > 0) {
+        carImage.src = '/deviceTracking/images/green.png';
+        carImage.style.width = '20px';
+        carImage.style.height = '40px';
+      } else if (ignitionStatus && device.speed === 0) {
+        carImage.src = '/deviceTracking/images/yellow.png';
+      } else {
+        carImage.src = '/deviceTracking/images/blackcar1.png';
+        carImage.style.width = '20px';
+        carImage.style.height = '27px';
       }
 
-      function createMarkerElement(device) {
+      carImage.style.transform = `rotate(${device.angle || 0}deg)`;
+      carImage.style.transformOrigin = 'center center';
+
+      customMarker.appendChild(carImage);
+
+      const marker = olaMaps
+        .addMarker({
+          element: customMarker,
+          offset: [0, -20],
+          anchor: 'center',
+        })
+        .setLngLat(device.coordinates);
+
+      marker.getElement().addEventListener('click', () => showPopup(index, marker));
+      markers.push(marker);
+    }
+  });
+
+  // Add only checked markers to clusterer
+  const visibleMarkers = markers.filter((marker, index) => {
+    const checkbox = document.querySelector(`.deviceCheckbox[data-index="${index}"]`);
+    return checkbox && checkbox.checked;
+  });
+  clusterer.addMarkers(visibleMarkers);
+}
+
+function createMarkerElement(device) {
         const customMarker = document.createElement("div");
         customMarker.classList.add("customMarkerClass");
         // ... rest of your existing marker creation code ...
@@ -1298,15 +1364,21 @@
       }
 
       function filterMarkers() {
-        $(".deviceCheckbox").each(function () {
-          const index = $(this).data("index");
-          if ($(this).is(":checked")) {
-            markers[index].getElement().style.display = "block";
-          } else {
-            markers[index].getElement().style.display = "none";
-          }
-        });
-      }
+  // Create array of visible markers based on checkbox state
+  const visibleMarkers = markers.filter((marker, index) => {
+    const checkbox = document.querySelector(`.deviceCheckbox[data-index="${index}"]`);
+    return checkbox && checkbox.checked;
+  });
+
+  // Remove all markers from the map
+  markers.forEach(marker => marker.remove());
+
+  // Add only visible markers back to the map
+  visibleMarkers.forEach(marker => marker.addTo(myMap));
+
+  // Update clusters with only visible markers
+  clusterer.addMarkers(visibleMarkers);
+}
 
       function setRefreshInterval() {
         clearInterval(refreshTimer);
@@ -1727,6 +1799,67 @@
     cursor: pointer;
   `;
       }
+
+
+      const deviceListHeader = document.querySelector('#deviceList h3');
+deviceListHeader.insertAdjacentHTML('afterend', `
+  <div class="deviceItem" style="margin-bottom: 10px;">
+    <input type="checkbox" id="selectAllCheckbox" checked />
+    <span style="margin-left: 10px;">Select All</span>
+  </div>
+`);
+
+document.querySelectorAll('.status-item').forEach(item => {
+  item.addEventListener('click', function() {
+    const icon = this.querySelector('.status-icon');
+    const iconSrc = icon.getAttribute('src');
+    
+    // Uncheck all checkboxes first
+    document.querySelectorAll('.deviceCheckbox').forEach(checkbox => {
+      checkbox.checked = false;
+    });
+    document.getElementById('selectAllCheckbox').checked = false;
+    
+    // Check boxes based on vehicle status
+    devices.forEach((device, index) => {
+      const checkbox = document.querySelector(`.deviceCheckbox[data-index="${index}"]`);
+      if (!checkbox) return;
+      
+      const currentDate = new Date();
+      const deviceDate = new Date(device.date);
+      const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+      const ignitionStatus = typeof device.ignition === 'string' 
+        ? device.ignition.toLowerCase() === 'true' 
+        : Boolean(device.ignition);
+      
+      let shouldCheck = false;
+      
+      // Match status with clicked icon
+      if (iconSrc.includes('green.png') && ignitionStatus && device.speed > 0  && hoursDifference < 2) {
+        shouldCheck = true;
+      } else if (iconSrc.includes('red/car0.png') && !ignitionStatus  && hoursDifference < 2) {
+        shouldCheck = true;
+      } else if (iconSrc.includes('yellow.png') && ignitionStatus && device.speed === 0  && hoursDifference < 2) {
+        shouldCheck = true;
+      } else if (iconSrc.includes('blackcar1.png') && hoursDifference > 2) {
+        shouldCheck = true;
+      }
+      
+      checkbox.checked = shouldCheck;
+    });
+    
+    // Update markers visibility
+    filterMarkers();
+  });
+});
+
+document.getElementById('selectAllCheckbox').addEventListener('change', function() {
+  const isChecked = this.checked;
+  document.querySelectorAll('.deviceCheckbox').forEach(checkbox => {
+    checkbox.checked = isChecked;
+  });
+  filterMarkers();
+});
     </script>
   </body>
 </html>
