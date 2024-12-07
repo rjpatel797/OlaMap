@@ -571,6 +571,52 @@
       font-size: 10px;
       margin-left: 8px;
     }
+
+    /*pop-up display right-side*/
+    .vehicle-info-popup {
+      position: fixed;
+      top: 175px;
+      right: 20px;
+      background: white;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      width: 250px;
+      z-index: 9999;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      align-items: center;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      color: #555;
+      font-weight: bold;
+    }
+
+    .info-value {
+      color: #333;
+    }
+
+    /* Style for metric values like speed and distance */
+    .info-value.metric {
+      background-color: #f1f5f9;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.95em;
+    }
+
+    #dateTimeDisplay {
+      white-space: nowrap; /* Keeps date and time on same line */
+    }
   </style>
 </head>
 
@@ -613,6 +659,17 @@
       <div id="customPopup" class="popup">
         <span class="close-btn" onclick="hidePopup(true)">✖</span>
         <div id="popupContent"></div>
+      </div>
+
+      <div id="vehicleInfoPopup" class="vehicle-info-popup">
+        <div class="info-row">
+          <span class="info-label">Speed:</span>
+          <span class="info-value metric" id="speedDisplay">0 km/h</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Date-Time:</span>
+          <span class="info-value" id="dateTimeDisplay">--</span>
+        </div>
       </div>
     </div>
   </div>
@@ -744,19 +801,18 @@
     }
 
     function fetchVehicleLocation(did) {
-      fetch(
-        `${API}opr=getVehicleBydeviceid&did=${did}`
-      )
+      fetch(`${API}opr=getVehicleBydeviceid&did=${did}`)
         .then((response) => response.json())
         .then((data) => {
-          if (!isTracking) return; // Check if still tracking
+          if (!isTracking) return;
           updateVehicleMarker(data);
           showVehicleInfo(data);
+          updateVehicleInfo(data[0]); // Add this line
         })
         .catch((error) => {
           console.error("Error fetching vehicle location:", error);
           if (isTracking) {
-            stopTracking(); // Stop tracking on error
+            stopTracking();
             alert("Error tracking vehicle. Please try again.");
           }
         });
@@ -767,148 +823,148 @@
     let isMapDragging = false;
 
     function updateVehicleMarker(vehicleData) {
-  if (!vehicleData || vehicleData.length === 0) return;
+      if (!vehicleData || vehicleData.length === 0) return;
 
-  const data = vehicleData[0];
-  const coordinates = data.latlang
-    ? data.latlang.split(",").map(coord => parseFloat(coord)).reverse()
-    : [10, 10];
+      const data = vehicleData[0];
+      const coordinates = data.latlang
+        ? data.latlang.split(",").map(coord => parseFloat(coord)).reverse()
+        : [10, 10];
 
-  if (!currentMarker) {
-    // Initial marker creation
-    const customMarker = document.createElement("div");
-    customMarker.classList.add("customMarkerClass");
+      if (!currentMarker) {
+        // Initial marker creation
+        const customMarker = document.createElement("div");
+        customMarker.classList.add("customMarkerClass");
 
-    const carImage = document.createElement("img");
-    carImage.classList.add("carImage");
-    carImage.src = "/deviceTracking/images/upside.png";
-    carImage.style.transform = `rotate(${data.angle || 0}deg)`;
-    customMarker.appendChild(carImage);
+        const carImage = document.createElement("img");
+        carImage.classList.add("carImage");
+        carImage.src = "/deviceTracking/images/upside.png";
+        carImage.style.transform = `rotate(${data.angle || 0}deg)`;
+        customMarker.appendChild(carImage);
 
-    currentMarker = olaMaps.addMarker({
-      element: customMarker,
-      offset: [0, -10],
-      anchor: "center",
-      draggable: false
-    })
-    .setLngLat(coordinates)
-    .addTo(myMap);
-    
-    lastPosition = coordinates;
+        currentMarker = olaMaps.addMarker({
+          element: customMarker,
+          offset: [0, -10],
+          anchor: "center",
+          draggable: false
+        })
+          .setLngLat(coordinates)
+          .addTo(myMap);
 
-    // Center map initially
-    myMap.flyTo({
-      center: coordinates,
-      zoom: 15,
-      speed: 1.5
-    });
+        lastPosition = coordinates;
 
-    currentMarker.getElement().addEventListener("click", () => {
-      showVehicleInfo(vehicleData, true);
-    });
-  } else {
-    if (!isMapDragging && !isAnimating) {
-      if (lastPosition && 
-          (lastPosition[0] !== coordinates[0] || lastPosition[1] !== coordinates[1])) {
-        
-        // First start the marker animation
-        animateMarkerMovement(lastPosition, coordinates, data.angle || 0);
-        
-        // Then smoothly move the map to follow the marker
-        myMap.easeTo({
+        // Center map initially
+        myMap.flyTo({
           center: coordinates,
-          duration: 2000, // Match animation duration
-          easing: easeInOutQuad
+          zoom: 15,
+          speed: 1.5
+        });
+
+        currentMarker.getElement().addEventListener("click", () => {
+          showVehicleInfo(vehicleData, true);
         });
       } else {
-        rotateMarker(data.angle || 0);
+        if (!isMapDragging && !isAnimating) {
+          if (lastPosition &&
+            (lastPosition[0] !== coordinates[0] || lastPosition[1] !== coordinates[1])) {
+
+            // First start the marker animation
+            animateMarkerMovement(lastPosition, coordinates, data.angle || 0);
+
+            // Then smoothly move the map to follow the marker
+            myMap.easeTo({
+              center: coordinates,
+              duration: 2000, // Match animation duration
+              easing: easeInOutQuad
+            });
+          } else {
+            rotateMarker(data.angle || 0);
+          }
+        }
       }
+
+      // Update last known position
+      lastPosition = coordinates;
+
+      showVehicleInfo(vehicleData, false);
     }
-  }
 
-  // Update last known position
-  lastPosition = coordinates;
-  
-  showVehicleInfo(vehicleData, false);
-}
+    myMap.on('dragstart', () => {
+      isMapDragging = true;
+    });
 
-myMap.on('dragstart', () => {
-  isMapDragging = true;
-});
+    myMap.on('dragend', () => {
+      isMapDragging = false;
+      if (currentMarker && lastPosition) {
+        currentMarker.setLngLat(lastPosition);
+        updatePopupPosition();
+      }
+    });
 
-myMap.on('dragend', () => {
-  isMapDragging = false;
-  if (currentMarker && lastPosition) {
-    currentMarker.setLngLat(lastPosition);
-    updatePopupPosition();
-  }
-});
-
-myMap.on('drag', () => {
-  if (currentMarker && lastPosition) {
-    // Force marker to stay at its true position
-    currentMarker.setLngLat(lastPosition);
-  }
-});
+    myMap.on('drag', () => {
+      if (currentMarker && lastPosition) {
+        // Force marker to stay at its true position
+        currentMarker.setLngLat(lastPosition);
+      }
+    });
     // Add animation functions
     function animateMarkerMovement(from, to, finalAngle) {
-  if (isAnimating || isMapDragging) return;
-  isAnimating = true;
+      if (isAnimating || isMapDragging) return;
+      isAnimating = true;
 
-  const startTime = performance.now();
-  const SPEED = 0.00000015; // Speed in coordinates per millisecond
-  
-  // Calculate total distance to travel
-  const dx = to[0] - from[0];
-  const dy = to[1] - from[1];
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  
-  // Calculate duration based on distance and speed
-  const duration = distance / SPEED;
-  
-  const startAngle = parseFloat(
-    currentMarker.getElement().querySelector("img").style.transform
-      .replace("rotate(", "")
-      .replace("deg)", "")
-  ) || 0;
+      const startTime = performance.now();
+      const SPEED = 0.00000015; // Speed in coordinates per millisecond
 
-  // Normalize angles to prevent spinning
-  let angleDiff = ((finalAngle - startAngle + 180) % 360) - 180;
-  if (angleDiff < -180) angleDiff += 360;
+      // Calculate total distance to travel
+      const dx = to[0] - from[0];
+      const dy = to[1] - from[1];
+      const distance = Math.sqrt(dx * dx + dy * dy);
 
-  function animate(currentTime) {
-    if (isMapDragging) {
-      isAnimating = false;
-      return;
-    }
+      // Calculate duration based on distance and speed
+      const duration = distance / SPEED;
 
-    const elapsed = currentTime - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    const easeProgress = easeInOutQuad(progress);
+      const startAngle = parseFloat(
+        currentMarker.getElement().querySelector("img").style.transform
+          .replace("rotate(", "")
+          .replace("deg)", "")
+      ) || 0;
 
-    const currentPosition = [
-      from[0] + (to[0] - from[0]) * easeProgress,
-      from[1] + (to[1] - from[1]) * easeProgress
-    ];
+      // Normalize angles to prevent spinning
+      let angleDiff = ((finalAngle - startAngle + 180) % 360) - 180;
+      if (angleDiff < -180) angleDiff += 360;
 
-    // Calculate the current angle using the normalized difference
-    const currentAngle = startAngle + (angleDiff * easeProgress);
+      function animate(currentTime) {
+        if (isMapDragging) {
+          isAnimating = false;
+          return;
+        }
 
-    currentMarker.setLngLat(currentPosition);
-    rotateMarker(currentAngle);
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeProgress = easeInOutQuad(progress);
 
-    if (progress < 1) {
+        const currentPosition = [
+          from[0] + (to[0] - from[0]) * easeProgress,
+          from[1] + (to[1] - from[1]) * easeProgress
+        ];
+
+        // Calculate the current angle using the normalized difference
+        const currentAngle = startAngle + (angleDiff * easeProgress);
+
+        currentMarker.setLngLat(currentPosition);
+        rotateMarker(currentAngle);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          isAnimating = false;
+        }
+      }
+
       requestAnimationFrame(animate);
-    } else {
-      isAnimating = false;
     }
-  }
-
-  requestAnimationFrame(animate);
-}
 
 
-// Add event listeners to handle map interaction
+    // Add event listeners to handle map interaction
     myMap.on('drag', () => {
       if (currentMarker && lastPosition) {
         // Keep marker at its actual position during map drag
@@ -917,17 +973,17 @@ myMap.on('drag', () => {
     });
 
     myMap.on('zoom', () => {
-  if (currentMarker && lastPosition) {
-    // Maintain position during zoom
-    currentMarker.setLngLat(lastPosition);
-    updatePopupPosition();
-  }
-});
+      if (currentMarker && lastPosition) {
+        // Maintain position during zoom
+        currentMarker.setLngLat(lastPosition);
+        updatePopupPosition();
+      }
+    });
 
     // Helper functions
     function easeInOutQuad(t) {
-  return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-}
+      return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    }
 
     function calculateBearing(startLat, startLng, destLat, destLng) {
       startLat = toRadians(startLat);
@@ -960,37 +1016,37 @@ myMap.on('drag', () => {
     }
 
     async function updateLocationPopup(deviceId, latlang) {
-        const locationCell = document.getElementById(`location-popup-${deviceId}`);
-        if (!locationCell) return;
+      const locationCell = document.getElementById(`location-popup-${deviceId}`);
+      if (!locationCell) return;
 
-        locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
+      locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
 
-        try {
-          const location = await fetchLocation(latlang);
-          locationCell.innerHTML = location;
-        } catch (error) {
-          console.error("Error updating location:", error);
-          locationCell.innerHTML = "Error fetching location";
-        }
+      try {
+        const location = await fetchLocation(latlang);
+        locationCell.innerHTML = location;
+      } catch (error) {
+        console.error("Error updating location:", error);
+        locationCell.innerHTML = "Error fetching location";
       }
+    }
 
-      async function fetchLocation(latlang) {
-        try {
-          // Check if latlang is valid
-          if (!latlang) return "Location not available";
-          
-          const [lat, lng] = latlang.split(",").map(coord => parseFloat(coord));
-          if (isNaN(lat) || isNaN(lng)) return "Invalid coordinates";
-          const response = await fetch(
-            `${API}opr=getLoc&lat=${lat}&lang=${lng}`
-          );
-          const data = await response.json();
-          return data[0].location || "Location not available";
-        } catch (error) {
-          console.error("Error fetching location:", error);
-          return "Error fetching location";
-        }
+    async function fetchLocation(latlang) {
+      try {
+        // Check if latlang is valid
+        if (!latlang) return "Location not available";
+
+        const [lat, lng] = latlang.split(",").map(coord => parseFloat(coord));
+        if (isNaN(lat) || isNaN(lng)) return "Invalid coordinates";
+        const response = await fetch(
+          `${API}opr=getLoc&lat=${lat}&lang=${lng}`
+        );
+        const data = await response.json();
+        return data[0].location || "Location not available";
+      } catch (error) {
+        console.error("Error fetching location:", error);
+        return "Error fetching location";
       }
+    }
 
     function showVehicleInfo(vehicleData, showPopup = false) {
       if (!vehicleData || vehicleData.length === 0) return;
@@ -1039,12 +1095,12 @@ myMap.on('drag', () => {
 
     /* Also update the updatePopupPosition function in your JavaScript */
     function updatePopupPosition() {
-  if (currentMarker && popup.style.display === "block" && lastPosition) {
-    const mapPos = myMap.project(lastPosition);
-    popup.style.left = `${mapPos.x}px`;
-    popup.style.top = `${mapPos.y + 110}px`;
-  }
-}
+      if (currentMarker && popup.style.display === "block" && lastPosition) {
+        const mapPos = myMap.project(lastPosition);
+        popup.style.left = `${mapPos.x}px`;
+        popup.style.top = `${mapPos.y + 110}px`;
+      }
+    }
 
     function hidePopup(manuallyClosed = false) {
       popup.style.display = "none";
@@ -1106,6 +1162,15 @@ myMap.on('drag', () => {
     //   if (manuallyClosed) isPopupClosedManually = true;
     // }
 
+    function updateVehicleInfo(data) {
+      // Update speed
+      document.getElementById('speedDisplay').textContent = `${Math.round(data.speed)} km/h`;
+
+      // Update date-time
+      const dateTime = data.ddate.split('.')[0]; // Remove milliseconds if present
+      document.getElementById('dateTimeDisplay').textContent = dateTime;
+    }
+
     // Add these functions
     function startTracking() {
 
@@ -1151,6 +1216,11 @@ myMap.on('drag', () => {
       isTracking = false;
       $("#trackButton").text("Track").removeClass("tracking");
       hidePopup();
+
+      // Clear all vehicle info displays
+      document.getElementById('speedDisplay').textContent = '0 km/h';
+      document.getElementById('dateTimeDisplay').textContent = '--';
+      document.getElementById('distanceDisplay').textContent = '0 km';
     }
 
     // Update the track button click handler
@@ -1193,36 +1263,36 @@ myMap.on('drag', () => {
 
     });
 
-    document.addEventListener('DOMContentLoaded', function() {
-    // Get URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const deviceName = urlParams.get('device');
-    const trackButton = document.getElementById('trackButton');
-    
-    if (deviceName) {
+    document.addEventListener('DOMContentLoaded', function () {
+      // Get URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const deviceName = urlParams.get('device');
+      const trackButton = document.getElementById('trackButton');
+
+      if (deviceName) {
 
         // Wait for the vehicle list to be populated
         const checkVehicleList = setInterval(() => {
-            const vehicleList = document.getElementById('vehicleList');
-            if (vehicleList && vehicleList.children.length > 0) {
-                clearInterval(checkVehicleList);
-                
-                // Find and click the matching device in the list
-                const deviceElements = vehicleList.querySelectorAll('.dropdown-item');
-                for (const element of deviceElements) {
-                    if (element.textContent.trim() === deviceName) {
-                        element.click();
-                        trackButton.click();
-                        break;
-                    }
-                }
+          const vehicleList = document.getElementById('vehicleList');
+          if (vehicleList && vehicleList.children.length > 0) {
+            clearInterval(checkVehicleList);
+
+            // Find and click the matching device in the list
+            const deviceElements = vehicleList.querySelectorAll('.dropdown-item');
+            for (const element of deviceElements) {
+              if (element.textContent.trim() === deviceName) {
+                element.click();
+                trackButton.click();
+                break;
+              }
             }
+          }
         }, 100);
-        
+
         // Add a timeout to prevent infinite checking
         setTimeout(() => clearInterval(checkVehicleList), 10000);
-    }
-});
+      }
+    });
   </script>
 </body>
 
