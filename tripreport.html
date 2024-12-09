@@ -319,9 +319,20 @@
             
                 <!-- Device Selector with correct structure -->
                 <div class="device-selector">
-                    <select id="deviceSelect" class="form-select">
-                        <option value="">Select Vehicle</option>
-                    </select>
+                    <div class="dropdown-container">
+                        <div class="selected-vehicle" id="deviceSelect" onclick="toggleDropdown()">
+                            Select Vehicle
+                        </div>
+                        <div class="dropdown-list" id="deviceDropdown">
+                            <div class="dropdown-search">
+                                <input type="text" placeholder="Search vehicle..." id="vehicleSearch" 
+                                    onclick="event.stopPropagation()" 
+                                    oninput="filterVehicles(this.value)" />
+                            </div>
+                            <div class="dropdown-items" id="vehicleList">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             
                 <!-- Trip Time -->
@@ -426,82 +437,99 @@
         }
 
         function toggleDropdown() {
-            const dropdown = document.getElementById('deviceDropdown');
-            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+            const dropdown = document.getElementById("deviceDropdown");
+            const currentDisplay = dropdown.style.display;
+            dropdown.style.display = currentDisplay === "block" ? "none" : "block";
+            
+            if (dropdown.style.display === "block") {
+                document.getElementById("vehicleSearch").value = "";
+                populateVehicleList(devices);
+            }
         }
 
         function filterVehicles(searchText) {
-            const vehicleList = document.getElementById('vehicleList');
+            if (!searchText) {
+                populateVehicleList(devices);
+                return;
+            }
             const filteredDevices = devices.filter(device => 
                 device.name.toLowerCase().includes(searchText.toLowerCase())
             );
-            
             populateVehicleList(filteredDevices);
         }
 
         function selectVehicle(deviceId, deviceName) {
             selectedDeviceId = deviceId;
-            document.getElementById('selectedVehicle').textContent = deviceName;
-            document.getElementById('deviceDropdown').style.display = 'none';
-            
-            // If you want to fetch data immediately when selecting a vehicle
-            // fetchPlaybackData(deviceId);
+            document.getElementById("deviceSelect").textContent = deviceName;
+            document.getElementById("deviceSelect").value = deviceId;
+            document.getElementById("deviceDropdown").style.display = "none";
         }
 
         function populateVehicleList(devicesList) {
-            const vehicleList = document.getElementById('vehicleList');
-            vehicleList.innerHTML = '';
-            
+            const vehicleList = document.getElementById("vehicleList");
+            vehicleList.innerHTML = "";
+
+            if (devicesList.length === 0) {
+                const noResults = document.createElement("div");
+                noResults.className = "dropdown-item";
+                noResults.textContent = "No vehicles found";
+                vehicleList.appendChild(noResults);
+                return;
+            }
+
             devicesList.forEach(device => {
-                const item = document.createElement('div');
-                item.className = 'dropdown-item';
+                const item = document.createElement("div");
+                item.className = "dropdown-item";
                 item.textContent = device.name;
                 item.onclick = () => selectVehicle(device.did, device.name);
                 vehicleList.appendChild(item);
             });
         }
 
+        // Close dropdown when clicking outside
+        document.addEventListener("click", function(event) {
+            const dropdown = document.getElementById("deviceDropdown");
+            const deviceSelect = document.getElementById("deviceSelect");
+            
+            if (!event.target.closest(".device-selector")) {
+                dropdown.style.display = "none";
+            }
+        });
+
         function fetchDeviceData() {
-            const mid = localStorage.getItem("mid");
-            console.log("Fetching devices with mid:", mid); // Debug log
+    const mid = localStorage.getItem("mid");
+    console.log("Fetching devices with mid:", mid);
 
-            fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Device data received:", data); // Debug log
-                    
-                    if (Array.isArray(data)) {
-                        devices = data.map(item => ({
-                            name: item.dname || 'Unnamed Device',
-                            did: item.did
-                        }));
-                        
-                        // Populate device select
-                        const deviceSelect = document.getElementById('deviceSelect');
-                        if (deviceSelect) {
-                            deviceSelect.innerHTML = '<option value="">Select Vehicle</option>';
-                            devices.forEach(device => {
-                                const option = document.createElement('option');
-                                option.value = device.did;
-                                option.textContent = device.name;
-                                deviceSelect.appendChild(option);
-                            });
-
-                            // Add change event listener
-                            deviceSelect.addEventListener('change', function() {
-                                selectedDeviceId = this.value;
-                            });
-                        } else {
-                            console.error('Device select element not found');
-                        }
-                    } else {
-                        console.error('Invalid data format received:', data);
-                    }
-                })
-                .catch(error => {
-                    console.error("Error fetching devices:", error);
-                });
-        }
+    fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log("Device data received:", data);
+            
+            if (Array.isArray(data)) {
+                // Map the devices array
+                devices = data.map(item => ({
+                    name: item.dname || 'Unnamed Device',
+                    did: item.did
+                }));
+                
+                // Instead of creating select options, populate the dropdown list
+                populateVehicleList(devices);
+                
+                // Set initial state of dropdown
+                const deviceSelect = document.getElementById('deviceSelect');
+                if (deviceSelect) {
+                    deviceSelect.textContent = 'Select Vehicle';
+                } else {
+                    console.error('Device select element not found');
+                }
+            } else {
+                console.error('Invalid data format received:', data);
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching devices:", error);
+        });
+}
 
         // document.addEventListener('click', function(event) {
         //     const dropdown = document.getElementById('deviceDropdown');

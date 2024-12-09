@@ -901,75 +901,44 @@
       white-space: nowrap;
     }
 
-
     .hold-time-selector {
-      display: none;
-      margin: 10px 0;
-      padding: 10px;
-      background: #f5f5f5;
-      border-radius: 4px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .hold-time-selector label {
-      margin-right: 8px;
-      font-weight: 500;
-      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+      font-size: 13px;
     }
 
     .hold-time-selector select {
-      padding: 6px 8px;
+      padding: 5px 10px;
       border-radius: 4px;
-      border: 1px solid #ddd;
-      background: white;
-      font-size: 14px;
-      cursor: pointer;
-      transition: border-color 0.2s;
-    }
-
-    .hold-time-selector select:hover {
-      border-color: #bbb;
-    }
-
-    .hold-time-selector select:focus {
+      background-color: white;
+      color: #2c3e50;
+      border: none;
       outline: none;
-      border-color: #4CAF50;
-      box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+      cursor: pointer;
+    }
+
+    .buttonclass button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background-color: #cccccc;
     }
 
     .stop-popup {
-      padding: 12px;
-      max-width: 300px;
-      background: white;
-      border-radius: 4px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-    }
-
-    .stop-popup h4 {
-      margin: 0 0 10px 0;
-      color: #333;
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    .stop-popup p {
-      margin: 8px 0;
-      font-size: 14px;
-      color: #555;
-      line-height: 1.4;
-    }
-
-    .stop-popup a {
-      color: #4CAF50;
-      text-decoration: none;
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-
-    .stop-popup a:hover {
-      color: #45a049;
-      text-decoration: underline;
-    }
+    position: absolute;
+    background: #fff;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
+    display: none;
+    z-index: 1000;
+    min-width: 280px;
+    text-align: left;
+    transform: translate(-50%, -100%);
+    margin-top: 150px;
+  }
   </style>
 </head>
 
@@ -1043,22 +1012,19 @@
         </div>
 
         <div class="hold-time-selector">
-          <label for="holdTimeSelect">Hold Time:</label>
-          <select id="holdTimeSelect">
-            <option value=">2 Min" selected>>2 Min</option>
-            <option value=">3 Min">>3 Min</option>
-            <option value=">5 Min">>5 Min</option>
-            <option value=">10 Min">>10 Min</option>
-            <option value=">15 Min">>15 Min</option>
-            <option value=">20 Min">>20 Min</option>
-            <option value=">30 Min">>30 Min</option>
-            <option value=">45 Min">>45 Min</option>
-            <option value=">1 Hour">>1 Hour</option>
-            <option value=">1.5 Hour">>1.5 Hour</option>
-            <option value=">2 Hour">>2 Hour</option>
-            <option value=">3 Hour">>3 Hour</option>
-            <option value=">5 Hour">>5 Hour</option>
-            <option value=">10 Hour">>10 Hour</option>
+          <label for="holdTime">Hold Time:</label>
+          <select id="holdTime">
+            <option value="2" selected>>2 Min</option>
+            <option value="3">>3 Min</option>
+            <option value="5">>5 Min</option>
+            <option value="10">>10 Min</option>
+            <option value="15">>15 Min</option>
+            <option value="20">>20 Min</option>
+            <option value="30">>30 Min</option>
+            <option value="45">>45 Min</option>
+            <option value="60">>1 Hour</option>
+            <option value="90">>1.5 Hour</option>
+            <option value="120">>2 Hour</option>
           </select>
         </div>
 
@@ -1074,6 +1040,11 @@
       <div id="customPopup" class="popup">
         <span class="close-btn" onclick="hidePopup(true)">✖</span>
         <div id="popupContent"></div>
+      </div>
+
+      <div id="stopMarkerPopup" class="popup stop-popup">
+        <span class="close-btn" onclick="hideStopPopup(true)">✖</span>
+        <div id="stopPopupContent"></div>
       </div>
 
       <div id="polylinePopup" class="polyline-popup">
@@ -1126,9 +1097,6 @@
     let speedThreshold = 30;
     let fetching = false;
     const MINIMUM_DISTANCE = 0.01; // km - threshold for considering vehicle stopped
-    let selectedHoldTime = 120; // Default 2 minutes in seconds
-    let stopPoints = [];
-    let currentStopPoint = null;
     let polylinePopup = null;
 
 
@@ -1772,189 +1740,128 @@
     //     }, 1000 / playbackSpeed); // Adjust interval based on speed
     //   }
 
-    // Utility Functions
-    function getHoldTimeInSeconds(value) {
-      try {
-        const number = parseInt(value.match(/\d+/)[0]);
-        if (!number) return 120; // Default to 2 minutes if parsing fails
 
-        if (value.includes('Hour')) {
-          return number * 3600;
-        } else if (value.includes('Min')) {
-          return number * 60;
-        }
-        return number;
-      } catch (error) {
-        console.error('Error parsing hold time:', error);
-        return 120; // Default to 2 minutes on error
-      }
-    }
+    // **Detect Stop During Playback** (this is the main change)
+    function detectStopDuringPlayback(currentIndex) {
+      if (currentIndex === 0) return; // Skip the first point, no previous point to compare
 
-    function getTimeDifferenceInSeconds(date1, date2) {
-      try {
-        return Math.abs((new Date(date1) - new Date(date2)) / 1000);
-      } catch (error) {
-        console.error('Error calculating time difference:', error);
-        return 0;
-      }
-    }
+      const holdTime = parseInt(document.getElementById("holdTime").value); // Get hold time from dropdown
+      const currentPoint = playbackData[currentIndex];
+      const prevPoint = playbackData[currentIndex - 1];
 
-    function formatDuration(seconds) {
-      try {
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
+      const prevTime = new Date(prevPoint.date);
+      const currentTime = new Date(currentPoint.date);
 
-        const parts = [];
-        if (hours > 0) parts.push(`${hours} ${hours === 1 ? 'hour' : 'hours'}`);
-        if (minutes > 0) parts.push(`${minutes} mins`);
-        if (remainingSeconds > 0) parts.push(`${remainingSeconds} secs`);
+      const timeDiff = (currentTime - prevTime) / (1000 * 60); // Time difference in minutes
+      const distance = calculateDistance(
+        prevPoint.coordinates[1],
+        prevPoint.coordinates[0],
+        currentPoint.coordinates[1],
+        currentPoint.coordinates[0]
+      );
 
-        return parts.join(' ') || '0 secs';
-      } catch (error) {
-        console.error('Error formatting duration:', error);
-        return '0 secs';
-      }
-    }
+      // Check if the vehicle has been stationary for the hold time and the distance is less than the threshold
+      if (timeDiff >= holdTime && distance < MINIMUM_DISTANCE) {
+        // Add stop marker dynamically
+        const stopMarker = olaMaps
+          .addMarker({
+            element: createStopMarkerElement(timeDiff), // Custom stop marker element
+            offset: [0, -10],
+            anchor: "center",
+          })
+          .setLngLat(prevPoint.coordinates)
+          .addTo(myMap);
 
-    // Core Stop Detection Logic
-    function detectStopPoints() {
-      if (!Array.isArray(playbackData) || playbackData.length === 0) {
-        console.warn('No playback data available');
-        return;
-      }
+        // Add marker to array for tracking
+        stopMarkers.push(stopMarker);
 
-      stopPoints = [];
-      let potentialStop = null;
-
-      for (let i = 0; i < playbackData.length - 1; i++) {
-        const current = playbackData[i];
-        const next = playbackData[i + 1];
-
-        if (!current?.coordinates || !next?.coordinates) continue;
-
-        const timeDiff = getTimeDifferenceInSeconds(current.date, next.date);
-        const distance = calculateDistance(
-          current.coordinates[1],
-          current.coordinates[0],
-          next.coordinates[1],
-          next.coordinates[0]
-        );
-
-        if (distance < MINIMUM_DISTANCE && timeDiff >= selectedHoldTime) {
-          if (!potentialStop) {
-            potentialStop = {
-              startTime: current.date,
-              startIndex: i,
-              coordinates: current.coordinates,
-              totalDistance: calculateTotalDistance(i)
-            };
-          }
-        } else if (potentialStop) {
-          potentialStop.endTime = current.date;
-          potentialStop.endIndex = i;
-          potentialStop.duration = getTimeDifferenceInSeconds(
-            potentialStop.startTime,
-            potentialStop.endTime
-          );
-          stopPoints.push(potentialStop);
-          potentialStop = null;
-        }
-      }
-    }
-
-    // Map Layer Management
-    function createStopMarkers() {
-      try {
-        // Remove existing markers
-        removeExistingMarkers();
-
-        // Create GeoJSON data
-        const geojsonData = {
-          type: 'FeatureCollection',
-          features: stopPoints.map((stop, index) => ({
-            type: 'Feature',
-            geometry: {
-              type: 'Point',
-              coordinates: stop.coordinates
-            },
-            properties: {
-              id: index,
-              startTime: stop.startTime,
-              endTime: stop.endTime,
-              duration: stop.duration,
-              totalDistance: stop.totalDistance
-            }
-          }))
-        };
-
-        // Add new source and layer
-        myMap.addSource('stop-points', { type: 'geojson', data: geojsonData });
-
-        myMap.addLayer({
-          id: 'stop-points',
-          type: 'symbol',
-          source: 'stop-points',
-          layout: {
-            'icon-image': 'stop-icon',
-            'icon-size': 1.5,
-            'icon-allow-overlap': true
-          }
+        // **Set the event listener to show popup when stop marker is clicked**
+        stopMarker.getElement().addEventListener("click", () => {
+          showStopPopup(prevPoint, currentPoint, timeDiff);
         });
 
-        // Add click handler
-        addStopPointClickHandler();
-      } catch (error) {
-        console.error('Error creating stop markers:', error);
+        console.log(
+          `Stop dynamically set at ${prevPoint.coordinates[1]}, ${prevPoint.coordinates[0]}.\n` +
+          `Stop Duration: ${timeDiff.toFixed(2)} minutes.\n` +
+          `Stop Time: ${new Date(prevPoint.date).toLocaleString()} to ${new Date(currentPoint.date).toLocaleString()}`
+        );
       }
     }
 
-    function removeExistingMarkers() {
-      if (myMap.getLayer('stop-points')) {
-        myMap.removeLayer('stop-points');
-      }
-      if (myMap.getSource('stop-points')) {
-        myMap.removeSource('stop-points');
-      }
+    // Helper to create the stop marker element
+    function createStopMarkerElement(duration) {
+      const stopElement = document.createElement("div");
+      stopElement.style.width = "40px";
+      stopElement.style.height = "40px";
+      stopElement.style.borderRadius = "50%";
+      stopElement.style.backgroundColor = "red";
+      stopElement.style.border = "2px solid white";
+      stopElement.style.display = "flex";
+      stopElement.style.alignItems = "center";
+      stopElement.style.justifyContent = "center";
+      stopElement.style.color = "white";
+      stopElement.style.fontSize = "10px";
+      stopElement.style.fontWeight = "bold";
+      stopElement.textContent = "STOP";
+      return stopElement;
     }
 
-    function addStopPointClickHandler() {
-      myMap.on('click', 'stop-points', (e) => {
-        if (!e.features?.[0]) return;
+    // Function to show the popup when a stop marker is clicked
+    function showStopPopup(startPoint, endPoint, duration) {
+    const startTime = new Date(startPoint.date).toLocaleString();
+    const endTime = new Date(endPoint.date).toLocaleString();
+    const stopDuration = formatDuration(duration);
+    const stopIndex = playbackData.findIndex(point => 
+        point.coordinates[0] === startPoint.coordinates[0] && 
+        point.coordinates[1] === startPoint.coordinates[1]
+    );
+    const cumulativeDistance = calculateCumulativeDistance(stopIndex);
 
-        const { coordinates } = e.features[0].geometry;
-        const properties = e.features[0].properties;
+    // Use the dedicated stop popup instead of customPopup
+    const popup = document.getElementById("stopMarkerPopup");
+    const popupContent = document.getElementById("stopPopupContent");
 
-        const popupContent = `
-            <div class="stop-popup">
-                <h4>Stop Details</h4>
-                <p>Duration: ${formatDuration(properties.duration)}</p>
-                <p>Stop Time: ${new Date(properties.startTime).toLocaleString()} to
-                   ${new Date(properties.endTime).toLocaleString()}</p>
-                <p>Distance: ${properties.totalDistance.toFixed(2)} km</p>
-                <p>Location: <a href="#" onclick="showLocationOnMap(${coordinates}); return false;">
-                    Click Here
-                </a></p>
-            </div>
-        `;
+    popupContent.innerHTML = `
+        <div style="font-family: Arial, sans-serif;">
+            <b>Stop Duration:</b> <span style="color: #e74c3c;">${stopDuration}</span><br><br>
+            <b>Stop Time:</b> <span style="color: #3498db;">${startTime} - ${endTime}</span><br><br>
+            <b>Location:</b> 
+            <a href="https://www.google.com/maps?q=${startPoint.coordinates[1]},${startPoint.coordinates[0]}" target="_blank" 
+               style="color: #2980b9;">View on Google Maps</a><br><br>
+            <b>Distance Covered:</b> <span style="color: #f39c12;">${cumulativeDistance.toFixed(2)} km</span><br>
+        </div>
+    `;
 
-        new olaMaps.Popup()
-          .setLngLat(coordinates)
-          .setHTML(popupContent)
-          .addTo(myMap);
-      });
+    popup.style.display = "block";
+    updateStopPopupPosition(startPoint.coordinates);
+}
+
+    // Helper function to calculate the duration in hours, minutes, and seconds
+    function formatDuration(durationInMinutes) {
+      const totalSeconds = Math.floor(durationInMinutes * 60);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      // Format as HH:MM:SS
+      return `${hours}h ${minutes}m ${seconds}s`;
     }
 
-    // Event Handlers
-    document.getElementById('holdTimeSelect')?.addEventListener('change', function (e) {
-      selectedHoldTime = getHoldTimeInSeconds(e.target.value);
-      if (Array.isArray(playbackData) && playbackData.length > 0) {
-        detectStopPoints();
-        createStopMarkers();
-      }
-    });
+    // Function to position the popup above the stop marker
+    function updateStopPopupPosition(coordinates) {
+    const mapPos = myMap.project(coordinates);
+    const popup = document.getElementById("stopMarkerPopup");
+    popup.style.left = `${mapPos.x}px`;
+    popup.style.top = `${mapPos.y - 60}px`;
+  }
 
-    /* start point set time */
+  function hideStopPopup(manuallyClosed = false) {
+    const popup = document.getElementById("stopMarkerPopup");
+    popup.style.display = "none";
+}
+
+
+    /*start time show starting point */
     function updateStartTimeDisplay(startDateTime) {
       const startTimeDisplay = document.getElementById("startTimeDisplay");
       if (startTimeDisplay) {
@@ -1965,6 +1872,11 @@
     }
 
     function startPlayback(isSpeedUpdate = false) {
+      // Disable start button and enable pause/stop buttons
+      document.getElementById("startPlayback").disabled = true;
+      document.getElementById("pausePlayback").disabled = false;
+      document.getElementById("stopPlayback").disabled = false;
+
       cleanupPolylineEvents();
 
       if (fetching) {
@@ -1976,11 +1888,6 @@
         console.error("Playback data is empty.");
         alert("Playback data is empty");
         return;
-      }
-
-      if (!isSpeedUpdate && Array.isArray(playbackData) && playbackData.length > 0) {
-        detectStopPoints();
-        createStopMarkers();
       }
 
       // Remove existing marker if not paused and not a speed update
@@ -2002,14 +1909,12 @@
         const customMarker = document.createElement("div");
         customMarker.classList.add("customMarkerClass");
 
-        // Create container for car and time
         const markerContainer = document.createElement("div");
         markerContainer.style.position = "relative";
         markerContainer.style.display = "flex";
         markerContainer.style.flexDirection = "column";
         markerContainer.style.alignItems = "center";
 
-        // Car image
         const carImage = document.createElement("img");
         carImage.classList.add("carImage");
         carImage.src = "/images/truck1.png";
@@ -2037,7 +1942,6 @@
           startContainer.style.flexDirection = "column";
           startContainer.style.alignItems = "center";
 
-          // Start marker "S"
           const markerElement = document.createElement("div");
           markerElement.innerHTML = "S";
           markerElement.style.backgroundColor = "green";
@@ -2053,7 +1957,6 @@
           markerElement.style.justifyContent = "center";
           markerElement.style.fontSize = "12px";
 
-          // Start time display
           const startTimeDisplay = document.createElement("div");
           startTimeDisplay.innerHTML = startDateTime;
           startTimeDisplay.style.backgroundColor = "white";
@@ -2077,6 +1980,7 @@
             .setLngLat(startCoordinates)
             .addTo(myMap);
         }
+
         vehicleMarker.getElement().addEventListener("click", () => {
           isPopupClosedManually = false;
           const cumulativeDistance = calculateCumulativeDistance(index);
@@ -2110,9 +2014,14 @@
           const adjustedAngle = angle + ANGLE_OFFSET;
           markerElement.style.transform = `rotate(${adjustedAngle}deg)`;
 
-          // Rest of your existing interval code...
+          // Add to polyline data
           dynamicPlaybackData.push(currentPoint);
           updatePolyline();
+
+          // **Check if the car has stopped dynamically during playback**
+          detectStopDuringPlayback(index);
+
+          // Update vehicle information
           const cumulativeDistance = calculateCumulativeDistance(index);
           const content = createPopupContent(
             currentPoint,
@@ -2148,12 +2057,20 @@
       return cumulativeDistance;
     }
 
+    let stopMarkers = [];
+
     function stopPlayback() {
+      // Disable stop/pause buttons and enable start button
+      document.getElementById("startPlayback").disabled = false;
+      document.getElementById("pausePlayback").disabled = false;
+      document.getElementById("stopPlayback").disabled = true;
+
       clearInterval(playbackInterval);
       playbackInterval = null;
       index = 0;
       isPaused = false;
       hidePopup();
+      hideStopPopup();
 
       if (vehicleMarker) {
         vehicleMarker.remove(); // Remove the marker
@@ -2165,6 +2082,12 @@
         startingMarker.remove();
         startingMarker = null;
       }
+
+      // Remove all stop markers
+    stopMarkers.forEach(marker => {
+        if (marker) marker.remove();
+    });
+    stopMarkers = [];
 
       // Clear the polyline
       dynamicPlaybackData = [];
@@ -2194,8 +2117,20 @@
       )} km`;
     }
 
+    // Add this when page loads to set initial state
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initially disable pause and stop buttons
+        document.getElementById("pausePlayback").disabled = false;
+        document.getElementById("stopPlayback").disabled = true;
+    });
+
     function pausePlayback() {
       if (playbackInterval) {
+        // Disable pause button and enable start/stop buttons
+        document.getElementById("startPlayback").disabled = false;
+        document.getElementById("pausePlayback").disabled = true;
+        document.getElementById("stopPlayback").disabled = false;
+
         clearInterval(playbackInterval);
         isPaused = true;
       }
