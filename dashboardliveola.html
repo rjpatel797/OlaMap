@@ -82,7 +82,7 @@
       }
 
       #deviceList {
-        width: 250px;
+        width: 200px;
         padding: 10px;
         background-color: #f9f9f9;
         border-right: 1px solid #ccc;
@@ -99,13 +99,13 @@
         display: flex;
         align-items: center;
         cursor: pointer;
-        padding: 8px;
-        margin: 5px 0;
+        padding: 2px 8px;
+        margin: 4px 0;
         background-color: #e6e6e6;
         border-radius: 4px;
         text-align: left;
         font-size: 14px;
-        min-height: 40px; /* Ensure consistent height for all items */
+        min-height: 25px; /* Ensure consistent height for all items */
       }
       .deviceItem:hover {
         background-color: #d4d4d4;
@@ -1214,12 +1214,6 @@ function getCarEmoji(device) {
             </span><br />
           </div>
         </div>`;
-        const distanceButton = `<button onclick="updateDistance('${device.deviceId}')" class="distance-btn">Get Today's
-          Distance</button>`;
-        const nearbyButton = `<button
-          onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[1]}, ${device.coordinates[0]})"
-          class="nearby-btn">View Nearby Vehicles</button>`;
-
         const currentDate = new Date();
         const deviceDate = new Date(device.date);
         const minDifference = Math.floor(
@@ -1234,7 +1228,7 @@ function getCarEmoji(device) {
         <b>Speed:</b> ${device.speed} km/h <br />
         <b>Hold Time:</b> ${device.holdtime} <br />
         <b>Status:</b> <span class="status-indicator-status ${
-      device.status == " Online" ? "status-on" : "status-off" }">${device.status}</span> <br />
+      device.status == "Online" ? "status-on" : "status-off" }">${device.status}</span> <br />
         <b>Battery:</b> ${device.battery}V <br />
         <div style="display: flex; align-items: center; gap: 5px;">
           <b>Location:</b> <span id="location-popup-${
@@ -1264,6 +1258,11 @@ function getCarEmoji(device) {
         }, ${
           device.coordinates[0]
         })" class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">View Nearby</button>
+          <button onclick="shareLocation(${
+          device.coordinates[1]
+        }, ${
+          device.coordinates[0]
+        })" class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">Share Location</button>
         </div>
         `;
         popup.style.display = "block";
@@ -1677,6 +1676,10 @@ function createMarkerElement(device) {
           radius: radius,
         });
         window.location.href = `viewnearby.html?${params.toString()}`;
+      }
+      function shareLocation(lat, lng) {
+        // Default radius is 12 km - can be modified as needed
+        window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
       }
 
       const clusterOptions = {
