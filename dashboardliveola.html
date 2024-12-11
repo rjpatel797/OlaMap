@@ -313,6 +313,10 @@
       #deviceDataTable td:nth-child(5),  /* Ac */
       #deviceDataTable td:nth-child(6),  /* Gps */
       #deviceDataTable td:nth-child(7),  /* Power */
+      #deviceDataTable td:nth-child(11),  /* Power */
+      #deviceDataTable td:nth-child(12),  /* Power */
+      #deviceDataTable td:nth-child(13),  /* Power */
+      #deviceDataTable td:nth-child(14),  /* Power */
       #deviceDataTable td:nth-child(8)   /* Ignition */ {
         text-align: center;
         padding: 8px 4px;
@@ -618,7 +622,7 @@
       .nearby-btn {
         padding: 4px 8px;
         font-size: 11px;
-        min-width: 60px;
+        /* min-width: 60px; */
       }
 
       #distance-value {
@@ -763,9 +767,9 @@
                     <th>Speed</th>
                     <th>Hold Time</th>
                     <th>Location</th>
-                    <th>View Today's Trip</th>
-                    <th>View Live Tracking</th>
-                    <th>View PLayback</th>
+                    <th>Today's Trip</th>
+                    <th>Live Tracking</th>
+                    <th>PLayback</th>
                   </tr>
                 </thead>
                 <tbody id="deviceTableBody">
@@ -1196,73 +1200,72 @@ function getCarEmoji(device) {
 
         popupTitle.innerHTML = `<div class="title">${
           device.name
-        }<div class="status"><b>GPS:</b> <span class="status-indicator ${
-          device.gps == true ? "status-on" : "status-off"
-        }">
-                  ${device.gps == true ? "ON" : "OFF"}
-              </span><br/>
-              <b>Engine:</b> <span class="status-indicator ${
-                device.ignition == "true" ? "status-on" : "status-off"
-              }">
-                  ${device.ignition == "true" ? "ON" : "OFF"}
-              </span><br/>
-              <b>Power:</b> <span class="status-indicator ${
-                device.power === "true" ? "status-on" : "status-off"
-              }">
-                  ${device.power === "true" ? "ON" : "OFF"}
-              </span><br/>
-              </div></div>`;
-        const distanceButton = `<button onclick="updateDistance('${device.deviceId}')" class="distance-btn">Get Today's Distance</button>`;
-        const nearbyButton = `<button onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[1]}, ${device.coordinates[0]})" class="nearby-btn">View Nearby Vehicles</button>`;
+          }<div class="status"><b>GPS:</b> <span class="status-indicator ${
+          device.gps == true ? " status-on" : "status-off" }">
+              ${device.gps == true ? "ON" : "OFF"}
+            </span><br />
+            <b>Engine:</b> <span class="status-indicator ${
+                device.ignition == " true" ? "status-on" : "status-off" }">
+              ${device.ignition == "true" ? "ON" : "OFF"}
+            </span><br />
+            <b>Power:</b> <span class="status-indicator ${
+                device.power === " true" ? "status-on" : "status-off" }">
+              ${device.power === "true" ? "ON" : "OFF"}
+            </span><br />
+          </div>
+        </div>`;
+        const distanceButton = `<button onclick="updateDistance('${device.deviceId}')" class="distance-btn">Get Today's
+          Distance</button>`;
+        const nearbyButton = `<button
+          onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[1]}, ${device.coordinates[0]})"
+          class="nearby-btn">View Nearby Vehicles</button>`;
 
         const currentDate = new Date();
         const deviceDate = new Date(device.date);
         const minDifference = Math.floor(
-          (currentDate - deviceDate) / (1000 * 60)
+        (currentDate - deviceDate) / (1000 * 60)
         );
         const timeAgo = formatTimeDifference(minDifference);
 
         popupContent.innerHTML = `
-    <b>Date:</b> ${
-      device.dateNew
-    } <span style="color: #666; font-size: 12px;">(${timeAgo})</span><br/>
-    <b>Speed:</b> ${device.speed} km/h <br/>
-    <b>Hold Time:</b> ${device.holdtime} <br/>
-    <b>Status:</b> <span class="status-indicator-status ${
-      device.status == "Online" ? "status-on" : "status-off"
-    }">${device.status}</span> <br/>
-    <b>Battery:</b> ${device.battery}V <br/>
-    <div style="display: flex; align-items: center; gap: 5px;">
-        <b>Location:</b> <span id="location-popup-${
+        <b>Date:</b> ${
+        device.dateNew
+        } <span style="color: #666; font-size: 12px;">(${timeAgo})</span><br />
+        <b>Speed:</b> ${device.speed} km/h <br />
+        <b>Hold Time:</b> ${device.holdtime} <br />
+        <b>Status:</b> <span class="status-indicator-status ${
+      device.status == " Online" ? "status-on" : "status-off" }">${device.status}</span> <br />
+        <b>Battery:</b> ${device.battery}V <br />
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <b>Location:</b> <span id="location-popup-${
           device.deviceId
         }"><button onclick="updateLocationPopup('${device.deviceId}', '${
           device.latlang
-        }')" 
-        style="background: none; 
+        }')" style="background: none; 
                border: none; 
                padding: 0;
                color: #3498db; 
                text-decoration: underline;
                cursor: pointer;
                font-size: 11px;">
-        Get Location
-</button></span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 5px;">
-        <b>Distance:</b> <span id="distance-value">0 km</span>
-    </div>
-    <div class="button-container" style="margin-top: 5px; gap: 5px;">
-        <button onclick="updateDistance('${
+              Get Location
+            </button></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <b>Distance:</b> <span id="distance-value">0 km</span>
+        </div>
+        <div class="button-container" style="margin-top: 5px; gap: 5px;">
+          <button onclick="updateDistance('${
           device.deviceId
         }')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 8px;">Get Distance</button>
-        
-        <button onclick="viewNearbyVehicles('${device.deviceId}', ${
+
+          <button onclick="viewNearbyVehicles('${device.deviceId}', ${
           device.coordinates[1]
         }, ${
           device.coordinates[0]
         })" class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">View Nearby</button>
-    </div>
-`;
+        </div>
+        `;
         popup.style.display = "block";
         if (marker) updatePopupPosition(marker);
       }
@@ -1544,24 +1547,27 @@ function createMarkerElement(device) {
             <td id="location-${device.deviceId}">
               <button onclick="updateLocation('${device.deviceId}', '${
             device.latlang
-          }')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 8px;">
-                Get Location
+          }')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+                <i class="fas fa-map-marker-alt" style="margin-right: 0"></i>
               </button>
             </td>
             <td>
               <button onclick="viewTodayTrip('${
                 device.name
-              }')" class="view-trip-btn">View Trip</button>
+              }')" class="view-trip-btn"  style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+              <i class="fas fa-route"></i></button>
             </td>
             <td>
               <button onclick="viewLiveTracking('${
                 device.name
-              }')" class="view-live-btn">View Live Tracking</button>
+              }')" class="view-live-btn"  style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+              <i class="fas fa-play-circle" style="margin-right: 0"></i></button>
             </td>
             <td>
               <button onclick="viewPlaybackTrip('${
                 device.deviceId
-              }')" class="view-live-btn">View Playback</button>
+              }')" class="view-live-btn"  style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+              <i class="fas fa-history"></i></button>
             </td>
           `;
           tableBody.appendChild(row);
