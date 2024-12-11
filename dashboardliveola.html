@@ -13,6 +13,17 @@
     <link href="olamap/style.css" rel="stylesheet" />
     <script src="olamap/olamaps-js-sdk.umd.js"></script>
 
+    <!-- Add these within the <head> tag of your Dashboard HTML -->
+<!-- XLSX for Excel export -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<!-- jsPDF for PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- jsPDF Autotable for table support in PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+
     <style>
       /* General reset and box-sizing */
       * {
@@ -732,6 +743,28 @@
 .table-search-input::placeholder {
   color: #95a5a6;
 }
+
+.export-buttons {
+    margin: 10px 0;
+    display: flex;
+    gap: 10px;
+}
+
+.export-buttons button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    background: #34495e;
+    color: white;
+    transition: background 0.3s ease;
+}
+
+.export-buttons button:hover {
+    background: #2c3e50;
+}
+
     </style>
   </head>
   <body>
@@ -781,43 +814,52 @@
         <!-- Add this new popup div for the table -->
         <div id="tablePopup" class="table-popup">
           <div class="table-popup-content">
-            <div class="table-popup-header">
-              <h2>All Devices Status</h2>
-              <div class="table-search">
-                <input 
-                type="text" 
-                id="tableSearchInput" 
-                placeholder="Search device name..." 
-                class="table-search-input"
-                >
+              <div class="table-popup-header">
+                  <h2>All Devices Status</h2>
+                  <div class="table-search">
+                      <input 
+                      type="text" 
+                      id="tableSearchInput" 
+                      placeholder="Search device name..." 
+                      class="table-search-input"
+                      >
+                  </div>
               </div>
-            </div>
-            <span class="table-close-btn" onclick="hideDeviceTable()">✖</span>
-            <div class="table-container">
-              <table id="deviceDataTable">
-                <thead>
-                  <tr>
-                    <th>Device Name</th>
-                    <th>Last Updated</th>
-                    <th>Status</th>
-                    <th>Battery</th>
-                    <th>Ac</th>
-                    <th>Gps</th>
-                    <th>Power</th>
-                    <th>Ignition</th>
-                    <th>Speed</th>
-                    <th>Hold Time</th>
-                    <th>Location</th>
-                    <th>Today's Trip</th>
-                    <th>Live Tracking</th>
-                    <th>PLayback</th>
-                  </tr>
-                </thead>
-                <tbody id="deviceTableBody">
-                  <!-- Data will be populated here -->
-                </tbody>
-              </table>
-            </div>
+              <span class="table-close-btn" onclick="hideDeviceTable()">✖</span>
+              <!-- Insert Export Buttons Here -->
+              <div class="export-buttons">
+                  <button onclick="copyDeviceTableToClipboard()">Copy</button>
+                  <button onclick="exportDeviceTableCSV()">CSV</button>
+                  <button onclick="exportDeviceTableExcel()">Excel</button>
+                  <button onclick="exportDeviceTablePDF()">PDF</button>
+                  <button onclick="printDeviceTable()">Print</button>
+                  <button onclick="saveDeviceTable()">Save</button>
+              </div>
+              <div class="table-container">
+                  <table id="deviceDataTable">
+                      <thead>
+                          <tr>
+                              <th>Device Name</th>
+                              <th>Last Updated</th>
+                              <th>Status</th>
+                              <th>Battery</th>
+                              <th>Ac</th>
+                              <th>Gps</th>
+                              <th>Power</th>
+                              <th>Ignition</th>
+                              <th>Speed</th>
+                              <th>Hold Time</th>
+                              <th>Location</th>
+                              <th>Today's Trip</th>
+                              <th>Live Tracking</th>
+                              <th>Playback</th>
+                          </tr>
+                      </thead>
+                      <tbody id="deviceTableBody">
+                          <!-- Data will be populated here -->
+                      </tbody>
+                  </table>
+              </div>
           </div>
         </div>
       </div>
@@ -1858,6 +1900,217 @@ deviceListHeader.insertAdjacentHTML('afterend', `
     <span style="margin-left: 10px;">Select All</span>
   </div>
 `);
+
+// Function to copy the device table to clipboard using modern API
+async function copyDeviceTableToClipboard() {
+    const table = document.getElementById('deviceDataTable');
+    if (!table) {
+        alert('Table not found!');
+        return;
+    }
+
+    // Extract text content from table
+    let tableText = '';
+    const rows = table.querySelectorAll('tr');
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('th, td');
+        const cellTexts = Array.from(cells).map(cell => cell.textContent.trim());
+        tableText += cellTexts.join('\t') + '\n';
+    });
+
+    try {
+        await navigator.clipboard.writeText(tableText);
+        alert('Table copied to clipboard!');
+    } catch (err) {
+        console.error('Failed to copy table:', err);
+        alert('Failed to copy table.');
+    }
+}
+
+// Function to export the device table as CSV
+function exportDeviceTableCSV() {
+    const table = document.getElementById('deviceDataTable');
+    if (!table) {
+        alert('Table not found!');
+        return;
+    }
+
+    const rows = table.querySelectorAll('tr');
+    const csv = [];
+    rows.forEach(row => {
+        const rowData = [];
+        row.querySelectorAll('th, td').forEach(cell => {
+            const cellText = cell.textContent.replace(/"/g, '""');
+            rowData.push(`"${cellText}"`);
+        });
+        csv.push(rowData.join(','));
+    });
+    const csvContent = csv.join('\n');
+    downloadFile(csvContent, 'device_status_table.csv', 'text/csv');
+}
+
+// Function to export the device table as Excel
+function exportDeviceTableExcel() {
+    const table = document.getElementById('deviceDataTable');
+    if (!table) {
+        alert('Table not found!');
+        return;
+    }
+
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Device Status" });
+    XLSX.writeFile(wb, 'device_status_table.xlsx');
+}
+
+// Function to export the device table as PDF
+async function exportDeviceTablePDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4');
+
+    const table = document.getElementById('deviceDataTable');
+    if (!table) {
+        alert('Table not found!');
+        return;
+    }
+
+    // Add title
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.text("Device Status Table", doc.internal.pageSize.width / 2, 15, { align: 'center' });
+
+    // Add date/time
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const now = new Date();
+    doc.text(`Generated on: ${now.toLocaleString()}`, 15, 25);
+
+    // Prepare table data
+    const headers = [
+        [
+            'Device Name',
+            'Last Updated',
+            'Status',
+            'Battery',
+            'Ac',
+            'Gps',
+            'Power',
+            'Ignition',
+            'Speed',
+            'Hold Time',
+            'Location',
+            "Today's Trip",
+            'Live Tracking',
+            'Playback'
+        ]
+    ];
+
+    const rows = Array.from(table.querySelectorAll('tbody tr')).map(row => {
+        const cells = Array.from(row.querySelectorAll('td'));
+        return cells.map(cell => cell.textContent.trim());
+    });
+
+    // If there's no data, just alert
+    if (rows.length === 0) {
+        alert('No data available to export.');
+        return;
+    }
+
+    doc.autoTable({
+        head: headers,
+        body: rows,
+        startY: 30,
+        theme: 'grid',
+        styles: {
+            fontSize: 8,
+            cellPadding: 2
+        },
+        headStyles: {
+            fillColor: [41, 128, 185],
+            textColor: 255,
+            fontSize: 9,
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        columnStyles: {
+            0: { cellWidth: 20 },  // Device Name
+            1: { cellWidth: 25 },  // Last Updated
+            2: { cellWidth: 15 },  // Status
+            3: { cellWidth: 15 },  // Battery
+            4: { cellWidth: 10 },  // Ac
+            5: { cellWidth: 10 },  // Gps
+            6: { cellWidth: 10 },  // Power
+            7: { cellWidth: 15 },  // Ignition
+            8: { cellWidth: 15 },  // Speed
+            9: { cellWidth: 20 },  // Hold Time
+            10: { cellWidth: 30 }, // Location
+            11: { cellWidth: 20 }, // Today's Trip
+            12: { cellWidth: 20 }, // Live Tracking
+            13: { cellWidth: 15 }  // Playback
+        },
+        didDrawPage: (data) => {
+            // Add footer with page numbers
+            const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
+            const totalPages = doc.internal.getNumberOfPages();
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "italic");
+            doc.text(`Page ${pageNumber} of ${totalPages}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+        }
+    });
+
+    doc.save('device_status_table.pdf');
+}
+
+// Function to print the device table
+
+// Function to save the device table as JSON
+function saveDeviceTable() {
+    const table = document.getElementById('deviceDataTable');
+    if (!table) {
+        alert('Table not found!');
+        return;
+    }
+
+    const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent.trim());
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    if (rows.length === 0) {
+        alert('No data available to save.');
+        return;
+    }
+
+    const data = rows.map(row => {
+        const cells = Array.from(row.querySelectorAll('td'));
+        const rowData = {};
+        cells.forEach((cell, index) => {
+            rowData[headers[index]] = cell.textContent.trim();
+        });
+        return rowData;
+    });
+
+    const jsonString = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = 'device_status_table.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// Reusable helper function to download a file
+function downloadFile(content, fileName, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
 
 document.querySelectorAll('.status-item').forEach(item => {
   item.addEventListener('click', function() {
