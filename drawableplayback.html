@@ -354,14 +354,14 @@
     }
 
     .customMarkerClass {
-      display: block !important;
-      height: 20px;
-      width: 40px;
-      position: relative;
-      transform-origin: center center;
-      /* Remove margin-top that was causing offset */
-    }
-
+  display: block !important;
+  height: 20px;
+  width: 40px;
+  position: relative;
+  transform-origin: center center;
+  transform: translate(-50%, -50%); /* Add this to center the marker */
+  top: -105px; /* Adjust this value to fine-tune vertical position */
+}
     .carImage {
       width: 40px;
       height: 20px;
@@ -601,7 +601,7 @@
     .device-selector::after {
       content: "▼";
       font-size: 10px;
-      color: #fff;
+      color: #000;
       position: absolute;
       right: 12px;
       top: 50%;
@@ -1382,8 +1382,11 @@
         // Initialize or reset marker
         if (!vehicleMarker) {
           const carMarkerElement = document.createElement("div");
-          carMarkerElement.classList.add("customMarkerClass");
-
+carMarkerElement.classList.add("customMarkerClass");
+carMarkerElement.style.position = "relative"; // Add this
+carMarkerElement.style.display = "flex"; // Add this
+carMarkerElement.style.alignItems = "center"; // Add this
+carMarkerElement.style.justifyContent = "center"; // Add this
           const carImage = document.createElement("img");
           carImage.src = "images/truck1.png";
           carImage.alt = "Car Marker";
@@ -1408,10 +1411,10 @@
           carMarkerElement.appendChild(carImage);
 
           vehicleMarker = olaMaps.addMarker({
-            element: carMarkerElement,
-            anchor: "center",
-            offset: [0, 0],
-          });
+  element: carMarkerElement,
+  anchor: "center", // Keep this
+  offset: [0, -10], // Adjust this offset to fine-tune position
+});
 
           vehicleMarker.getElement().addEventListener("click", () => {
             isPopupClosedManually = false;
