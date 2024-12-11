@@ -152,8 +152,8 @@
     }
 
     .customMarkerClass .carImage {
-      height: 40px;
-      width: 80px;
+      height: 45px;
+      width: 20px;
       /* transform-origin: center;
       transition: transform 0.3s ease;
       will-change: transform; */
@@ -837,7 +837,7 @@
 
         const carImage = document.createElement("img");
         carImage.classList.add("carImage");
-        carImage.src = "/deviceTracking/images/upside.png";
+        carImage.src = "/deviceTracking/images/car_image_transparent.png";
         carImage.style.transform = `rotate(${data.angle || 0}deg)`;
         customMarker.appendChild(carImage);
 
