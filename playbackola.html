@@ -551,12 +551,13 @@
       background: #ddd;
       border-radius: 5px;
       outline: none;
+      max-width: 120px;
     }
 
     .speed-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 15px;
-      height: 15px;
+      width: 5px;
+      height: 5px;
       background: #4caf50;
       border-radius: 50%;
       cursor: pointer;
@@ -724,7 +725,7 @@
       align-items: center;
       gap: 10px;
       background: linear-gradient(145deg, #1e242c, #1a1f25);
-      padding: 12px 15px;
+      padding: 5px 8px;
       border-radius: 8px;
       border: 1px solid rgba(255, 255, 255, 0.05);
       width: fit-content;
@@ -734,9 +735,9 @@
     }
 
     .icon-speedometer {
-      display: inline-flex;
-      width: 32px;
-      height: 32px;
+      display: none;
+      width: 28px;
+      height: 25px;
       background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2.5"/><path d="M3.34 19.66A10 10 0 1 0 19.66 3.34"/></svg>') no-repeat center center;
       background-size: 18px;
       background-color: #3b82f6;
@@ -751,8 +752,8 @@
       border-radius: 6px;
       color: #fff;
       font-size: 13px;
-      padding: 8px 35px 8px 12px;
-      width: 120px;
+      padding: 8px 0px 8px 12px;
+      width: 100px;
       appearance: none;
       cursor: pointer;
       position: relative;
@@ -797,7 +798,7 @@
 
     /* Firefox specific styles */
     .speed-dropdown {
-      -moz-appearance: none;
+      appearance: none;
       text-indent: 0.01px;
       text-overflow: "";
     }
@@ -926,7 +927,7 @@
     }
 
     .stop-popup {
-    position: absolute;
+    position: relative; /* Change from absolute to relative */
     background: #fff;
     padding: 15px 20px;
     border: none;
@@ -934,11 +935,22 @@
     box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
     display: none;
     z-index: 1000;
-    min-width: 280px;
+    max-width: 350px;
     text-align: left;
-    transform: translate(-50%, -100%);
-    margin-top: 150px;
-  }
+}
+
+/* Add arrow at bottom of popup */
+.stop-popup::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid #fff;
+}
+
   </style>
 </head>
 
@@ -1764,13 +1776,13 @@
       if (timeDiff >= holdTime && distance < MINIMUM_DISTANCE) {
         // Add stop marker dynamically
         const stopMarker = olaMaps
-          .addMarker({
-            element: createStopMarkerElement(timeDiff), // Custom stop marker element
-            offset: [0, -10],
-            anchor: "center",
-          })
-          .setLngLat(prevPoint.coordinates)
-          .addTo(myMap);
+    .addMarker({
+        element: createStopMarkerElement(timeDiff),
+        offset: [0, -18], // Adjusted offset to position above the polyline
+        anchor: "bottom", // Set anchor to bottom
+    })
+    .setLngLat(prevPoint.coordinates)
+    .addTo(myMap);
 
         // Add marker to array for tracking
         stopMarkers.push(stopMarker);
@@ -1790,21 +1802,51 @@
 
     // Helper to create the stop marker element
     function createStopMarkerElement(duration) {
-      const stopElement = document.createElement("div");
-      stopElement.style.width = "40px";
-      stopElement.style.height = "40px";
-      stopElement.style.borderRadius = "50%";
-      stopElement.style.backgroundColor = "red";
-      stopElement.style.border = "2px solid white";
-      stopElement.style.display = "flex";
-      stopElement.style.alignItems = "center";
-      stopElement.style.justifyContent = "center";
-      stopElement.style.color = "white";
-      stopElement.style.fontSize = "10px";
-      stopElement.style.fontWeight = "bold";
-      stopElement.textContent = "STOP";
-      return stopElement;
-    }
+    const stopElement = document.createElement("div");
+    stopElement.classList.add('stop-marker');
+    stopElement.style.position = "relative";
+    stopElement.style.width = "30px"; // Made smaller for better proportion
+    stopElement.style.height = "40px"; // Adjusted height for proper teardrop shape
+    stopElement.style.display = "flex";
+    stopElement.style.alignItems = "center";
+    stopElement.style.justifyContent = "center";
+    stopElement.style.zIndex = "10"; // Ensure it stays above the polyline
+    stopElement.style.marginLeft = "18px"
+
+    // Create main teardrop shape
+    const marker = document.createElement("div");
+    marker.style.position = "absolute";
+    marker.style.width = "30px";
+    marker.style.height = "30px"; // Make the circle part perfectly round
+    marker.style.backgroundColor = "#ff0000"; // Pure red color
+    marker.style.borderRadius = "50% 50% 50% 0"; // Modified border radius
+    marker.style.transform = "rotate(-45deg)"; // Changed rotation
+    marker.style.border = "1.5px solid white"; // Slightly thinner border
+    marker.style.boxShadow = "0 2px 4px rgba(0,0,0,0.25)";
+    marker.style.top = "0";
+
+    // Container for text
+    const textContainer = document.createElement("div");
+    textContainer.style.position = "absolute";
+    textContainer.style.width = "100%";
+    textContainer.style.height = "100%";
+    textContainer.style.display = "flex";
+    textContainer.style.alignItems = "center";
+    textContainer.style.justifyContent = "center";
+    textContainer.style.transform = "rotate(45deg)"; // Counter-rotate to make text straight
+    textContainer.style.color = "white";
+    textContainer.style.fontSize = "8px"; // Slightly smaller text
+    textContainer.style.fontWeight = "bold";
+    textContainer.style.fontFamily = "Arial, sans-serif";
+    textContainer.textContent = "STOP";
+
+    marker.appendChild(textContainer);
+    stopElement.appendChild(marker);
+
+    return stopElement;
+}
+
+let popupMarker;
 
     // Function to show the popup when a stop marker is clicked
     function showStopPopup(startPoint, endPoint, duration) {
@@ -1817,7 +1859,6 @@
     );
     const cumulativeDistance = calculateCumulativeDistance(stopIndex);
 
-    // Use the dedicated stop popup instead of customPopup
     const popup = document.getElementById("stopMarkerPopup");
     const popupContent = document.getElementById("stopPopupContent");
 
@@ -1832,10 +1873,18 @@
         </div>
     `;
 
-    popup.style.display = "block";
-    updateStopPopupPosition(startPoint.coordinates);
-}
+    // Create a new marker for the popup
+     popupMarker = olaMaps
+        .addMarker({
+            element: popup,
+            offset: [0, -120], // Offset to position popup above stop marker
+            anchor: "bottom",  // Anchor to bottom of popup
+        })
+        .setLngLat(startPoint.coordinates)
+        .addTo(myMap);
 
+    popup.style.display = "block";
+}
     // Helper function to calculate the duration in hours, minutes, and seconds
     function formatDuration(durationInMinutes) {
       const totalSeconds = Math.floor(durationInMinutes * 60);
@@ -1848,18 +1897,20 @@
     }
 
     // Function to position the popup above the stop marker
-    function updateStopPopupPosition(coordinates) {
-    const mapPos = myMap.project(coordinates);
-    const popup = document.getElementById("stopMarkerPopup");
-    popup.style.left = `${mapPos.x}px`;
-    popup.style.top = `${mapPos.y - 60}px`;
-  }
+//     function updateStopPopupPosition(coordinates) {
+//     const mapPos = myMap.project(coordinates);
+//     const popup = document.getElementById("stopMarkerPopup");
+//     const popupHeight = popup.offsetHeight;
+    
+//     // Position popup above the stop marker with a small gap
+//     popup.style.left = `${mapPos.x}px`;
+//     popup.style.top = `${mapPos.y - popupHeight - 10}px`; // 10px gap between marker and popup
+// }
 
-  function hideStopPopup(manuallyClosed = false) {
+function hideStopPopup(manuallyClosed = false) {
     const popup = document.getElementById("stopMarkerPopup");
     popup.style.display = "none";
 }
-
 
     /*start time show starting point */
     function updateStartTimeDisplay(startDateTime) {
