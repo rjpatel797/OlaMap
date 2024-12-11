@@ -82,7 +82,7 @@
       }
 
       #deviceList {
-        width: 250px;
+        width: 200px;
         padding: 10px;
         background-color: #f9f9f9;
         border-right: 1px solid #ccc;
@@ -99,13 +99,13 @@
         display: flex;
         align-items: center;
         cursor: pointer;
-        padding: 8px;
-        margin: 5px 0;
+        padding: 2px 8px;
+        margin: 4px 0;
         background-color: #e6e6e6;
         border-radius: 4px;
         text-align: left;
         font-size: 14px;
-        min-height: 40px; /* Ensure consistent height for all items */
+        min-height: 25px; /* Ensure consistent height for all items */
       }
       .deviceItem:hover {
         background-color: #d4d4d4;
@@ -313,6 +313,10 @@
       #deviceDataTable td:nth-child(5),  /* Ac */
       #deviceDataTable td:nth-child(6),  /* Gps */
       #deviceDataTable td:nth-child(7),  /* Power */
+      #deviceDataTable td:nth-child(11),  /* Power */
+      #deviceDataTable td:nth-child(12),  /* Power */
+      #deviceDataTable td:nth-child(13),  /* Power */
+      #deviceDataTable td:nth-child(14),  /* Power */
       #deviceDataTable td:nth-child(8)   /* Ignition */ {
         text-align: center;
         padding: 8px 4px;
@@ -502,9 +506,15 @@
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
       }
 
+      .table-popup-header{
+        display: flex;
+        justify-content: space-between;
+        margin: 0px 0 10px 0;
+      }
+
       .table-close-btn {
         position: absolute;
-        top: 10px;
+        top: 0px;
         right: 10px;
         font-size: 24px;
         cursor: pointer;
@@ -517,7 +527,6 @@
       }
 
       .table-container {
-        margin-top: 20px;
         overflow-x: auto;
         max-height: calc(80vh - 100px);
       }
@@ -618,7 +627,7 @@
       .nearby-btn {
         padding: 4px 8px;
         font-size: 11px;
-        min-width: 60px;
+        /* min-width: 60px; */
       }
 
       #distance-value {
@@ -697,6 +706,32 @@
         padding-right: 10px;
         justify-content: space-between;
       }
+
+      .table-search {
+  position: relative;
+  margin: 0 30px 0 0;
+}
+
+.table-search-input {
+  width: 100%;
+  max-width: 300px;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #2c3e50;
+  transition: all 0.3s ease;
+}
+
+.table-search-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.table-search-input::placeholder {
+  color: #95a5a6;
+}
     </style>
   </head>
   <body>
@@ -746,8 +781,18 @@
         <!-- Add this new popup div for the table -->
         <div id="tablePopup" class="table-popup">
           <div class="table-popup-content">
+            <div class="table-popup-header">
+              <h2>All Devices Status</h2>
+              <div class="table-search">
+                <input 
+                type="text" 
+                id="tableSearchInput" 
+                placeholder="Search device name..." 
+                class="table-search-input"
+                >
+              </div>
+            </div>
             <span class="table-close-btn" onclick="hideDeviceTable()">✖</span>
-            <h2>All Devices Status</h2>
             <div class="table-container">
               <table id="deviceDataTable">
                 <thead>
@@ -763,9 +808,9 @@
                     <th>Speed</th>
                     <th>Hold Time</th>
                     <th>Location</th>
-                    <th>View Today's Trip</th>
-                    <th>View Live Tracking</th>
-                    <th>View PLayback</th>
+                    <th>Today's Trip</th>
+                    <th>Live Tracking</th>
+                    <th>PLayback</th>
                   </tr>
                 </thead>
                 <tbody id="deviceTableBody">
@@ -1196,73 +1241,71 @@ function getCarEmoji(device) {
 
         popupTitle.innerHTML = `<div class="title">${
           device.name
-        }<div class="status"><b>GPS:</b> <span class="status-indicator ${
-          device.gps == true ? "status-on" : "status-off"
-        }">
-                  ${device.gps == true ? "ON" : "OFF"}
-              </span><br/>
-              <b>Engine:</b> <span class="status-indicator ${
-                device.ignition == "true" ? "status-on" : "status-off"
-              }">
-                  ${device.ignition == "true" ? "ON" : "OFF"}
-              </span><br/>
-              <b>Power:</b> <span class="status-indicator ${
-                device.power === "true" ? "status-on" : "status-off"
-              }">
-                  ${device.power === "true" ? "ON" : "OFF"}
-              </span><br/>
-              </div></div>`;
-        const distanceButton = `<button onclick="updateDistance('${device.deviceId}')" class="distance-btn">Get Today's Distance</button>`;
-        const nearbyButton = `<button onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[1]}, ${device.coordinates[0]})" class="nearby-btn">View Nearby Vehicles</button>`;
-
+          }<div class="status"><b>GPS:</b> <span class="status-indicator ${
+          device.gps == true ? "status-on" : "status-off" }">
+              ${device.gps == true ? "ON" : "OFF"}
+            </span><br />
+            <b>Engine:</b> <span class="status-indicator ${
+                device.ignition == "true" ? "status-on" : "status-off" }">
+              ${device.ignition == "true" ? "ON" : "OFF"}
+            </span><br />
+            <b>Power:</b> <span class="status-indicator ${
+                device.power === "true" ? "status-on" : "status-off" }">
+              ${device.power === "true" ? "ON" : "OFF"}
+            </span><br />
+          </div>
+        </div>`;
         const currentDate = new Date();
         const deviceDate = new Date(device.date);
         const minDifference = Math.floor(
-          (currentDate - deviceDate) / (1000 * 60)
+        (currentDate - deviceDate) / (1000 * 60)
         );
         const timeAgo = formatTimeDifference(minDifference);
 
         popupContent.innerHTML = `
-    <b>Date:</b> ${
-      device.dateNew
-    } <span style="color: #666; font-size: 12px;">(${timeAgo})</span><br/>
-    <b>Speed:</b> ${device.speed} km/h <br/>
-    <b>Hold Time:</b> ${device.holdtime} <br/>
-    <b>Status:</b> <span class="status-indicator-status ${
-      device.status == "Online" ? "status-on" : "status-off"
-    }">${device.status}</span> <br/>
-    <b>Battery:</b> ${device.battery}V <br/>
-    <div style="display: flex; align-items: center; gap: 5px;">
-        <b>Location:</b> <span id="location-popup-${
+        <b>Date:</b> ${
+        device.dateNew
+        } <span style="color: #666; font-size: 12px;">(${timeAgo})</span><br />
+        <b>Speed:</b> ${device.speed} km/h <br />
+        <b>Hold Time:</b> ${device.holdtime} <br />
+        <b>Status:</b> <span class="status-indicator-status ${
+      device.status == "Online" ? "status-on" : "status-off" }">${device.status}</span> <br />
+        <b>Battery:</b> ${device.battery}V <br />
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <b>Location:</b> <span id="location-popup-${
           device.deviceId
         }"><button onclick="updateLocationPopup('${device.deviceId}', '${
           device.latlang
-        }')" 
-        style="background: none; 
+        }')" style="background: none; 
                border: none; 
                padding: 0;
                color: #3498db; 
                text-decoration: underline;
                cursor: pointer;
                font-size: 11px;">
-        Get Location
-</button></span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 5px;">
-        <b>Distance:</b> <span id="distance-value">0 km</span>
-    </div>
-    <div class="button-container" style="margin-top: 5px; gap: 5px;">
-        <button onclick="updateDistance('${
+              Get Location
+            </button></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <b>Distance:</b> <span id="distance-value">0 km</span>
+        </div>
+        <div class="button-container" style="margin-top: 5px; gap: 5px;">
+          <button onclick="updateDistance('${
           device.deviceId
         }')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 8px;">Get Distance</button>
-        
-        <button onclick="viewNearbyVehicles('${device.deviceId}', ${
+
+          <button onclick="viewNearbyVehicles('${device.deviceId}', ${
           device.coordinates[1]
         }, ${
           device.coordinates[0]
         })" class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">View Nearby</button>
-    </div>
-`;
+          <button onclick="shareLocation(${
+          device.coordinates[1]
+        }, ${
+          device.coordinates[0]
+        })" class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">Share Location</button>
+        </div>
+        `;
         popup.style.display = "block";
         if (marker) updatePopupPosition(marker);
       }
@@ -1509,71 +1552,74 @@ function createMarkerElement(device) {
         });
       }
 
-      // Add these functions to your existing JavaScript
       function showDeviceTable() {
-        const tablePopup = document.getElementById("tablePopup");
-        const tableBody = document.getElementById("deviceTableBody");
-        tableBody.innerHTML = "";
+    const tablePopup = document.getElementById("tablePopup");
+    const tableBody = document.getElementById("deviceTableBody");
+    tableBody.innerHTML = "";
 
-        devices.forEach((device) => {
-          const row = document.createElement("tr");
-          const statusClass =
-            device.status === "Online" ? "status-online" : "status-offline";
+    // First, create all rows
+    const deviceRows = devices.map(device => {
+        const row = document.createElement("tr");
+        const statusClass = device.status === "Online" ? "status-online" : "status-offline";
 
-          row.innerHTML = `
+        row.innerHTML = `
             <td>${device.name}</td>
             <td>${device.dateNew}</td>
-            <td><span class="status-cell ${statusClass}">${
-            device.status
-          }</span></td>
+            <td><span class="status-cell ${statusClass}">${device.status}</span></td>
             <td>${device.battery}V</td>
-            <td><span class="status-cell"><span class="status-indicator-list ${
-              device.ac == "true" ? "status-on" : "status-off"
-            }">${device.ac === "true" ? "On" : "Off"}</span></span></td>
-            <td><span class="status-cell"><span class="status-indicator-list ${
-              device.gps === true ? "status-on" : "status-off"
-            }">${device.gps === true ? "On" : "Off"}</span></span></td>
-            <td><span class="status-cell"><span class="status-indicator-list ${
-              device.power == "true" ? "status-on" : "status-off"
-            }">${device.power === "true" ? "On" : "Off"}</span></span></td>
-            <td><span class="status-cell"><span class="status-indicator-list ${
-              device.ignition == "true" ? "status-on" : "status-off"
-            }">${device.ignition === "true" ? "On" : "Off"}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${device.ac == "true" ? "status-on" : "status-off"}">${device.ac === "true" ? "On" : "Off"}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${device.gps === true ? "status-on" : "status-off"}">${device.gps === true ? "On" : "Off"}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${device.power == "true" ? "status-on" : "status-off"}">${device.power === "true" ? "On" : "Off"}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${device.ignition == "true" ? "status-on" : "status-off"}">${device.ignition === "true" ? "On" : "Off"}</span></span></td>
             <td>${device.speed} km/h</td>
             <td>${device.holdtime}</td>
             <td id="location-${device.deviceId}">
-              <button onclick="updateLocation('${device.deviceId}', '${
-            device.latlang
-          }')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 8px;">
-                Get Location
-              </button>
+                <button onclick="updateLocation('${device.deviceId}', '${device.latlang}')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+                    <i class="fas fa-map-marker-alt" style="margin-right: 0"></i>
+                </button>
             </td>
             <td>
-              <button onclick="viewTodayTrip('${
-                device.name
-              }')" class="view-trip-btn">View Trip</button>
+                <button onclick="viewTodayTrip('${device.name}')" class="view-trip-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+                    <i class="fas fa-route"></i>
+                </button>
             </td>
             <td>
-              <button onclick="viewLiveTracking('${
-                device.name
-              }')" class="view-live-btn">View Live Tracking</button>
+                <button onclick="viewLiveTracking('${device.name}')" class="view-live-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+                    <i class="fas fa-play-circle" style="margin-right: 0"></i>
+                </button>
             </td>
             <td>
-              <button onclick="viewPlaybackTrip('${
-                device.deviceId
-              }')" class="view-live-btn">View Playback</button>
+                <button onclick="viewPlaybackTrip('${device.deviceId}')" class="view-live-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+                    <i class="fas fa-history"></i>
+                </button>
             </td>
-          `;
-          tableBody.appendChild(row);
-        });
+        `;
+        return row;
+    });
 
-        tablePopup.style.display = "block";
-      }
+    // Add all rows initially
+    deviceRows.forEach(row => tableBody.appendChild(row));
+    tablePopup.style.display = "block";
+
+    // Add search functionality
+    const searchInput = document.getElementById("tableSearchInput");
+    searchInput.value = ""; // Clear search input when opening table
+
+    searchInput.addEventListener("input", function() {
+        const searchTerm = this.value.toLowerCase();
+        
+        deviceRows.forEach(row => {
+            const deviceName = row.cells[0].textContent.toLowerCase();
+            row.style.display = deviceName.includes(searchTerm) ? "" : "none";
+        });
+    });
+}
+
 
       function hideDeviceTable() {
-        document.getElementById("tablePopup").style.display = "none";
-      }
-
+  document.getElementById("tablePopup").style.display = "none";
+  document.getElementById("tableSearchInput").value = ""; // Clear search when closing
+}
       // Close popup when clicking outside
       document
         .getElementById("tablePopup")
@@ -1671,6 +1717,10 @@ function createMarkerElement(device) {
           radius: radius,
         });
         window.location.href = `viewnearby.html?${params.toString()}`;
+      }
+      function shareLocation(lat, lng) {
+        // Default radius is 12 km - can be modified as needed
+        window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
       }
 
       const clusterOptions = {
