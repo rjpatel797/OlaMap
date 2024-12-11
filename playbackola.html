@@ -1776,13 +1776,13 @@
       if (timeDiff >= holdTime && distance < MINIMUM_DISTANCE) {
         // Add stop marker dynamically
         const stopMarker = olaMaps
-          .addMarker({
-            element: createStopMarkerElement(timeDiff), // Custom stop marker element
-            offset: [0, -10],
-            anchor: "center",
-          })
-          .setLngLat(prevPoint.coordinates)
-          .addTo(myMap);
+    .addMarker({
+        element: createStopMarkerElement(timeDiff),
+        offset: [0, -18], // Adjusted offset to position above the polyline
+        anchor: "bottom", // Set anchor to bottom
+    })
+    .setLngLat(prevPoint.coordinates)
+    .addTo(myMap);
 
         // Add marker to array for tracking
         stopMarkers.push(stopMarker);
@@ -1802,23 +1802,51 @@
 
     // Helper to create the stop marker element
     function createStopMarkerElement(duration) {
-      const stopElement = document.createElement("div");
-      stopElement.style.width = "40px";
-      stopElement.style.height = "40px";
-      stopElement.style.borderRadius = "50%";
-      stopElement.style.backgroundColor = "red";
-      stopElement.style.border = "2px solid white";
-      stopElement.style.display = "flex";
-      stopElement.style.alignItems = "center";
-      stopElement.style.justifyContent = "center";
-      stopElement.style.color = "white";
-      stopElement.style.fontSize = "10px";
-      stopElement.style.fontWeight = "bold";
-      stopElement.textContent = "STOP";
-      return stopElement;
-    }
+    const stopElement = document.createElement("div");
+    stopElement.classList.add('stop-marker');
+    stopElement.style.position = "relative";
+    stopElement.style.width = "30px"; // Made smaller for better proportion
+    stopElement.style.height = "40px"; // Adjusted height for proper teardrop shape
+    stopElement.style.display = "flex";
+    stopElement.style.alignItems = "center";
+    stopElement.style.justifyContent = "center";
+    stopElement.style.zIndex = "10"; // Ensure it stays above the polyline
+    stopElement.style.marginLeft = "18px"
 
-    let popupMarker;
+    // Create main teardrop shape
+    const marker = document.createElement("div");
+    marker.style.position = "absolute";
+    marker.style.width = "30px";
+    marker.style.height = "30px"; // Make the circle part perfectly round
+    marker.style.backgroundColor = "#ff0000"; // Pure red color
+    marker.style.borderRadius = "50% 50% 50% 0"; // Modified border radius
+    marker.style.transform = "rotate(-45deg)"; // Changed rotation
+    marker.style.border = "1.5px solid white"; // Slightly thinner border
+    marker.style.boxShadow = "0 2px 4px rgba(0,0,0,0.25)";
+    marker.style.top = "0";
+
+    // Container for text
+    const textContainer = document.createElement("div");
+    textContainer.style.position = "absolute";
+    textContainer.style.width = "100%";
+    textContainer.style.height = "100%";
+    textContainer.style.display = "flex";
+    textContainer.style.alignItems = "center";
+    textContainer.style.justifyContent = "center";
+    textContainer.style.transform = "rotate(45deg)"; // Counter-rotate to make text straight
+    textContainer.style.color = "white";
+    textContainer.style.fontSize = "8px"; // Slightly smaller text
+    textContainer.style.fontWeight = "bold";
+    textContainer.style.fontFamily = "Arial, sans-serif";
+    textContainer.textContent = "STOP";
+
+    marker.appendChild(textContainer);
+    stopElement.appendChild(marker);
+
+    return stopElement;
+}
+
+let popupMarker;
 
     // Function to show the popup when a stop marker is clicked
     function showStopPopup(startPoint, endPoint, duration) {
