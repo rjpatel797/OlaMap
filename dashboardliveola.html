@@ -506,9 +506,15 @@
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
       }
 
+      .table-popup-header{
+        display: flex;
+        justify-content: space-between;
+        margin: 0px 0 10px 0;
+      }
+
       .table-close-btn {
         position: absolute;
-        top: 10px;
+        top: 0px;
         right: 10px;
         font-size: 24px;
         cursor: pointer;
@@ -521,7 +527,6 @@
       }
 
       .table-container {
-        margin-top: 20px;
         overflow-x: auto;
         max-height: calc(80vh - 100px);
       }
@@ -701,6 +706,32 @@
         padding-right: 10px;
         justify-content: space-between;
       }
+
+      .table-search {
+  position: relative;
+  margin: 0 30px 0 0;
+}
+
+.table-search-input {
+  width: 100%;
+  max-width: 300px;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #2c3e50;
+  transition: all 0.3s ease;
+}
+
+.table-search-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.table-search-input::placeholder {
+  color: #95a5a6;
+}
     </style>
   </head>
   <body>
@@ -750,8 +781,18 @@
         <!-- Add this new popup div for the table -->
         <div id="tablePopup" class="table-popup">
           <div class="table-popup-content">
+            <div class="table-popup-header">
+              <h2>All Devices Status</h2>
+              <div class="table-search">
+                <input 
+                type="text" 
+                id="tableSearchInput" 
+                placeholder="Search device name..." 
+                class="table-search-input"
+                >
+              </div>
+            </div>
             <span class="table-close-btn" onclick="hideDeviceTable()">✖</span>
-            <h2>All Devices Status</h2>
             <div class="table-container">
               <table id="deviceDataTable">
                 <thead>
@@ -1201,15 +1242,15 @@ function getCarEmoji(device) {
         popupTitle.innerHTML = `<div class="title">${
           device.name
           }<div class="status"><b>GPS:</b> <span class="status-indicator ${
-          device.gps == true ? " status-on" : "status-off" }">
+          device.gps == true ? "status-on" : "status-off" }">
               ${device.gps == true ? "ON" : "OFF"}
             </span><br />
             <b>Engine:</b> <span class="status-indicator ${
-                device.ignition == " true" ? "status-on" : "status-off" }">
+                device.ignition == "true" ? "status-on" : "status-off" }">
               ${device.ignition == "true" ? "ON" : "OFF"}
             </span><br />
             <b>Power:</b> <span class="status-indicator ${
-                device.power === " true" ? "status-on" : "status-off" }">
+                device.power === "true" ? "status-on" : "status-off" }">
               ${device.power === "true" ? "ON" : "OFF"}
             </span><br />
           </div>
@@ -1511,74 +1552,74 @@ function createMarkerElement(device) {
         });
       }
 
-      // Add these functions to your existing JavaScript
       function showDeviceTable() {
-        const tablePopup = document.getElementById("tablePopup");
-        const tableBody = document.getElementById("deviceTableBody");
-        tableBody.innerHTML = "";
+    const tablePopup = document.getElementById("tablePopup");
+    const tableBody = document.getElementById("deviceTableBody");
+    tableBody.innerHTML = "";
 
-        devices.forEach((device) => {
-          const row = document.createElement("tr");
-          const statusClass =
-            device.status === "Online" ? "status-online" : "status-offline";
+    // First, create all rows
+    const deviceRows = devices.map(device => {
+        const row = document.createElement("tr");
+        const statusClass = device.status === "Online" ? "status-online" : "status-offline";
 
-          row.innerHTML = `
+        row.innerHTML = `
             <td>${device.name}</td>
             <td>${device.dateNew}</td>
-            <td><span class="status-cell ${statusClass}">${
-            device.status
-          }</span></td>
+            <td><span class="status-cell ${statusClass}">${device.status}</span></td>
             <td>${device.battery}V</td>
-            <td><span class="status-cell"><span class="status-indicator-list ${
-              device.ac == "true" ? "status-on" : "status-off"
-            }">${device.ac === "true" ? "On" : "Off"}</span></span></td>
-            <td><span class="status-cell"><span class="status-indicator-list ${
-              device.gps === true ? "status-on" : "status-off"
-            }">${device.gps === true ? "On" : "Off"}</span></span></td>
-            <td><span class="status-cell"><span class="status-indicator-list ${
-              device.power == "true" ? "status-on" : "status-off"
-            }">${device.power === "true" ? "On" : "Off"}</span></span></td>
-            <td><span class="status-cell"><span class="status-indicator-list ${
-              device.ignition == "true" ? "status-on" : "status-off"
-            }">${device.ignition === "true" ? "On" : "Off"}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${device.ac == "true" ? "status-on" : "status-off"}">${device.ac === "true" ? "On" : "Off"}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${device.gps === true ? "status-on" : "status-off"}">${device.gps === true ? "On" : "Off"}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${device.power == "true" ? "status-on" : "status-off"}">${device.power === "true" ? "On" : "Off"}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${device.ignition == "true" ? "status-on" : "status-off"}">${device.ignition === "true" ? "On" : "Off"}</span></span></td>
             <td>${device.speed} km/h</td>
             <td>${device.holdtime}</td>
             <td id="location-${device.deviceId}">
-              <button onclick="updateLocation('${device.deviceId}', '${
-            device.latlang
-          }')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
-                <i class="fas fa-map-marker-alt" style="margin-right: 0"></i>
-              </button>
+                <button onclick="updateLocation('${device.deviceId}', '${device.latlang}')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+                    <i class="fas fa-map-marker-alt" style="margin-right: 0"></i>
+                </button>
             </td>
             <td>
-              <button onclick="viewTodayTrip('${
-                device.name
-              }')" class="view-trip-btn"  style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
-              <i class="fas fa-route"></i></button>
+                <button onclick="viewTodayTrip('${device.name}')" class="view-trip-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+                    <i class="fas fa-route"></i>
+                </button>
             </td>
             <td>
-              <button onclick="viewLiveTracking('${
-                device.name
-              }')" class="view-live-btn"  style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
-              <i class="fas fa-play-circle" style="margin-right: 0"></i></button>
+                <button onclick="viewLiveTracking('${device.name}')" class="view-live-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+                    <i class="fas fa-play-circle" style="margin-right: 0"></i>
+                </button>
             </td>
             <td>
-              <button onclick="viewPlaybackTrip('${
-                device.deviceId
-              }')" class="view-live-btn"  style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
-              <i class="fas fa-history"></i></button>
+                <button onclick="viewPlaybackTrip('${device.deviceId}')" class="view-live-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+                    <i class="fas fa-history"></i>
+                </button>
             </td>
-          `;
-          tableBody.appendChild(row);
-        });
+        `;
+        return row;
+    });
 
-        tablePopup.style.display = "block";
-      }
+    // Add all rows initially
+    deviceRows.forEach(row => tableBody.appendChild(row));
+    tablePopup.style.display = "block";
+
+    // Add search functionality
+    const searchInput = document.getElementById("tableSearchInput");
+    searchInput.value = ""; // Clear search input when opening table
+
+    searchInput.addEventListener("input", function() {
+        const searchTerm = this.value.toLowerCase();
+        
+        deviceRows.forEach(row => {
+            const deviceName = row.cells[0].textContent.toLowerCase();
+            row.style.display = deviceName.includes(searchTerm) ? "" : "none";
+        });
+    });
+}
+
 
       function hideDeviceTable() {
-        document.getElementById("tablePopup").style.display = "none";
-      }
-
+  document.getElementById("tablePopup").style.display = "none";
+  document.getElementById("tableSearchInput").value = ""; // Clear search when closing
+}
       // Close popup when clicking outside
       document
         .getElementById("tablePopup")
