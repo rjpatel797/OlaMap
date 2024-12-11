@@ -926,7 +926,7 @@
     }
 
     .stop-popup {
-    position: absolute;
+    position: relative; /* Change from absolute to relative */
     background: #fff;
     padding: 15px 20px;
     border: none;
@@ -934,11 +934,22 @@
     box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
     display: none;
     z-index: 1000;
-    min-width: 280px;
+    max-width: 350px;
     text-align: left;
-    transform: translate(-50%, -100%);
-    margin-top: 150px;
-  }
+}
+
+/* Add arrow at bottom of popup */
+.stop-popup::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid #fff;
+}
+
   </style>
 </head>
 
@@ -1806,6 +1817,8 @@
       return stopElement;
     }
 
+    let popupMarker;
+
     // Function to show the popup when a stop marker is clicked
     function showStopPopup(startPoint, endPoint, duration) {
     const startTime = new Date(startPoint.date).toLocaleString();
@@ -1817,7 +1830,6 @@
     );
     const cumulativeDistance = calculateCumulativeDistance(stopIndex);
 
-    // Use the dedicated stop popup instead of customPopup
     const popup = document.getElementById("stopMarkerPopup");
     const popupContent = document.getElementById("stopPopupContent");
 
@@ -1832,10 +1844,18 @@
         </div>
     `;
 
-    popup.style.display = "block";
-    updateStopPopupPosition(startPoint.coordinates);
-}
+    // Create a new marker for the popup
+     popupMarker = olaMaps
+        .addMarker({
+            element: popup,
+            offset: [0, -120], // Offset to position popup above stop marker
+            anchor: "bottom",  // Anchor to bottom of popup
+        })
+        .setLngLat(startPoint.coordinates)
+        .addTo(myMap);
 
+    popup.style.display = "block";
+}
     // Helper function to calculate the duration in hours, minutes, and seconds
     function formatDuration(durationInMinutes) {
       const totalSeconds = Math.floor(durationInMinutes * 60);
@@ -1848,18 +1868,20 @@
     }
 
     // Function to position the popup above the stop marker
-    function updateStopPopupPosition(coordinates) {
-    const mapPos = myMap.project(coordinates);
-    const popup = document.getElementById("stopMarkerPopup");
-    popup.style.left = `${mapPos.x}px`;
-    popup.style.top = `${mapPos.y - 60}px`;
-  }
+//     function updateStopPopupPosition(coordinates) {
+//     const mapPos = myMap.project(coordinates);
+//     const popup = document.getElementById("stopMarkerPopup");
+//     const popupHeight = popup.offsetHeight;
+    
+//     // Position popup above the stop marker with a small gap
+//     popup.style.left = `${mapPos.x}px`;
+//     popup.style.top = `${mapPos.y - popupHeight - 10}px`; // 10px gap between marker and popup
+// }
 
-  function hideStopPopup(manuallyClosed = false) {
+function hideStopPopup(manuallyClosed = false) {
     const popup = document.getElementById("stopMarkerPopup");
     popup.style.display = "none";
 }
-
 
     /*start time show starting point */
     function updateStartTimeDisplay(startDateTime) {
