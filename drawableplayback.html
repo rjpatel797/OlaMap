@@ -1803,22 +1803,38 @@ stopPlayback = function() {
     }
 
     function setupDateValidation() {
-      const fromDateInput = document.getElementById('fromDate');
-      const toDateInput = document.getElementById('toDate');
-      const fromTimeInput = document.getElementById('fromTime');
-      const toTimeInput = document.getElementById('toTime');
-      // Get current date in YYYY-MM-DD format
+      const fromDateInput = document.getElementById("fromDate");
+      const toDateInput = document.getElementById("toDate");
+      const fromTimeInput = document.getElementById("fromTime");
+      const toTimeInput = document.getElementById("toTime");
+
+      // Function to get current date in YYYY-MM-DD format
+      function getCurrentDate() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+
+      // Set initial values when page loads
       const currentDate = getCurrentDate();
-      fromDateInput.value = currentDate;
-      toDateInput.value = currentDate;
-      fromTimeInput.value = '00:00';
-      toTimeInput.value = '23:59';
+      
+      // Set default values only if they haven't been set by URL parameters
+      if (!fromDateInput.value) {
+        fromDateInput.value = currentDate;
+      }
+      if (!toDateInput.value) {
+        toDateInput.value = currentDate;
+      }
+      if (!fromTimeInput.value) {
+        fromTimeInput.value = "00:00";
+      }
+      if (!toTimeInput.value) {
+        toTimeInput.value = "23:59";
+      }
 
-      // Force set the values
-      fromDateInput.value = currentDate;
-      toDateInput.value = currentDate;
-
-      // Set max attribute
+      // Set max attribute to current date
       fromDateInput.max = currentDate;
       toDateInput.max = currentDate;
 
@@ -1828,30 +1844,30 @@ stopPlayback = function() {
           const toTime = toTimeInput.value;
 
           if (fromTime > toTime) {
-            alert('From time cannot be after To time on the same day');
+            alert("Start time cannot be after end time on the same day");
             toTimeInput.value = fromTime;
           }
         }
       }
 
-      fromTimeInput.addEventListener('change', validateTimes);
-      toTimeInput.addEventListener('change', validateTimes);
+      fromTimeInput.addEventListener("change", validateTimes);
+      toTimeInput.addEventListener("change", validateTimes);
 
       // Validate From Date
-      fromDateInput.addEventListener('input', function () {
+      fromDateInput.addEventListener("input", function () {
         const fromDate = new Date(this.value);
         const toDate = new Date(toDateInput.value);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         if (fromDate > today) {
-          alert('From date cannot be in the future');
+          alert("From date cannot be in the future");
           this.value = currentDate;
           return;
         }
 
         if (toDateInput.value && fromDate > toDate) {
-          alert('From date cannot be after To date');
+          alert("From date cannot be after To date");
           this.value = toDateInput.value;
           return;
         }
@@ -1860,20 +1876,20 @@ stopPlayback = function() {
       });
 
       // Validate To Date
-      toDateInput.addEventListener('input', function () {
+      toDateInput.addEventListener("input", function () {
         const fromDate = new Date(fromDateInput.value);
         const toDate = new Date(this.value);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         if (toDate > today) {
-          alert('To date cannot be in the future');
+          alert("To date cannot be in the future");
           this.value = currentDate;
           return;
         }
 
         if (fromDateInput.value && toDate < fromDate) {
-          alert('To date cannot be before From date');
+          alert("To date cannot be before From date");
           this.value = fromDateInput.value;
           return;
         }
@@ -1881,6 +1897,12 @@ stopPlayback = function() {
         fromDateInput.max = this.value;
       });
     }
+
+    // Make sure to call setupDateValidation when the page loads
+    document.addEventListener("DOMContentLoaded", function() {
+      setupDateValidation();
+    });
+
 
     function addDirectionArrows() {
   // Remove existing arrows if any
