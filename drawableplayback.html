@@ -799,6 +799,12 @@
         flex: 1;
       }
     }
+
+    .direction-arrow {
+  pointer-events: none;
+  z-index: 1;
+}
+
   </style>
 </head>
 
@@ -1705,10 +1711,11 @@
     }
 
     const originalStopPlayback = stopPlayback;
-    stopPlayback = function () {
-      cleanupPolylineEvents();
-      originalStopPlayback();
-    };
+stopPlayback = function() {
+  originalStopPlayback();
+  const arrows = document.querySelectorAll('.direction-arrow');
+  arrows.forEach(arrow => arrow.remove());
+};
 
     // Add this function to your JavaScript code
     function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -1778,7 +1785,10 @@
       }
     }
     // Listen for map movement to adjust the popup position
-    myMap.on("move", updatePopupPosition);
+    myMap.on('move', () => {
+  updatePopupPosition();
+  addDirectionArrows();
+});
 
     // Hide custom popup, set flag if closed manually
     function hidePopup(manuallyClosed = false) {
@@ -1871,6 +1881,89 @@
         fromDateInput.max = this.value;
       });
     }
+
+    function addDirectionArrows() {
+  // Remove existing arrows if any
+  const existingArrows = document.querySelectorAll('.direction-arrow');
+  existingArrows.forEach(arrow => arrow.remove());
+
+  // Calculate total path length and number of arrows needed
+  const ARROW_SPACING = 150; // pixels between arrows
+  let totalLength = 0;
+  const segments = [];
+
+  // Calculate segments and their lengths
+  for (let i = 0; i < pathCoordinates.length - 1; i++) {
+    const start = myMap.project(pathCoordinates[i]);
+    const end = myMap.project(pathCoordinates[i + 1]);
+    const length = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
+    segments.push({ start, end, length });
+    totalLength += length;
+  }
+
+  // Calculate number of arrows
+  const numArrows = Math.floor(totalLength / ARROW_SPACING);
+  if (numArrows === 0) return;
+
+  const spacing = totalLength / numArrows;
+
+  // Create arrows
+  let distanceCovered = spacing / 2; // Start at half spacing for even distribution
+  let segmentIndex = 0;
+  let segmentDistance = 0;
+
+  for (let i = 0; i < numArrows; i++) {
+    // Find the right segment
+    while (segmentDistance + segments[segmentIndex].length < distanceCovered) {
+      segmentDistance += segments[segmentIndex].length;
+      segmentIndex++;
+      if (segmentIndex >= segments.length) return;
+    }
+
+    // Calculate position within segment
+    const segment = segments[segmentIndex];
+    const segmentPosition = (distanceCovered - segmentDistance) / segment.length;
+    const x = segment.start.x + (segment.end.x - segment.start.x) * segmentPosition;
+    const y = segment.start.y + (segment.end.y - segment.start.y) * segmentPosition;
+
+    // Calculate angle
+    const angle = Math.atan2(segment.end.y - segment.start.y, segment.end.x - segment.start.x);
+
+    // Create arrow element
+    const arrow = document.createElement('div');
+    arrow.className = 'direction-arrow';
+    arrow.style.position = 'absolute';
+    arrow.style.left = `${x}px`;
+    arrow.style.top = `${y}px`;
+    arrow.style.width = '16px';
+    arrow.style.height = '16px';
+    arrow.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
+
+    // Create SVG arrow
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 16 16');
+    svg.style.width = '100%';
+    svg.style.height = '100%';
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M0,8 L12,8 M8,4 L12,8 L8,12');
+    path.setAttribute('stroke', '#000000');
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('fill', 'none');
+
+    svg.appendChild(path);
+    arrow.appendChild(svg);
+    document.getElementById('map').appendChild(arrow);
+
+    distanceCovered += spacing;
+  }
+}
+
+const originalAddPolyline = addPolyline;
+addPolyline = function() {
+  originalAddPolyline();
+  addDirectionArrows();
+};
 
 
     // Event listeners
