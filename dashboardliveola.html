@@ -539,7 +539,7 @@
 
       .table-container {
         overflow-x: auto;
-        max-height: calc(80vh - 100px);
+        max-height: calc(70vh - 100px);
       }
 
       #deviceDataTable {
@@ -1055,6 +1055,8 @@
       let currentMarker = null;
       let refreshInterval = 60000;
       let refreshTimer;
+      let selectedDevices = new Set();
+      let isInitialLoad = true;
 
       function formatHoldTime(ms) {
         const hours = Math.floor(ms / 3600000);
@@ -1164,6 +1166,10 @@
                 latlang: item.latlang,
               };
             });
+            if (isInitialLoad) {
+                initializeSelectedDevices(devices);
+                isInitialLoad = false; // Set flag to false after initial load
+            }
             createDeviceList();
             initializeMarkers();
             updateStatusCounts();
@@ -1171,43 +1177,59 @@
           .catch((error) => console.error("Error fetching data:", error));
       }
 
-      function createDeviceList() {
-  const deviceContainer = $("#deviceContainer");
-  deviceContainer.empty();
-  
-  devices.forEach((device, index) => {
-    const item = $(`
-      <div class="deviceItem" id="device-${device.name.replace(/\s+/g, "-")}">
-        <input type="checkbox" class="deviceCheckbox" data-index="${index}" checked />
-        <span class="car-emoji">${getCarEmoji(device)}</span>
-        <span>${device.name}</span>
-      </div>
-    `);
-    
-    item.on("click", function(e) {
-      if (!e.target.classList.contains('deviceCheckbox')) {
-        if (currentMarker && currentMarker === markers[index]) {
-          hidePopup();
-        } else {
-          showPopup(index, markers[index]);
-          myMap.flyTo({
-            center: device.coordinates,
-            zoom: 14,
-            speed: 1.5
-          });
-        }
-      }
+      function initializeSelectedDevices(devices) {
+    selectedDevices.clear();  // Clear existing selections
+    devices.forEach(device => {
+        selectedDevices.add(device.deviceId);
     });
-    
-    deviceContainer.append(item);
-  });
-  
-  // Add change event listener to device checkboxes
-  $('.deviceCheckbox').on('change', function() {
-    const allChecked = $('.deviceCheckbox').toArray().every(cb => cb.checked);
-    $('#selectAllCheckbox').prop('checked', allChecked);
-    filterMarkers();
-  });
+}
+
+function createDeviceList() {
+    const deviceContainer = $("#deviceContainer");
+    deviceContainer.empty();
+
+    // Add "Select All" checkbox at the top
+    if (isInitialLoad) {
+        document.getElementById('selectAllCheckbox').checked = true;
+    }
+
+    devices.forEach((device, index) => {
+        const isChecked = isInitialLoad || selectedDevices.has(device.deviceId);
+        const item = $(`
+            <div class="deviceItem" id="device-${device.name.replace(/\s+/g, "-")}">
+                <input type="checkbox" class="deviceCheckbox" data-index="${index}" ${isChecked ? 'checked' : ''} />
+                <span class="car-emoji">${getCarEmoji(device)}</span>
+                <span>${device.name}</span>
+            </div>
+        `);
+
+        // Attach event listener to the checkbox directly
+        const checkbox = item.find('.deviceCheckbox')[0];
+        checkbox.addEventListener('change', handleCheckboxChange);
+
+        item.on("click", function(e) {
+            if (!e.target.classList.contains('deviceCheckbox')) {
+                if (currentMarker && currentMarker === markers[index]) {
+                    hidePopup();
+                } else {
+                    showPopup(index, markers[index]);
+                    myMap.flyTo({
+                        center: device.coordinates,
+                        zoom: 14,
+                        speed: 1.5
+                    });
+                }
+            }
+        });
+
+        deviceContainer.append(item);
+    });
+
+    // Update "Select All" checkbox state based on current selections
+    if (!isInitialLoad) {
+        const allChecked = devices.every(device => selectedDevices.has(device.deviceId));
+        document.getElementById('selectAllCheckbox').checked = allChecked;
+    }
 }
 
 function getCarEmoji(device) {
@@ -1477,6 +1499,11 @@ function createMarkerElement(device) {
 
         $("#searchInput").on("input", filterDeviceList);
         $(document).on("change", ".deviceCheckbox", filterMarkers);
+
+        if (performance.navigation.type === 1) { // Check if it's a manual refresh
+        isInitialLoad = true;
+        selectedDevices.clear();
+    }
 
         myMap.on("move", () => {
           if (popup.style.display === "block" && currentMarker) {
@@ -2111,58 +2138,97 @@ function downloadFile(content, fileName, mimeType) {
     URL.revokeObjectURL(url);
 }
 
+// Update the checkbox change event handler
+function handleCheckboxChange(e) {
+    const checkbox = e.target;
+    const deviceIndex = parseInt(checkbox.dataset.index);
+    const device = devices[deviceIndex];
+    
+    // Update selectedDevices Set
+    if (checkbox.checked) {
+        selectedDevices.add(device.deviceId);
+    } else {
+        selectedDevices.delete(device.deviceId);
+    }
+    
+    // Update "Select All" checkbox state
+    const allDeviceCheckboxes = document.querySelectorAll('.deviceCheckbox');
+    const allChecked = Array.from(allDeviceCheckboxes).every(cb => cb.checked);
+    document.getElementById('selectAllCheckbox').checked = allChecked;
+    
+    filterMarkers();
+}
 
 document.querySelectorAll('.status-item').forEach(item => {
-  item.addEventListener('click', function() {
-    const icon = this.querySelector('.status-icon');
-    const iconSrc = icon.getAttribute('src');
-    
-    // Uncheck all checkboxes first
-    document.querySelectorAll('.deviceCheckbox').forEach(checkbox => {
-      checkbox.checked = false;
+    item.addEventListener('click', function() {
+        const icon = this.querySelector('.status-icon');
+        const iconSrc = icon.getAttribute('src');
+        
+        // Clear existing selections
+        selectedDevices.clear();
+        
+        // Uncheck all checkboxes first
+        document.querySelectorAll('.deviceCheckbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        document.getElementById('selectAllCheckbox').checked = false;
+        
+        // Check boxes based on vehicle status
+        devices.forEach((device, index) => {
+            const checkbox = document.querySelector(`.deviceCheckbox[data-index="${index}"]`);
+            if (!checkbox) return;
+            
+            const currentDate = new Date();
+            const deviceDate = new Date(device.date);
+            const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+            const ignitionStatus = typeof device.ignition === 'string' 
+                ? device.ignition.toLowerCase() === 'true' 
+                : Boolean(device.ignition);
+            
+            let shouldCheck = false;
+            
+            if (iconSrc.includes('green.png') && ignitionStatus && device.speed > 0 && hoursDifference < 2) {
+                shouldCheck = true;
+            } else if (iconSrc.includes('red/car0.png') && !ignitionStatus && hoursDifference < 2) {
+                shouldCheck = true;
+            } else if (iconSrc.includes('yellow.png') && ignitionStatus && device.speed === 0 && hoursDifference < 2) {
+                shouldCheck = true;
+            } else if (iconSrc.includes('blackcar1.png') && hoursDifference > 2) {
+                shouldCheck = true;
+            }
+            
+            checkbox.checked = shouldCheck;
+            if (shouldCheck) {
+                selectedDevices.add(device.deviceId);
+            }
+        });
+        
+        filterMarkers();
     });
-    document.getElementById('selectAllCheckbox').checked = false;
-    
-    // Check boxes based on vehicle status
-    devices.forEach((device, index) => {
-      const checkbox = document.querySelector(`.deviceCheckbox[data-index="${index}"]`);
-      if (!checkbox) return;
-      
-      const currentDate = new Date();
-      const deviceDate = new Date(device.date);
-      const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-      const ignitionStatus = typeof device.ignition === 'string' 
-        ? device.ignition.toLowerCase() === 'true' 
-        : Boolean(device.ignition);
-      
-      let shouldCheck = false;
-      
-      // Match status with clicked icon
-      if (iconSrc.includes('green.png') && ignitionStatus && device.speed > 0  && hoursDifference < 2) {
-        shouldCheck = true;
-      } else if (iconSrc.includes('red/car0.png') && !ignitionStatus  && hoursDifference < 2) {
-        shouldCheck = true;
-      } else if (iconSrc.includes('yellow.png') && ignitionStatus && device.speed === 0  && hoursDifference < 2) {
-        shouldCheck = true;
-      } else if (iconSrc.includes('blackcar1.png') && hoursDifference > 2) {
-        shouldCheck = true;
-      }
-      
-      checkbox.checked = shouldCheck;
-    });
-    
-    // Update markers visibility
-    filterMarkers();
-  });
 });
 
 document.getElementById('selectAllCheckbox').addEventListener('change', function() {
-  const isChecked = this.checked;
-  document.querySelectorAll('.deviceCheckbox').forEach(checkbox => {
-    checkbox.checked = isChecked;
-  });
-  filterMarkers();
+    const isChecked = this.checked;
+    const deviceCheckboxes = document.querySelectorAll('.deviceCheckbox');
+    
+    deviceCheckboxes.forEach((checkbox, index) => {
+        checkbox.checked = isChecked;
+        const device = devices[index];
+        
+        if (isChecked) {
+            selectedDevices.add(device.deviceId);
+        } else {
+            selectedDevices.delete(device.deviceId);
+        }
+    });
+    
+    filterMarkers();
 });
+
+window.addEventListener('beforeunload', () => {
+    localStorage.removeItem('selectedDevices'); // Clear selections on manual refresh
+});
+
     </script>
   </body>
 </html>
