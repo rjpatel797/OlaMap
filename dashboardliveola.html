@@ -764,6 +764,23 @@
 .export-buttons button:hover {
     background: #2c3e50;
 }
+.group-header {
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.group-header:hover {
+    background-color: #34495e !important;
+}
+
+.deviceItem {
+    margin-left: 10px;
+}
+
+.group-checkbox {
+    width: 16px;
+    height: 16px;
+}
 
     </style>
   </head>
@@ -1164,6 +1181,7 @@
                 gps: item.gps,
                 power: item.power,
                 latlang: item.latlang,
+                devicegroup: item.devicegroup,
               };
             });
             if (isInitialLoad) {
@@ -1193,43 +1211,129 @@ function createDeviceList() {
         document.getElementById('selectAllCheckbox').checked = true;
     }
 
-    devices.forEach((device, index) => {
-        const isChecked = isInitialLoad || selectedDevices.has(device.deviceId);
-        const item = $(`
-            <div class="deviceItem" id="device-${device.name.replace(/\s+/g, "-")}">
-                <input type="checkbox" class="deviceCheckbox" data-index="${index}" ${isChecked ? 'checked' : ''} />
-                <span class="car-emoji">${getCarEmoji(device)}</span>
-                <span>${device.name}</span>
+    // Group devices by their devicegroup
+    const deviceGroups = {};
+    devices.forEach(device => {
+        const groupName = device.devicegroup || 'Ungrouped';
+        if (!deviceGroups[groupName]) {
+            deviceGroups[groupName] = [];
+        }
+        deviceGroups[groupName].push(device);
+    });
+
+    // Create HTML for each group
+    Object.entries(deviceGroups).forEach(([groupName, groupDevices]) => {
+        // Create group header with checkbox
+        const groupHeader = $(`
+            <div class="group-header" style="
+                background-color: #2c3e50; 
+                color: white;
+                padding: 8px 12px;
+                margin: 10px 0 5px 0;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            ">
+                <input type="checkbox" class="group-checkbox" 
+                    data-group="${groupName}" 
+                    ${isInitialLoad ? 'checked' : ''}
+                    style="cursor: pointer;"
+                />
+                <span style="flex: 1;">${groupName}</span>
             </div>
         `);
 
-        // Attach event listener to the checkbox directly
-        const checkbox = item.find('.deviceCheckbox')[0];
-        checkbox.addEventListener('change', handleCheckboxChange);
-
-        item.on("click", function(e) {
-            if (!e.target.classList.contains('deviceCheckbox')) {
-                if (currentMarker && currentMarker === markers[index]) {
-                    hidePopup();
+        // Add group checkbox handler
+        const groupCheckbox = groupHeader.find('.group-checkbox');
+        groupCheckbox.on('change', function() {
+            const isChecked = this.checked;
+            const groupDeviceCheckboxes = deviceContainer
+                .find(`[data-group="${groupName}"]`)
+                .find('.deviceCheckbox');
+            
+            groupDeviceCheckboxes.each(function() {
+                this.checked = isChecked;
+                const deviceIndex = parseInt(this.dataset.index);
+                const device = devices[deviceIndex];
+                
+                if (isChecked) {
+                    selectedDevices.add(device.deviceId);
                 } else {
-                    showPopup(index, markers[index]);
-                    myMap.flyTo({
-                        center: device.coordinates,
-                        zoom: 14,
-                        speed: 1.5
-                    });
+                    selectedDevices.delete(device.deviceId);
                 }
-            }
+            });
+            
+            // Update main "Select All" checkbox
+            const allChecked = $('.deviceCheckbox').toArray().every(cb => cb.checked);
+            $('#selectAllCheckbox').prop('checked', allChecked);
+            
+            filterMarkers();
         });
 
-        deviceContainer.append(item);
+        deviceContainer.append(groupHeader);
+
+        // Create container for group's devices
+        const groupContainer = $(`<div data-group="${groupName}"></div>`);
+
+        // Add devices in this group
+        groupDevices.forEach((device, index) => {
+            const isChecked = isInitialLoad || selectedDevices.has(device.deviceId);
+            const item = $(`
+                <div class="deviceItem" id="device-${device.name.replace(/\s+/g, "-")}" style="margin-left: 10px;">
+                    <input type="checkbox" class="deviceCheckbox" data-index="${devices.indexOf(device)}" ${isChecked ? 'checked' : ''} />
+                    <span class="car-emoji">${getCarEmoji(device)}</span>
+                    <span>${device.name}</span>
+                </div>
+            `);
+
+            // Attach event listener to the checkbox
+            const checkbox = item.find('.deviceCheckbox')[0];
+            checkbox.addEventListener('change', function(e) {
+                handleCheckboxChange(e);
+                
+                // Update group checkbox state
+                const groupDevices = $(`[data-group="${groupName}"] .deviceCheckbox`);
+                const allGroupChecked = groupDevices.toArray().every(cb => cb.checked);
+                groupHeader.find('.group-checkbox').prop('checked', allGroupChecked);
+            });
+
+            item.on("click", function(e) {
+                if (!e.target.classList.contains('deviceCheckbox')) {
+                    if (currentMarker && currentMarker === markers[devices.indexOf(device)]) {
+                        hidePopup();
+                    } else {
+                        showPopup(devices.indexOf(device), markers[devices.indexOf(device)]);
+                        myMap.flyTo({
+                            center: device.coordinates,
+                            zoom: 14,
+                            speed: 1.5
+                        });
+                    }
+                }
+            });
+
+            groupContainer.append(item);
+        });
+
+        deviceContainer.append(groupContainer);
     });
 
-    // Update "Select All" checkbox state based on current selections
-    if (!isInitialLoad) {
-        const allChecked = devices.every(device => selectedDevices.has(device.deviceId));
-        document.getElementById('selectAllCheckbox').checked = allChecked;
-    }
+    // Update main "Select All" checkbox behavior
+    $('#selectAllCheckbox').off('change').on('change', function() {
+        const isChecked = this.checked;
+        $('.deviceCheckbox, .group-checkbox').prop('checked', isChecked);
+        
+        if (isChecked) {
+            devices.forEach(device => selectedDevices.add(device.deviceId));
+        } else {
+            selectedDevices.clear();
+        }
+        
+        filterMarkers();
+    });
 }
 
 function getCarEmoji(device) {
