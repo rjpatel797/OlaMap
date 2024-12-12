@@ -840,49 +840,101 @@
     /* pop-up display righ-side*/
     .vehicle-info-popup {
       position: fixed;
-      top: 200px;
+      top: 160px;
       right: 20px;
-      background: white;
-      padding: 15px;
-      border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-      width: 250px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 12px;  /* Reduced from 15px */
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      width: 180px;  /* Reduced from 280px */
       z-index: 9999;
+      transition: all 0.3s ease;
     }
 
-    .info-row {
+    .info-container {
       display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid #eee;
-      align-items: center;
+      flex-direction: column;
+      gap: 8px;  /* Reduced from 12px */
     }
 
-    .info-row:last-child {
-      border-bottom: none;
+    .info-card {
+      display: flex;
+      align-items: center;
+      padding: 8px;  /* Reduced from 10px */
+      background: white;
+      border-radius: 10px;
+      transition: transform 0.2s ease;
+      border: 1px solid #f0f0f0;
+    }
+
+    .info-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .info-icon {
+      font-size: 16px;  /* Reduced from 20px */
+      width: 30px;  /* Reduced from 40px */
+      height: 30px;  /* Reduced from 40px */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-right: 8px;  /* Reduced from 12px */
+    }
+
+    .info-details {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;  /* Reduced from 4px */
     }
 
     .info-label {
-      color: #555;
-      font-weight: bold;
+      color: #64748b;
+      font-size: 11px;  /* Reduced from 12px */
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .info-value {
-      color: #333;
+      color: #1e293b;
+      font-size: 13px;  /* Reduced from 16px */
+      font-weight: 600;
     }
 
-    /* New styles for metric values */
-    .info-value.metric {
-      background-color: #f1f5f9;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.95em;
+    #speedDisplay {
+      color: #2563eb;
     }
 
-    /* Keep date-time clean without background */
     #dateTimeDisplay {
+      font-size: 12px;  
       white-space: nowrap;
-      /* Keeps date and time on same line */
+    }
+
+    #distanceDisplay {
+      color: #059669;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .vehicle-info-popup {
+        width: calc(100% - 40px);
+        top: auto;
+        bottom: 20px;
+        right: 20px;
+      }
+      
+      .info-container {
+        flex-direction: row;
+        justify-content: space-between;
+      }
+      
+      .info-card {
+        flex: 1;
+      }
     }
 
     .start-time-popup {
@@ -1009,7 +1061,7 @@
             <option value="30">30 KM/H</option>
             <option value="40">40 KM/H</option>
             <option value="45">45 KM/H</option>
-            <option value="50">50 KM/H</option>
+            <option value="50"selected>50 KM/H</option>
             <option value="60">60 KM/H</option>
             <option value="65">65 KM/H</option>
             <option value="70">70 KM/H</option>
@@ -1026,13 +1078,13 @@
         <div class="hold-time-selector">
           <label for="holdTime">Hold Time:</label>
           <select id="holdTime">
-            <option value="2" selected>>2 Min</option>
+            <option value="2">>2 Min</option>
             <option value="3">>3 Min</option>
             <option value="5">>5 Min</option>
             <option value="10">>10 Min</option>
             <option value="15">>15 Min</option>
             <option value="20">>20 Min</option>
-            <option value="30">>30 Min</option>
+            <option value="30" selected>>30 Min</option>
             <option value="45">>45 Min</option>
             <option value="60">>1 Hour</option>
             <option value="90">>1.5 Hour</option>
@@ -1065,19 +1117,33 @@
     </div>
 
     <div id="vehicleInfoPopup" class="vehicle-info-popup">
-      <div class="info-row">
-        <span class="info-label">Speed:</span>
-        <span class="info-value metric" id="speedDisplay">0 km/h</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Date-Time:</span>
-        <span class="info-value" id="dateTimeDisplay">--</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Distance:</span>
-        <span class="info-value metric" id="distanceDisplay">0 km</span>
+      <div class="info-container">
+        <div class="info-card">
+          <div class="info-icon">🚗</div>
+          <div class="info-details">
+            <span class="info-label">Speed</span>
+            <span class="info-value" id="speedDisplay">0 km/h</span>
+          </div>
+        </div>
+        
+        <div class="info-card">
+          <div class="info-icon">🕒</div>
+          <div class="info-details">
+            <span class="info-label">Time</span>
+            <span class="info-value" id="dateTimeDisplay">--</span>
+          </div>
+        </div>
+        
+        <div class="info-card">
+          <div class="info-icon">📍</div>
+          <div class="info-details">
+            <span class="info-label">Distance</span>
+            <span class="info-value" id="distanceDisplay">0 km</span>
+          </div>
+        </div>
       </div>
     </div>
+
   </div>
 
   <script src="js/api.js"></script>
@@ -2365,85 +2431,106 @@
     // }
 
     function setupDateValidation() {
-      const fromDateInput = document.getElementById("fromDate");
-      const toDateInput = document.getElementById("toDate");
-      const fromTimeInput = document.getElementById("fromTime");
-      const toTimeInput = document.getElementById("toTime");
-      // Get current date in YYYY-MM-DD format
-      const currentDate = getCurrentDate();
-      fromDateInput.value = currentDate;
-      toDateInput.value = currentDate;
-      fromTimeInput.value = "00:00";
-      toTimeInput.value = "23:59";
+    const fromDateInput = document.getElementById("fromDate");
+    const toDateInput = document.getElementById("toDate");
+    const fromTimeInput = document.getElementById("fromTime");
+    const toTimeInput = document.getElementById("toTime");
 
-      // Force set the values
-      fromDateInput.value = currentDate;
-      toDateInput.value = currentDate;
-
-      // Set max attribute
-      fromDateInput.max = currentDate;
-      toDateInput.max = currentDate;
-
-      function validateTimes() {
-        if (fromDateInput.value === toDateInput.value) {
-          const fromTime = fromTimeInput.value;
-          const toTime = toTimeInput.value;
-
-          if (fromTime > toTime) {
-            alert("Start time cannot be after end time on the same day");
-            toTimeInput.value = fromTime;
-          }
-        }
-      }
-
-      fromTimeInput.addEventListener("change", validateTimes);
-      toTimeInput.addEventListener("change", validateTimes);
-
-      // Validate From Date
-      fromDateInput.addEventListener("input", function () {
-        const fromDate = new Date(this.value);
-        const toDate = new Date(toDateInput.value);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        if (fromDate > today) {
-          alert("From date cannot be in the future");
-          this.value = currentDate;
-          return;
-        }
-
-        if (toDateInput.value && fromDate > toDate) {
-          alert("From date cannot be after To date");
-          this.value = toDateInput.value;
-          return;
-        }
-
-        toDateInput.min = this.value;
-      });
-
-      // Validate To Date
-      toDateInput.addEventListener("input", function () {
-        const fromDate = new Date(fromDateInput.value);
-        const toDate = new Date(this.value);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        if (toDate > today) {
-          alert("To date cannot be in the future");
-          this.value = currentDate;
-          return;
-        }
-
-        if (fromDateInput.value && toDate < fromDate) {
-          alert("To date cannot be before From date");
-          this.value = fromDateInput.value;
-          return;
-        }
-
-        fromDateInput.max = this.value;
-      });
+    // Function to get current date in YYYY-MM-DD format
+    function getCurrentDate() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
     }
 
+    // Set initial values when page loads
+    const currentDate = getCurrentDate();
+    
+    // Set default values only if they haven't been set by URL parameters
+    if (!fromDateInput.value) {
+      fromDateInput.value = currentDate;
+    }
+    if (!toDateInput.value) {
+      toDateInput.value = currentDate;
+    }
+    if (!fromTimeInput.value) {
+      fromTimeInput.value = "00:00";
+    }
+    if (!toTimeInput.value) {
+      toTimeInput.value = "23:59";
+    }
+
+    // Set max attribute to current date
+    fromDateInput.max = currentDate;
+    toDateInput.max = currentDate;
+
+    function validateTimes() {
+      if (fromDateInput.value === toDateInput.value) {
+        const fromTime = fromTimeInput.value;
+        const toTime = toTimeInput.value;
+
+        if (fromTime > toTime) {
+          alert("Start time cannot be after end time on the same day");
+          toTimeInput.value = fromTime;
+        }
+      }
+    }
+
+    fromTimeInput.addEventListener("change", validateTimes);
+    toTimeInput.addEventListener("change", validateTimes);
+
+    // Validate From Date
+    fromDateInput.addEventListener("input", function () {
+      const fromDate = new Date(this.value);
+      const toDate = new Date(toDateInput.value);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (fromDate > today) {
+        alert("From date cannot be in the future");
+        this.value = currentDate;
+        return;
+      }
+
+      if (toDateInput.value && fromDate > toDate) {
+        alert("From date cannot be after To date");
+        this.value = toDateInput.value;
+        return;
+      }
+
+      toDateInput.min = this.value;
+    });
+
+    // Validate To Date
+    toDateInput.addEventListener("input", function () {
+      const fromDate = new Date(fromDateInput.value);
+      const toDate = new Date(this.value);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (toDate > today) {
+        alert("To date cannot be in the future");
+        this.value = currentDate;
+        return;
+      }
+
+      if (fromDateInput.value && toDate < fromDate) {
+        alert("To date cannot be before From date");
+        this.value = fromDateInput.value;
+        return;
+      }
+
+      fromDateInput.max = this.value;
+    });
+  }
+
+    // Make sure to call setupDateValidation when the page loads
+    document.addEventListener("DOMContentLoaded", function() {
+      setupDateValidation();
+    });
+    
     document.addEventListener("DOMContentLoaded", function () {
       // Get URL parameters
       const urlParams = new URLSearchParams(window.location.search);
