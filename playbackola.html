@@ -843,7 +843,7 @@
       top: 160px;
       right: 20px;
       background: rgba(255, 255, 255, 0.95);
-      padding: 12px;  /* Reduced from 15px */
+      padding: 8px;  /* Reduced from 15px */
       border-radius: 12px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
       backdrop-filter: blur(10px);
@@ -855,13 +855,13 @@
     .info-container {
       display: flex;
       flex-direction: column;
-      gap: 8px;  /* Reduced from 12px */
+      gap: 3px;  /* Reduced from 12px */
     }
 
     .info-card {
       display: flex;
       align-items: center;
-      padding: 8px;  /* Reduced from 10px */
+      padding: 3px;  /* Reduced from 10px */
       background: white;
       border-radius: 10px;
       transition: transform 0.2s ease;
@@ -2151,6 +2151,12 @@
     }
 
     function startPlayback(isSpeedUpdate = false) {
+
+      const selectedVehicle = document.getElementById('selectedVehicle');
+    if (selectedVehicle.textContent === 'Select Vehicle') {
+        alert('Please select a vehicle before starting playback');
+        return;
+    }
       // Disable start button and enable pause/stop buttons
       document.getElementById("startPlayback").disabled = true;
       document.getElementById("pausePlayback").disabled = false;
@@ -2547,6 +2553,27 @@
       fromDateInput.max = this.value;
     });
   }
+
+  const dateTimeInputs = document.querySelectorAll('#fromDate, #toDate, #fromTime, #toTime');
+dateTimeInputs.forEach(input => {
+    input.addEventListener('change', () => {
+        // Reset device selection
+        document.getElementById('selectedVehicle').textContent = 'Select Vehicle';
+        
+        // Stop any ongoing playback
+        stopPlayback();
+        
+        // Clear any existing data
+        playbackData = [];
+        dynamicPlaybackData = [];
+        
+        // Reset the dropdown display
+        const dropdown = document.getElementById('deviceDropdown');
+        if (dropdown) {
+            dropdown.style.display = 'none';
+        }
+    });
+});
 
     // Make sure to call setupDateValidation when the page loads
     document.addEventListener("DOMContentLoaded", function() {
