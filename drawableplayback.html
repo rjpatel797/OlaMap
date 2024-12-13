@@ -1078,7 +1078,7 @@
     // Select a vehicle and update the selected vehicle text
     function selectVehicle(deviceId, deviceName) {
       if (!deviceId) {
-        console.error("No device ID provided");
+        console.error("No Vehicle ID provided");
         return;
       }
 
@@ -1165,7 +1165,7 @@
           populateVehicleList(devices);
         })
         .catch((error) => {
-          console.error("Error fetching devices:", error);
+          console.error("Error fetching Vehicle:", error);
           alert("Error loading vehicle list. Please try again.");
         });
     }
@@ -1227,8 +1227,8 @@
     function fetchPlaybackData(did) {
       console.log("did.........." + did);
       if (!did) {
-        console.error("No device ID provided");
-        return Promise.reject("Device ID required");
+        console.error("No Vehicle ID provided");
+        return Promise.reject("Vehicle ID required");
       }
 
       const fromDate = document.getElementById("fromDate").value;
@@ -1244,7 +1244,7 @@
       const formattedToDateTime = `${formatDate(toDate)}${formatTime(toTime)}`;
 
       console.log(
-        `Fetching data for device ${did} from ${formattedFromDateTime} to ${formattedToDateTime}`
+        `Fetching data for Vehicle ${did} from ${formattedFromDateTime} to ${formattedToDateTime}`
       );
 
       return fetch(

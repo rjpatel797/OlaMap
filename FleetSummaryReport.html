@@ -374,8 +374,8 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Device Group</th>
-                            <th>Device Name</th>
+                            <th>Vehicle Group</th>
+                            <th>Vehicle Name</th>
                             <th>Distance Travelled(km)</th>
                             <th>Max. Speed(km/h)</th>
                             <th>Drive Time</th>
@@ -630,11 +630,11 @@
                     populateVehicleList(devices);
                 })
                 .catch(error => {
-                    console.error("Error fetching devices:", error);
+                    console.error("Error fetching Vehicles:", error);
                     // Show error in dropdown
                     const vehicleList = document.getElementById('vehicleList');
                     if (vehicleList) {
-                        vehicleList.innerHTML = '<div class="dropdown-item" style="color: red;">Error loading devices</div>';
+                        vehicleList.innerHTML = '<div class="dropdown-item" style="color: red;">Error loading Vehicles</div>';
                     }
                 });
         }
@@ -857,7 +857,7 @@
 
         function exportExcel() {
             // Get headers
-            const headers = ['Device Group', 'Device Name', 'Distance Travelled(km)', 'Max. Speed(km/h)', 'Drive Time', 'Stoppage Time'];
+            const headers = ['Vehicle Group', 'Vehicle Name', 'Distance Travelled(km)', 'Max. Speed(km/h)', 'Drive Time', 'Stoppage Time'];
             
             // Get data rows
             const rows = document.querySelectorAll('#reportData tr');
@@ -951,7 +951,7 @@
             doc.text(`Report Period: ${startDate} ${startTime} to ${endDate} ${endTime}`, 15, 25);
 
             // Get table data
-            const headers = [['Device Group', 'Device Name', 'Distance(km)', 'Speed(km/h)', 'Drive Time', 'Stoppage Time']];
+            const headers = [['Vehicle Group', 'Vehicle Name', 'Distance(km)', 'Speed(km/h)', 'Drive Time', 'Stoppage Time']];
             const rows = document.querySelectorAll('#reportData tr');
             const data = Array.from(rows).map(row => {
                 const cells = row.querySelectorAll('td');

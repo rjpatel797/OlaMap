@@ -513,16 +513,16 @@
 
         function fetchDeviceData() {
             const mid = localStorage.getItem("mid");
-            console.log("Fetching devices with mid:", mid);
+            console.log("Fetching vehicle with mid:", mid);
 
             fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log("Device data received:", data);
+                    console.log("vehicle data received:", data);
 
                     if (Array.isArray(data)) {
                         devices = data.map(item => ({
-                            name: item.dname || 'Unnamed Device',
+                            name: item.dname || 'Unnamed vehicle',
                             did: item.did
                         }));
                         populateVehicleList(devices);
@@ -531,14 +531,14 @@
                         if (deviceSelect) {
                             deviceSelect.textContent = 'Select Vehicle';
                         } else {
-                            console.error('Device select element not found');
+                            console.error('vehicle select element not found');
                         }
                     } else {
                         console.error('Invalid data format received:', data);
                     }
                 })
                 .catch(error => {
-                    console.error("Error fetching devices:", error);
+                    console.error("Error fetching vehicle:", error);
                 });
         }
 
@@ -802,7 +802,7 @@
 
         function exportExcel() {
             // Get headers
-            const headers = ['Device Group', 'Device Name', 'Distance Travelled(km)', 'Max. Speed(km/h)', 'Drive Time', 'Stoppage Time'];
+            const headers = ['vehicle Group', 'vehicle Name', 'Distance Travelled(km)', 'Max. Speed(km/h)', 'Drive Time', 'Stoppage Time'];
 
             // Get data rows
             const rows = document.querySelectorAll('#reportData tr');

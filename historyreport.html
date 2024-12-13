@@ -440,7 +440,7 @@ function fetchDeviceData() {
             
             if (Array.isArray(data)) {
                 devices = data.map(item => ({
-                    name: item.dname || 'Unnamed Device',
+                    name: item.dname || 'Unnamed Vehicle',
                     did: item.did
                 }));
                 populateVehicleList(devices);
@@ -456,7 +456,7 @@ function fetchDeviceData() {
             }
         })
         .catch(error => {
-            console.error("Error fetching devices:", error);
+            console.error("Error fetching Vehicles:", error);
         });
 }
 
