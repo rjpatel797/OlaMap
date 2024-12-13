@@ -706,7 +706,7 @@
       top: 160px;
       right: 20px;
       background: rgba(255, 255, 255, 0.95);
-      padding: 12px;  /* Reduced from 15px */
+      padding: 8px;  /* Reduced from 15px */
       border-radius: 12px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
       backdrop-filter: blur(10px);
@@ -718,13 +718,13 @@
     .info-container {
       display: flex;
       flex-direction: column;
-      gap: 8px;  /* Reduced from 12px */
+      gap: 3px;  /* Reduced from 12px */
     }
 
     .info-card {
       display: flex;
       align-items: center;
-      padding: 8px;  /* Reduced from 10px */
+      padding: 3px;  /* Reduced from 10px */
       background: white;
       border-radius: 10px;
       transition: transform 0.2s ease;
@@ -815,6 +815,28 @@
     <div class="content">
       <div class="controls">
         <div class="datetime-selector">
+          <div class="device-selector">
+            <div class="dropdown-container">
+              <!-- Dropdown Button (Selected Vehicle) -->
+              <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
+                Select Vehicle
+              </div>
+  
+              <!-- Dropdown List (Hidden by default) -->
+              <div class="dropdown-list" id="deviceDropdown">
+                <!-- Search input for filtering vehicles -->
+                <div class="dropdown-search">
+                  <input type="text" placeholder="Search vehicle..." id="vehicleSearch"
+                    onclick="event.stopPropagation()" onkeyup="filterVehicles(this.value)" />
+                </div>
+  
+                <!-- List of filtered vehicles -->
+                <div class="dropdown-items" id="vehicleList">
+                  <!-- Vehicles will be populated here dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
           <div class="date-input">
             <label>From:</label>
             <div class="datetime-wrapper">
@@ -829,30 +851,8 @@
               <input type="time" id="toTime" value="23:59" />
             </div>
           </div>
-          <div class="device-selector">
-            <div class="dropdown-container">
-              <!-- Dropdown Button (Selected Vehicle) -->
-              <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
-                Select Vehicle
-              </div>
-
-              <!-- Dropdown List (Hidden by default) -->
-              <div class="dropdown-list" id="deviceDropdown">
-                <!-- Search input for filtering vehicles -->
-                <div class="dropdown-search">
-                  <input type="text" placeholder="Search vehicle..." id="vehicleSearch"
-                    onclick="event.stopPropagation()" onkeyup="filterVehicles(this.value)" />
-                </div>
-
-                <!-- List of filtered vehicles -->
-                <div class="dropdown-items" id="vehicleList">
-                  <!-- Vehicles will be populated here dynamically -->
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
-
+  
         <div class="buttonclass">
           <button id="startPlayback">Start</button>
           <button id="pausePlayback">Pause</button>
@@ -863,14 +863,14 @@
       <div id="polylinePopup" class="polyline-popup">
         <div id="polylinePopupContent"></div>
       </div>
-
+  
       <!-- Custom Popup Element -->
       <div id="customPopup" class="popup">
         <span class="close-btn" onclick="hidePopup(true)">✖</span>
         <div id="popupContent"></div>
       </div>
     </div>
-
+  
     <div id="vehicleInfoPopup" class="vehicle-info-popup">
       <div class="info-container">
         <div class="info-card">
@@ -898,8 +898,7 @@
         </div>
       </div>
     </div>
-
-  </div>
+  
   </div>
 
   <script src="js/api.js"></script>
@@ -1078,7 +1077,7 @@
     // Select a vehicle and update the selected vehicle text
     function selectVehicle(deviceId, deviceName) {
       if (!deviceId) {
-        console.error("No device ID provided");
+        console.error("No Vehicle ID provided");
         return;
       }
 
@@ -1165,7 +1164,7 @@
           populateVehicleList(devices);
         })
         .catch((error) => {
-          console.error("Error fetching devices:", error);
+          console.error("Error fetching Vehicle:", error);
           alert("Error loading vehicle list. Please try again.");
         });
     }
@@ -1227,8 +1226,8 @@
     function fetchPlaybackData(did) {
       console.log("did.........." + did);
       if (!did) {
-        console.error("No device ID provided");
-        return Promise.reject("Device ID required");
+        console.error("No Vehicle ID provided");
+        return Promise.reject("Vehicle ID required");
       }
 
       const fromDate = document.getElementById("fromDate").value;
@@ -1244,7 +1243,7 @@
       const formattedToDateTime = `${formatDate(toDate)}${formatTime(toTime)}`;
 
       console.log(
-        `Fetching data for device ${did} from ${formattedFromDateTime} to ${formattedToDateTime}`
+        `Fetching data for Vehicle ${did} from ${formattedFromDateTime} to ${formattedToDateTime}`
       );
 
       return fetch(
@@ -1549,6 +1548,13 @@
 }
 
     function startPlayback() {
+
+      const selectedVehicle = document.getElementById('selectedVehicle');
+    if (selectedVehicle.textContent === 'Select Vehicle') {
+        alert('Please select a vehicle before starting playback');
+        return;
+    }
+
       if (!playbackData || playbackData.length === 0) {
           alert("No playback data available. Please select a vehicle and date range first.");
           return;
@@ -1986,6 +1992,28 @@ addPolyline = function() {
   originalAddPolyline();
   addDirectionArrows();
 };
+
+
+const dateTimeInputs = document.querySelectorAll('#fromDate, #toDate, #fromTime, #toTime');
+dateTimeInputs.forEach(input => {
+    input.addEventListener('change', () => {
+        // Reset device selection
+        document.getElementById('selectedVehicle').textContent = 'Select Vehicle';
+        
+        // Stop any ongoing playback
+        stopPlayback();
+        
+        // Clear any existing data
+        playbackData = [];
+        dynamicPlaybackData = [];
+        
+        // Reset the dropdown display
+        const dropdown = document.getElementById('deviceDropdown');
+        if (dropdown) {
+            dropdown.style.display = 'none';
+        }
+    });
+});
 
 
     // Event listeners
