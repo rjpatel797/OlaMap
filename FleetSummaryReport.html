@@ -102,10 +102,12 @@
         .date-input input[type="time"]:focus {
             box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
         }
+
         /* Update the device selector styles */
         .device-selector {
             position: relative;
-            width: 250px;
+            width: 255px;
+            top: 5px;
         }
 
         .dropdown-container {
@@ -258,6 +260,58 @@
             padding: 20px;
             color: #666;
         }
+
+        .selected-devices {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            padding: 5px;
+        }
+
+        .selected-device-tag {
+            background: #e2e8f0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .remove-device {
+            cursor: pointer;
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .device-checkbox {
+            width: 16px;
+            height: 16px;
+        }
+
+        .select-all-option {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .select-all-option input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .select-all-option label {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -284,19 +338,25 @@
                 <div class="device-selector">
                     <div class="dropdown-container">
                         <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
-                            Select Vehicle
+                            Select Vehicles
                         </div>
+                        <div class="selected-devices" id="selectedDevicesList"></div>
                         <div class="dropdown-list" id="deviceDropdown">
                             <div class="dropdown-search">
                                 <input type="text" 
-                                       placeholder="Search vehicle..." 
+                                       placeholder="Search vehicles..." 
                                        id="vehicleSearch"
                                        onclick="event.stopPropagation()"
                                        onkeyup="filterVehicles(this.value)">
                             </div>
-                            <div class="dropdown-items" id="vehicleList">
-                                <!-- Vehicles will be populated here -->
+                            <!-- Add Select All checkbox -->
+                            <div class="select-all-option">
+                                <input type="checkbox" 
+                                       id="selectAllCheckbox" 
+                                       onclick="toggleSelectAll(event)">
+                                <label for="selectAllCheckbox">Select All</label>
                             </div>
+                            <div class="dropdown-items" id="vehicleList"></div>
                         </div>
                     </div>
                 </div>
@@ -371,13 +431,57 @@
             if (dropdown) {
                 dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
             }
-        } 
+        }
+        
+        function toggleSelectAll(event) {
+            event.stopPropagation();
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const isChecked = selectAllCheckbox.checked;
+            
+            // Get all visible devices (respecting search filter)
+            const visibleDevices = Array.from(document.querySelectorAll('#vehicleList .dropdown-item'))
+                .map(item => {
+                    const checkbox = item.querySelector('input[type="checkbox"]');
+                    const label = item.querySelector('span');
+                    return {
+                        did: devices.find(d => d.name === label.textContent)?.did,
+                        name: label.textContent,
+                        checkbox: checkbox
+                    };
+                })
+                .filter(device => device.did && device.checkbox.parentElement.style.display !== 'none');
+
+            // Update all visible checkboxes and selectedDevices
+            visibleDevices.forEach(device => {
+                device.checkbox.checked = isChecked;
+                if (isChecked) {
+                    selectedDevices.set(device.did, device.name);
+                } else {
+                    selectedDevices.delete(device.did);
+                }
+            });
+
+            updateSelectedDevicesDisplay();
+        }
 
         function filterVehicles(searchText) {
-            const filteredDevices = devices.filter(device => 
+            const filteredDevices = devices.filter((device) =>
                 device.name.toLowerCase().includes(searchText.toLowerCase())
             );
             populateVehicleList(filteredDevices);
+            
+            // Update Select All checkbox state based on filtered items
+            updateSelectAllCheckbox();
+        }
+
+        function updateSelectAllCheckbox() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const visibleCheckboxes = Array.from(document.querySelectorAll('#vehicleList .dropdown-item input[type="checkbox"]:not([style*="display: none"])'));
+            const allChecked = visibleCheckboxes.every(cb => cb.checked);
+            const someChecked = visibleCheckboxes.some(cb => cb.checked);
+            
+            selectAllCheckbox.checked = allChecked;
+            selectAllCheckbox.indeterminate = someChecked && !allChecked;
         }
 
         function selectVehicle(deviceId, deviceName) {
@@ -389,23 +493,128 @@
             document.getElementById('deviceDropdown').style.display = 'none';
         }
 
+        let selectedDevices = new Map(); // Store selected devices
+
         function populateVehicleList(devicesList) {
             const vehicleList = document.getElementById('vehicleList');
-            if (!vehicleList) {
-                console.error('Vehicle list element not found');
-                return;
-            }
+            if (!vehicleList) return;
             
-            vehicleList.innerHTML = ''; // Clear existing items
+            vehicleList.innerHTML = '';
             
             devicesList.forEach(device => {
                 const item = document.createElement('div');
                 item.className = 'dropdown-item';
-                item.style.color = '#333'; // Set text color to black
-                item.textContent = device.name;
-                item.onclick = () => selectVehicle(device.did, device.name);
+                item.style.color = '#333';
+                
+                // Add checkbox
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'device-checkbox';
+                checkbox.checked = selectedDevices.has(device.did);
+                
+                const label = document.createElement('span');
+                label.textContent = device.name;
+                
+                item.appendChild(checkbox);
+                item.appendChild(label);
+                
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    checkbox.checked = !checkbox.checked;
+                    updateSelectedDevices(device, checkbox.checked);
+                };
+                
                 vehicleList.appendChild(item);
             });
+        }
+
+        function updateSelectedDevices(device, isSelected) {
+            if (isSelected) {
+                selectedDevices.set(device.did, device.name);
+            } else {
+                selectedDevices.delete(device.did);
+            }
+            updateSelectedDevicesDisplay();
+            updateSelectAllCheckbox();
+        }
+
+        function updateSelectedDevicesDisplay() {
+            const selectedVehicle = document.getElementById('selectedVehicle');
+            
+            if (selectedDevices.size === 0) {
+                selectedVehicle.textContent = 'Select Vehicle';
+                return;
+            }
+            
+            // Create container for device tags
+            const container = document.createElement('div');
+            container.style.display = 'flex';
+            container.style.alignItems = 'center';
+            container.style.gap = '5px';
+
+            // Get first two devices
+            const devices = Array.from(selectedDevices.entries());
+            const firstTwoDevices = devices.slice(0, 2);
+            
+            // Create tags for first two devices
+            firstTwoDevices.forEach(([did, name]) => {
+                const tag = document.createElement('div');
+                tag.style.backgroundColor = '#e2e8f0';
+                tag.style.padding = '2px 8px';
+                tag.style.borderRadius = '4px';
+                tag.style.fontSize = '12px';
+                tag.style.display = 'inline-flex';
+                tag.style.alignItems = 'center';
+                
+                const closeButton = document.createElement('span');
+                closeButton.textContent = '×';
+                closeButton.style.cursor = 'pointer';
+                closeButton.style.color = '#ef4444';
+                closeButton.style.marginLeft = '5px';
+                closeButton.onclick = (e) => {
+                    e.stopPropagation(); // Stop event from bubbling up
+                    removeDevice(did);
+                };
+                
+                tag.textContent = name;
+                tag.appendChild(closeButton);
+                container.appendChild(tag);
+            });
+
+            // Add count indicator if there are more devices
+            if (selectedDevices.size > 2) {
+                const moreCount = document.createElement('div');
+                moreCount.style.backgroundColor = '#e2e8f0';
+                moreCount.style.padding = '2px 8px';
+                moreCount.style.borderRadius = '4px';
+                moreCount.style.fontSize = '12px';
+                moreCount.textContent = `+${selectedDevices.size - 2}`;
+                container.appendChild(moreCount);
+            }
+            
+            // Clear previous content and add new tags
+            selectedVehicle.innerHTML = '';
+            selectedVehicle.appendChild(container);
+        }
+
+        function removeDevice(did) {
+            // Stop propagation if event exists
+            if (event) {
+                event.stopPropagation();
+            }
+            
+            // Remove the device from selected devices
+            selectedDevices.delete(did);
+            
+            // Update displays
+            updateSelectedDevicesDisplay();
+            populateVehicleList(devices);
+            
+            // Keep dropdown open
+            const dropdown = document.getElementById('deviceDropdown');
+            if (dropdown) {
+                dropdown.style.display = 'block';
+            }
         }
 
         function fetchDeviceData() {
@@ -507,22 +716,21 @@
                 return;
             }
 
-            if (!selectedDeviceId) {
-                alert("Please select a vehicle");
+            if (selectedDevices.size === 0) {
+                alert("Please select at least one vehicle");
                 return;
             }
 
             const startDateTime = `${startDate} ${startTime}`;
             const endDateTime = `${endDate} ${endTime}`;
 
-            console.log("Generating report for:", startDateTime, endDateTime, selectedDeviceId);
+            // Join all selected device IDs with commas
+            const deviceIds = Array.from(selectedDevices.keys()).join(',');
 
-            // Format dates for API
             const formattedStartDate = formatDateForApi(startDateTime);
             const formattedEndDate = formatDateForApi(endDateTime);
 
-            // Make API call with formatted dates and selectedDeviceId
-            fetchReportData(formattedStartDate, formattedEndDate, selectedDeviceId);
+            fetchReportData(formattedStartDate, formattedEndDate, deviceIds);
         }
 
         function formatDateForApi(dateTimeString) {
