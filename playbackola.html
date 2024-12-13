@@ -516,7 +516,7 @@
     .device-selector::after {
       content: "▼";
       font-size: 10px;
-      color: #fff;
+      color: #000;
       position: absolute;
       right: 12px;
       top: 50%;
@@ -721,92 +721,95 @@
 
     /*over speeding*/
     .speed-threshold-container {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: linear-gradient(145deg, #1e242c, #1a1f25);
-      padding: 5px 8px;
-      border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      width: fit-content;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: linear-gradient(145deg, #1e242c, #1a1f25);
+    padding: 5px 6px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+      color: #e6edf3;
       color: #e6edf3;
       font-size: 13px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .icon-speedometer {
-      display: none;
-      width: 28px;
-      height: 25px;
-      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2.5"/><path d="M3.34 19.66A10 10 0 1 0 19.66 3.34"/></svg>') no-repeat center center;
-      background-size: 18px;
-      background-color: #3b82f6;
-      border-radius: 8px;
-      padding: 6px;
-      transition: all 0.3s ease;
-    }
-
-    .speed-dropdown {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 6px;
-      color: #fff;
+    color: #e6edf3;
       font-size: 13px;
-      padding: 8px 0px 8px 12px;
-      width: 100px;
-      appearance: none;
-      cursor: pointer;
-      position: relative;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(8px);
-      background: linear-gradient(145deg,
-          rgba(29, 36, 44, 0.8),
-          rgba(25, 31, 37, 0.8));
-    }
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
 
-    .speed-dropdown::after {
-      content: "";
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      width: 10px;
-      height: 10px;
-      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>') no-repeat;
-      background-size: contain;
-      transform: translateY(-50%);
-      pointer-events: none;
-    }
+.speed-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 25px;
+    background: #dc2626;
+    border-radius: 6px;
+    padding: 5px;
+    transition: all 0.3s ease;
+}
 
-    .speed-dropdown:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(59, 130, 246, 0.5);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
+.speed-icon svg {
+    width: 16px;
+    height: 16px;
+    stroke: white;
+}
 
-    .speed-dropdown:focus {
-      outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
-    }
+.speed-select-wrapper {
+    position: relative;
+}
 
-    .speed-dropdown option {
-      background-color: #1a1f25;
-      color: #fff;
-      padding: 10px;
-    }
+.speed-dropdown {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 13px;
+    padding: 6px 25px 6px 10px;
+    appearance: none;
+    cursor: pointer;
+    min-width: 120px;
+    backdrop-filter: blur(8px);
+    background: linear-gradient(145deg, rgba(29, 36, 44, 0.8), rgba(25, 31, 37, 0.8));
+}
 
-    /* Firefox specific styles */
-    .speed-dropdown {
-      appearance: none;
-      text-indent: 0.01px;
-      text-overflow: "";
-    }
+.speed-dropdown:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(220, 38, 38, 0.5);
+}
 
-    /* Edge specific styles */
-    .speed-dropdown::-ms-expand {
-      display: none;
-    }
+.speed-dropdown:focus {
+    outline: none;
+    border-color: #dc2626;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.25);
+}
+
+.speed-dropdown option {
+    background-color: #1a1f25;
+    color: #fff;
+    padding: 8px;
+}
+
+.speed-select-wrapper::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    pointer-events: none;
+}
+
+.speed-label {
+    font-weight: 500;
+    font-size: 13px;
+    color: #e6edf3;
+    white-space: nowrap;
+}
 
     /* Add these styles to your existing CSS */
     .polyline-popup {
@@ -1003,6 +1006,87 @@
       border-right: 8px solid transparent;
       border-top: 8px solid #fff;
     }
+
+    .hold-time-selector {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #fff;
+    padding: 5px 6px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: #e6edf3;
+    width: 150px;
+}
+
+.hold-time-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 25px;
+    background: #3b82f6;
+    border-radius: 6px;
+    padding: 5px;
+}
+
+.hold-time-icon svg {
+    width: 16px;
+    height: 16px;
+    stroke: white;
+}
+
+.hold-time-select {
+    background: #fff;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 12px;
+    padding: 6px 0px 6px 0px;
+    appearance: none;
+    cursor: pointer;
+    min-width: 100px;
+    backdrop-filter: blur(8px);
+    background: #fff;
+}
+
+.hold-time-select:hover {
+    background: #fff;
+    border-color: rgba(59, 130, 246, 0.5);
+}
+
+.hold-time-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+.hold-time-select option {
+    background-color: #fff;
+    color: #fff;
+    padding: 8px;
+}
+
+.hold-time-wrapper {
+    position: relative;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+}
+
+.hold-time-wrapper::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    pointer-events: none;
+}
   </style>
 </head>
 
@@ -1050,48 +1134,61 @@
             </div>
             <input type="range" min="0.25" max="8" step="0.25" value="1" class="speed-slider" id="speedSlider"
               onchange="updateSpeed(this.value)" />
-            <div class="speed-label" id="speedLabel">1x</div>
+            <div class="speed-label" id="speedLabel" style="color: #000;">1x</div>
           </div>
         </div>
 
         <!-- Add this inside your controls section, near other controls -->
         <div class="speed-threshold-container">
-          <i class="icon-speedometer"></i>
-          Over Speeding:
-          <select id="overSpeedingThreshold" class="speed-dropdown">
-            <option value="30">30 KM/H</option>
-            <option value="40">40 KM/H</option>
-            <option value="45">45 KM/H</option>
-            <option value="50"selected>50 KM/H</option>
-            <option value="60">60 KM/H</option>
-            <option value="65">65 KM/H</option>
-            <option value="70">70 KM/H</option>
-            <option value="75">75 KM/H</option>
-            <option value="80">80 KM/H</option>
-            <option value="85">85 KM/H</option>
-            <option value="90">90 KM/H</option>
-            <option value="95">95 KM/H</option>
-            <option value="100">100 KM/H</option>
-            <option value="120">120 KM/H</option>
-          </select>
-        </div>
+          <div class="speed-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41M12 10.5l3.5 4.5h-7z"/>
+                  <circle cx="12" cy="12" r="10"/>
+              </svg>
+          </div>
+          <div class="speed-select-wrapper">
+              <select id="overSpeedingThreshold" class="speed-dropdown">
+                  <option value="30">30 km/h</option>
+                  <option value="40">40 km/h</option>
+                  <option value="45">45 km/h</option>
+                  <option value="50" selected>50 km/h</option>
+                  <option value="60">60 km/h</option>
+                  <option value="65">65 km/h</option>
+                  <option value="70">70 km/h</option>
+                  <option value="75">75 km/h</option>
+                  <option value="80">80 km/h</option>
+                  <option value="85">85 km/h</option>
+                  <option value="90">90 km/h</option>
+                  <option value="95">95 km/h</option>
+                  <option value="100">100 km/h</option>
+                  <option value="120">120 km/h</option>
+              </select>
+          </div>
+      </div>
 
         <div class="hold-time-selector">
-          <label for="holdTime">Hold Time:</label>
-          <select id="holdTime">
-            <option value="2">>2 Min</option>
-            <option value="3">>3 Min</option>
-            <option value="5">>5 Min</option>
-            <option value="10">>10 Min</option>
-            <option value="15">>15 Min</option>
-            <option value="20">>20 Min</option>
-            <option value="30" selected>>30 Min</option>
-            <option value="45">>45 Min</option>
-            <option value="60">>1 Hour</option>
-            <option value="90">>1.5 Hour</option>
-            <option value="120">>2 Hour</option>
-          </select>
-        </div>
+          <div class="hold-time-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+              </svg>
+          </div>
+          <div class="hold-time-wrapper">
+              <select class="hold-time-select" id="holdTime">
+                  <option value="2">2 Minutes</option>
+                  <option value="3">3 Minutes</option>
+                  <option value="5">5 Minutes</option>
+                  <option value="10">10 Minutes</option>
+                  <option value="15">15 Minutes</option>
+                  <option value="20">20 Minutes</option>
+                  <option value="30" selected>30 Minutes</option>
+                  <option value="45">45 Minutes</option>
+                  <option value="60">1 Hour</option>
+                  <option value="90">1.5 Hours</option>
+                  <option value="120">2 Hours</option>
+              </select>
+          </div>
+      </div>
 
         <div class="buttonclass">
           <button id="startPlayback">Start</button>
