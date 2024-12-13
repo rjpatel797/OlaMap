@@ -1012,6 +1012,21 @@
     <div id="navbar-container"></div>
     <div class="content">
       <div class="controls">
+        <div class="device-selector">
+          <div class="dropdown-container">
+            <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
+              Select Vehicle
+            </div>
+            <div class="dropdown-list" id="deviceDropdown">
+              <div class="dropdown-search">
+                <input type="text" placeholder="Search vehicle..." id="vehicleSearch"
+                  onclick="event.stopPropagation()" onkeyup="filterVehicles(this.value)" />
+              </div>
+              <div class="dropdown-items" id="vehicleList"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="datetime-selector">
           <div class="date-input">
             <label>From:</label>
@@ -1025,20 +1040,6 @@
             <div class="datetime-wrapper">
               <input type="date" id="toDate" placeholder="dd/mm/yyyy" />
               <input type="time" id="toTime" value="23:59" />
-            </div>
-          </div>
-          <div class="device-selector">
-            <div class="dropdown-container">
-              <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
-                Select Vehicle
-              </div>
-              <div class="dropdown-list" id="deviceDropdown">
-                <div class="dropdown-search">
-                  <input type="text" placeholder="Search vehicle..." id="vehicleSearch"
-                    onclick="event.stopPropagation()" onkeyup="filterVehicles(this.value)" />
-                </div>
-                <div class="dropdown-items" id="vehicleList"></div>
-              </div>
             </div>
           </div>
 

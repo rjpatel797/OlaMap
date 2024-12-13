@@ -815,6 +815,28 @@
     <div class="content">
       <div class="controls">
         <div class="datetime-selector">
+          <div class="device-selector">
+            <div class="dropdown-container">
+              <!-- Dropdown Button (Selected Vehicle) -->
+              <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
+                Select Vehicle
+              </div>
+  
+              <!-- Dropdown List (Hidden by default) -->
+              <div class="dropdown-list" id="deviceDropdown">
+                <!-- Search input for filtering vehicles -->
+                <div class="dropdown-search">
+                  <input type="text" placeholder="Search vehicle..." id="vehicleSearch"
+                    onclick="event.stopPropagation()" onkeyup="filterVehicles(this.value)" />
+                </div>
+  
+                <!-- List of filtered vehicles -->
+                <div class="dropdown-items" id="vehicleList">
+                  <!-- Vehicles will be populated here dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
           <div class="date-input">
             <label>From:</label>
             <div class="datetime-wrapper">
@@ -829,30 +851,8 @@
               <input type="time" id="toTime" value="23:59" />
             </div>
           </div>
-          <div class="device-selector">
-            <div class="dropdown-container">
-              <!-- Dropdown Button (Selected Vehicle) -->
-              <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
-                Select Vehicle
-              </div>
-
-              <!-- Dropdown List (Hidden by default) -->
-              <div class="dropdown-list" id="deviceDropdown">
-                <!-- Search input for filtering vehicles -->
-                <div class="dropdown-search">
-                  <input type="text" placeholder="Search vehicle..." id="vehicleSearch"
-                    onclick="event.stopPropagation()" onkeyup="filterVehicles(this.value)" />
-                </div>
-
-                <!-- List of filtered vehicles -->
-                <div class="dropdown-items" id="vehicleList">
-                  <!-- Vehicles will be populated here dynamically -->
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
-
+  
         <div class="buttonclass">
           <button id="startPlayback">Start</button>
           <button id="pausePlayback">Pause</button>
@@ -863,14 +863,14 @@
       <div id="polylinePopup" class="polyline-popup">
         <div id="polylinePopupContent"></div>
       </div>
-
+  
       <!-- Custom Popup Element -->
       <div id="customPopup" class="popup">
         <span class="close-btn" onclick="hidePopup(true)">✖</span>
         <div id="popupContent"></div>
       </div>
     </div>
-
+  
     <div id="vehicleInfoPopup" class="vehicle-info-popup">
       <div class="info-container">
         <div class="info-card">
@@ -898,8 +898,7 @@
         </div>
       </div>
     </div>
-
-  </div>
+  
   </div>
 
   <script src="js/api.js"></script>
