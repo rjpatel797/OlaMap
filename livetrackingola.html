@@ -792,8 +792,43 @@
         }
 
         function selectVehicle(deviceId, deviceName) {
+          // First stop any existing tracking
+          if (isTracking) {
+            stopTracking();
+          }
+          
+          // Reset marker and data
+          if (currentMarker) {
+            currentMarker.remove();
+            currentMarker = null;
+          }
+
+          lastPosition = null;
+          isAnimating = false;
+          isMapDragging = false;
+
+          // Clear vehicle info displays
+          document.getElementById('speedDisplay').textContent = '0 km/h';
+          document.getElementById('dateTimeDisplay').textContent = '--';
+          
+          // Hide any popups
+          const customPopup = document.getElementById('customPopup');
+          if (customPopup) {
+            customPopup.style.display = 'none';
+          }
+
+          // Update dropdown selection
           document.getElementById("selectedVehicle").textContent = deviceName;
           document.getElementById("deviceDropdown").style.display = "none";
+          
+          // Reset track button to initial state
+          const trackButton = document.getElementById("trackButton");
+          if (trackButton) {
+            trackButton.textContent = "Track";
+            trackButton.classList.remove("tracking");
+          }
+
+          // Now we can fetch vehicle location for the new device
           fetchVehicleLocation(deviceId);
         }
 
