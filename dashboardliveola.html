@@ -793,7 +793,7 @@
       <div class="content">
         <!-- Device List -->
         <div id="deviceList">
-          <h3>Device List</h3>
+          <h3>Vehicle List</h3>
           <input
             type="text"
             id="searchInput"
@@ -824,7 +824,7 @@
         </div>
         <div class="viewAllBtn">
           <button onclick="showDeviceTable()" class="table-btn">
-            View All Devices
+            View All Vehicle
           </button>
         </div>
 
@@ -832,12 +832,12 @@
         <div id="tablePopup" class="table-popup">
           <div class="table-popup-content">
               <div class="table-popup-header">
-                  <h2>All Devices Status</h2>
+                  <h2>All Vehicles Status</h2>
                   <div class="table-search">
                       <input 
                       type="text" 
                       id="tableSearchInput" 
-                      placeholder="Search device name..." 
+                      placeholder="Search Vehicle name..." 
                       class="table-search-input"
                       >
                   </div>
@@ -856,7 +856,7 @@
                   <table id="deviceDataTable">
                       <thead>
                           <tr>
-                              <th>Device Name</th>
+                              <th>Vehicle Name</th>
                               <th>Last Updated</th>
                               <th>Status</th>
                               <th>Battery</th>
@@ -1153,7 +1153,7 @@
                 isNaN(coordinates[1])
               ) {
                 console.warn(
-                  `Device ${item.dname} has invalid or missing 'latlang' data.`
+                  `Vehicle ${item.dname} has invalid or missing 'latlang' data.`
                 );
               }
 
@@ -2117,7 +2117,7 @@ async function exportDeviceTablePDF() {
     // Prepare table data
     const headers = [
         [
-            'Device Name',
+            'Vehicle Name',
             'Last Updated',
             'Status',
             'Battery',
