@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Trip Report</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        #navbar-container {
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 0;
+        }
+
+        .content {
+            padding: 20px;
+            background: #f5f5f5;
+            /* height: 100vh; */
+        }
+
+        /* Report Controls */
+        .report-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #2c3e50;
+            border-radius: 8px;
+        }
+
+        .date-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-group label,
+        .device-selector label,
+        .trip-time label {
+            color: white;
+            font-size: 13px;
+        }
+
+        .form-select {
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            min-width: 200px;
+        }
+
+        .submit-btn,
+        .reset-btn {
+            padding: 6px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .submit-btn {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .reset-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .datetime-selector {
+            display: flex;
+            gap: 15px;
+        }
+
+        .date-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-input label {
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .date-input input[type="date"],
+        .date-input input[type="time"] {
+            padding: 5px 8px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #2c3e50;
+            background-color: white;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .date-input input[type="date"] {
+            width: 130px;
+        }
+
+        .date-input input[type="time"] {
+            width: 100px;
+        }
+
+        .date-input input[type="date"]:hover,
+        .date-input input[type="time"]:hover {
+            background-color: #f8f9fa;
+        }
+
+        .date-input input[type="date"]:focus,
+        .date-input input[type="time"]:focus {
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+        }
+        /* Update the device selector styles */
+        .device-selector {
+            position: relative;
+            width: 255px;
+            top: 5px;
+        }
+
+        .dropdown-container {
+            position: relative;
+        }
+
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1000;
+        }
+
+        .dropdown-header {
+            padding: 10px;
+            color: rgb(0, 0, 0);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 500;
+        }
+
+        .dropdown-search {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown-search input {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 4px;
+            color: rgb(0, 0, 0);
+            font-size: 13px;
+        }
+
+        .dropdown-search input::placeholder {
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        .dropdown-items {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .dropdown-item {
+            padding: 8px 10px;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Selected state */
+        .selected-vehicle {
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            color: rgb(0, 0, 0);
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .selected-vehicle:after {
+            content: '▼';
+            font-size: 10px;
+            margin-left: 8px;
+        }
+        .submit-btn {
+            background-color: #2ecc71;
+            color: white;
+            padding: 8px 16px;
+            font-size: 13px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            height: 32px;
+        }
+
+        /* Report Table */
+        .report-table {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .report-table table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .report-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 12px 15px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .report-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .report-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .export-buttons {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .export-buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            background: #34495e;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .export-buttons button:hover {
+            background: #2c3e50;
+        }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .selected-devices {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            padding: 5px;
+        }
+
+        .selected-device-tag {
+            background: #e2e8f0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .remove-device {
+            cursor: pointer;
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .device-checkbox {
+            width: 16px;
+            height: 16px;
+        }
+
+        .select-all-option {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .select-all-option input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .select-all-option label {
+            cursor: pointer;
+            color: #333;
+        }
+
+        .speed-limit {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 15px;
+}
+
+.speed-limit label {
+    color: white;
+    font-size: 13px;
+}
+
+.speed-limit select {
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    font-size: 13px;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navbar -->
+        <div id="navbar-container"></div>
+
+        <div class="content">
+            <div class="report-controls">
+                <!-- Start DateTime -->
+                <div class="date-group">
+                    <label>Start DateTime:</label>
+                    <input type="date" id="startDate">
+                    <input type="time" id="startTime" value="00:00">
+                </div>
+            
+                <!-- End DateTime -->
+                <div class="date-group">
+                    <label>End DateTime:</label>
+                    <input type="date" id="endDate">
+                    <input type="time" id="endTime" value="23:59">
+                </div>
+            
+                <!-- Device Selector with correct structure -->
+                <div class="device-selector">
+                    <label>Device:</label>
+                    <select id="deviceSelect" class="form-select">
+                        <option value="">Select Vehicle</option>
+                    </select>
+                </div>
+            
+                <!-- Trip Time -->
+                <div class="speed-limit">
+                    <label>Speed Limit (km/h):</label>
+                    <select id="speedLimit">
+                        <option value="30">30 km/h</option>
+                        <option value="40">40 km/h</option>
+                        <option value="50">50 km/h</option>
+                        <option value="60">60 km/h</option>
+                        <option value="70">70 km/h</option>
+                    </select>
+                </div>
+            
+                <!-- Buttons -->
+                <button class="submit-btn">Submit</button>
+                <button class="reset-btn">Reset</button>
+            </div>
+
+            <div class="export-buttons">
+                <button onclick="exportCopy()">Copy</button>
+                <button onclick="exportCSV()">CSV</button>
+                <button onclick="exportExcel()">Excel</button>
+                <button onclick="exportPDF()">PDF</button>
+                <button onclick="window.print()">Print</button>
+                <button onclick="saveReport()">Save</button>
+            </div>
+
+            <div class="report-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Srno</th>
+                            <th>Vehicle Name</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Start Location</th>
+                            <th>End Location</th>
+                            <th>Max Speed</th>
+                            <th>Total Time</th>
+                            <th>Avg Speed</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportData">
+                        <!-- Report data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+
+        let selectedDeviceId = null;
+        let devices = [];
+
+        $(document).ready(function() {
+
+            // Check if 'mid' is available in localStorage otherwise ri-direct login page
+            if (!localStorage.getItem('mid')) {
+                // Redirect to login page if 'mid' is not found
+                window.location.href = '/index.html';  
+            }
+
+            console.log("Document ready, initializing..."); // Debug log
+
+            $("#navbar-container").load("navbarola.html", function() {
+                console.log("Navbar loaded successfully!");
+            });
+
+            setDefaultDates();
+            fetchDeviceData();
+
+            // Add event listener for form submission
+            $('.submit-btn').click(function() {
+                generateReport();
+            });
+
+            // Add event listener for reset
+            $('.reset-btn').click(function() {
+                resetForm();
+            });
+        });
+
+        function resetForm() {
+            document.getElementById('deviceSelect').value = '';
+            setDefaultDates();
+            // Clear any existing report data
+            document.getElementById('reportData').innerHTML = '';
+        }
+
+        function setDefaultDates() {
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            
+            document.getElementById('endDate').value = today;
+            document.getElementById('endTime').value = '23:59';
+            
+            document.getElementById('startDate').value = today;
+            document.getElementById('startTime').value = '00:00';
+        }
+
+        function toggleDropdown() {
+            const dropdown = document.getElementById("deviceDropdown");
+            const currentDisplay = dropdown.style.display;
+            dropdown.style.display = currentDisplay === "block" ? "none" : "block";
+            
+            if (dropdown.style.display === "block") {
+                document.getElementById("vehicleSearch").value = "";
+                populateVehicleList(devices);
+            }
+        }
+
+        function filterVehicles(searchText) {
+            const filteredDevices = devices.filter((device) =>
+                device.name.toLowerCase().includes(searchText.toLowerCase())
+            );
+            populateVehicleList(filteredDevices);
+            
+            // Update Select All checkbox state based on filtered items
+            updateSelectAllCheckbox();
+        }
+
+        function updateSelectAllCheckbox() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const visibleCheckboxes = Array.from(document.querySelectorAll('#vehicleList .dropdown-item input[type="checkbox"]:not([style*="display: none"])'));
+            const allChecked = visibleCheckboxes.every(cb => cb.checked);
+            const someChecked = visibleCheckboxes.some(cb => cb.checked);
+            
+            selectAllCheckbox.checked = allChecked;
+            selectAllCheckbox.indeterminate = someChecked && !allChecked;
+        }
+
+        function selectVehicle(deviceId, deviceName) {
+            selectedDeviceId = deviceId;
+            document.getElementById("deviceSelect").textContent = deviceName;
+            document.getElementById("deviceSelect").value = deviceId;
+            document.getElementById("deviceDropdown").style.display = "none";
+        }
+
+        let selectedDevices = new Map();
+
+        function populateVehicleList(devicesList) {
+            const vehicleList = document.getElementById('vehicleList');
+            if (!vehicleList) return;
+            
+            vehicleList.innerHTML = '';
+            
+            devicesList.forEach(device => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.style.color = '#333';
+                
+                // Add checkbox
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'device-checkbox';
+                checkbox.checked = selectedDevices.has(device.did);
+                
+                const label = document.createElement('span');
+                label.textContent = device.name;
+                
+                item.appendChild(checkbox);
+                item.appendChild(label);
+                
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    checkbox.checked = !checkbox.checked;
+                    updateSelectedDevices(device, checkbox.checked);
+                };
+                
+                vehicleList.appendChild(item);
+            });
+        }
+
+        function updateSelectedDevices(device, isSelected) {
+            if (isSelected) {
+                selectedDevices.set(device.did, device.name);
+            } else {
+                selectedDevices.delete(device.did);
+            }
+            updateSelectedDevicesDisplay();
+            updateSelectAllCheckbox();
+        }
+
+        function updateSelectedDevicesDisplay() {
+            const selectedVehicle = document.getElementById('selectedVehicle');
+            
+            if (selectedDevices.size === 0) {
+                selectedVehicle.textContent = 'Select Vehicle';
+                return;
+            }
+            
+            // Create container for device tags
+            const container = document.createElement('div');
+            container.style.display = 'flex';
+            container.style.alignItems = 'center';
+            container.style.gap = '5px';
+
+            // Get first two devices
+            const devices = Array.from(selectedDevices.entries());
+            const firstTwoDevices = devices.slice(0, 2);
+            
+            // Create tags for first two devices
+            firstTwoDevices.forEach(([did, name]) => {
+                const tag = document.createElement('div');
+                tag.style.backgroundColor = '#e2e8f0';
+                tag.style.padding = '2px 8px';
+                tag.style.borderRadius = '4px';
+                tag.style.fontSize = '12px';
+                tag.style.display = 'inline-flex';
+                tag.style.alignItems = 'center';
+                
+                const closeButton = document.createElement('span');
+                closeButton.textContent = '×';
+                closeButton.style.cursor = 'pointer';
+                closeButton.style.color = '#ef4444';
+                closeButton.style.marginLeft = '5px';
+                closeButton.onclick = (e) => {
+                    e.stopPropagation(); // Stop event from bubbling up
+                    removeDevice(did);
+                };
+                
+                tag.textContent = name;
+                tag.appendChild(closeButton);
+                container.appendChild(tag);
+            });
+
+            // Add count indicator if there are more devices
+            if (selectedDevices.size > 2) {
+                const moreCount = document.createElement('div');
+                moreCount.style.backgroundColor = '#e2e8f0';
+                moreCount.style.padding = '2px 8px';
+                moreCount.style.borderRadius = '4px';
+                moreCount.style.fontSize = '12px';
+                moreCount.textContent = `+${selectedDevices.size - 2}`;
+                container.appendChild(moreCount);
+            }
+            
+            // Clear previous content and add new tags
+            selectedVehicle.innerHTML = '';
+            selectedVehicle.appendChild(container);
+        }
+
+        function removeDevice(did) {
+            // Stop propagation if event exists
+            if (event) {
+                event.stopPropagation();
+            }
+            
+            // Remove the device from selected devices
+            selectedDevices.delete(did);
+            
+            // Update displays
+            updateSelectedDevicesDisplay();
+            populateVehicleList(devices);
+            
+            // Keep dropdown open
+            const dropdown = document.getElementById('deviceDropdown');
+            if (dropdown) {
+                dropdown.style.display = 'block';
+            }
+        }
+
+        function toggleSelectAll(event) {
+            event.stopPropagation();
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const isChecked = selectAllCheckbox.checked;
+            
+            // Get all visible devices (respecting search filter)
+            const visibleDevices = Array.from(document.querySelectorAll('#vehicleList .dropdown-item'))
+                .map(item => {
+                    const checkbox = item.querySelector('input[type="checkbox"]');
+                    const label = item.querySelector('span');
+                    return {
+                        did: devices.find(d => d.name === label.textContent)?.did,
+                        name: label.textContent,
+                        checkbox: checkbox
+                    };
+                })
+                .filter(device => device.did && device.checkbox.parentElement.style.display !== 'none');
+
+            // Update all visible checkboxes and selectedDevices
+            visibleDevices.forEach(device => {
+                device.checkbox.checked = isChecked;
+                if (isChecked) {
+                    selectedDevices.set(device.did, device.name);
+                } else {
+                    selectedDevices.delete(device.did);
+                }
+            });
+
+            updateSelectedDevicesDisplay();
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener("click", function(event) {
+            const dropdown = document.getElementById("deviceDropdown");
+            const deviceSelect = document.getElementById("deviceSelect");
+            
+            if (!event.target.closest(".device-selector")) {
+                dropdown.style.display = "none";
+            }
+        });
+
+        function fetchDeviceData() {
+    const mid = localStorage.getItem("mid");
+    console.log("Fetching vehicles with mid:", mid);
+
+    fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log("Vehicle data received:", data);
+            
+            const deviceSelect = document.getElementById('deviceSelect');
+            deviceSelect.innerHTML = '<option value="">Select Vehicle</option>';
+            
+            if (Array.isArray(data)) {
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.did;
+                    option.textContent = item.dname || 'Unnamed vehicle';
+                    deviceSelect.appendChild(option);
+                });
+            } else {
+                console.error('Invalid data format received:', data);
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching vehicles:", error);
+        });
+}
+        // document.addEventListener('click', function(event) {
+        //     const dropdown = document.getElementById('deviceDropdown');
+        //     const selectedVehicle = document.getElementById('selectedVehicle');
+            
+        //     if (!event.target.closest('.device-selector') && 
+        //         event.target !== selectedVehicle) {
+        //         dropdown.style.display = 'none';
+        //     }
+        // });
+
+        function createDeviceList() {
+            const dropdownInput = document.getElementById("searchInput");
+            const dropdownList = document.getElementById("deviceDropdown");
+
+            // Populate dropdown list
+            function populateDropdown(filteredDevices) {
+                dropdownList.innerHTML = ""; // Clear existing items
+                filteredDevices.forEach((device) => {
+                    const item = document.createElement("div");
+                    item.className = "dropdown-item";
+                    item.textContent = device.name;
+                    item.dataset.deviceId = device.did;
+
+                    // Add click event to select the item
+                    item.addEventListener("click", () => {
+                        dropdownInput.value = device.name; // Set input value to selected item
+                        dropdownList.style.display = "none"; // Hide dropdown
+                        fetchPlaybackData(device.did); // Fetch data for the selected vehicle
+                    });
+
+                    dropdownList.appendChild(item);
+                });
+            }
+
+            // Initialize with all devices
+            populateDropdown(devices);
+
+            // Show/Hide dropdown on input focus
+            dropdownInput.addEventListener("focus", () => {
+                dropdownList.style.display = "block";
+            });
+
+            // Filter items based on input
+            dropdownInput.addEventListener("input", (event) => {
+                const searchTerm = event.target.value.toLowerCase();
+                const filteredDevices = devices.filter((device) =>
+                    device.name.toLowerCase().includes(searchTerm)
+                );
+                populateDropdown(filteredDevices);
+            });
+
+            // Hide dropdown when clicking outside
+            document.addEventListener("click", (event) => {
+                if (!event.target.closest(".dropdown-container")) {
+                    dropdownList.style.display = "none";
+                }
+            });
+        }
+
+        function generateReport() {
+    const startDate = document.getElementById('startDate').value;
+    const startTime = document.getElementById('startTime').value;
+    const endDate = document.getElementById('endDate').value;
+    const endTime = document.getElementById('endTime').value;
+    const speedLimit = document.getElementById('speedLimit').value;
+    const deviceId = document.getElementById('deviceSelect').value;
+
+    if (!startDate || !endDate) {
+        alert("Please select dates");
+        return;
+    }
+
+    if (!deviceId) {
+        alert("Please select a vehicle");
+        return;
+    }
+
+    const startDateTime = `${startDate} ${startTime}`;
+    const endDateTime = `${endDate} ${endTime}`;
+
+    const formattedStartDate = formatDateForApi(startDateTime);
+    const formattedEndDate = formatDateForApi(endDateTime);
+
+    fetchSpeedReport(formattedStartDate, formattedEndDate, deviceId, speedLimit);
+}
+        function formatDateForApi(dateTimeString) {
+            const date = new Date(dateTimeString);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+        }
+
+        function fetchSpeedReport(fromdate, todate, deviceid, speedlimit) {
+    console.log("Fetching speed report data...");
+    
+    const reportBody = document.getElementById('reportData');
+    reportBody.innerHTML = `
+        <tr>
+            <td colspan="10" style="text-align: center;">Loading...</td>
+        </tr>
+    `;
+
+    const url = `${API}opr=getspeedmoniteringReport&speedlimit=${speedlimit}&fromdate=${fromdate}&todate=${todate}&deviceid=${deviceid}`;
+    
+    fetch(url)
+        .then(response => response.text())
+        .then(data => {
+            try {
+                // Parse the JSON response directly without any text manipulation
+                const parsedData = JSON.parse(data);
+                console.log("Parsed Speed Report Data:", parsedData);
+                
+                if (Array.isArray(parsedData)) {
+                    displaySpeedReportData(parsedData);
+                } else {
+                    displaySpeedReportData([parsedData]);
+                }
+            } catch (parseError) {
+                console.error("JSON Parse Error:", parseError);
+                reportBody.innerHTML = `
+                    <tr>
+                        <td colspan="10" style="text-align: center; color: red;">
+                            Error loading report data: ${parseError.message}
+                        </td>
+                    </tr>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching speed report data:", error);
+            reportBody.innerHTML = `
+                <tr>
+                    <td colspan="10" style="text-align: center; color: red;">
+                        Error loading report data: ${error.message}
+                    </td>
+                </tr>
+            `;
+        });
+}
+
+function formatLocation(latitude, longitude) {
+    if (!latitude || !longitude) return 'Unknown';
+    return `${latitude}, ${longitude}`;
+}
+
+
+        function formatReportItem(item) {
+            // Convert timestamps to readable format
+            const formatDate = (dateStr) => {
+                try {
+                    const date = new Date(dateStr);
+                    return date.toLocaleString();
+                } catch (e) {
+                    return dateStr;
+                }
+            };
+
+            // Calculate duration in minutes
+            const calculateDuration = (start, end) => {
+                try {
+                    const startTime = new Date(start).getTime();
+                    const endTime = new Date(end).getTime();
+                    return Math.round((endTime - startTime) / (1000 * 60)); // Convert to minutes
+                } catch (e) {
+                    return 0;
+                }
+            };
+
+            return {
+                deviceName: item.dname || 'undefined',
+                startTime: formatDate(item.startdate),
+                endTime: formatDate(item.enddate),
+                startLocation: item.startloc || 'Unknown',
+                endLocation: item.endloc || 'Unknown',
+                maxSpeed: parseFloat(item.maxspeed || 0).toFixed(1),
+                totalTime: item.totaltime || '0',
+                avgSpeed: parseFloat(item.avgspeed || 0).toFixed(1)
+            };
+        }
+
+        function displaySpeedReportData(data) {
+    const reportBody = document.getElementById('reportData');
+    
+    if (!data || data.length === 0) {
+        reportBody.innerHTML = `
+            <tr>
+                <td colspan="10" style="text-align: center;">No data available</td>
+            </tr>
+        `;
+        return;
+    }
+
+    reportBody.innerHTML = data.map((item, index) => {
+        const startLocation = formatLocation(item.startlocaitonlatitude, item.startlocaitonlangitude);
+        const endLocation = formatLocation(item.endlocationlatitude, item.endlocationlangitude);
+        
+        return `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${item.deviceName || 'N/A'}</td>
+                <td>${item.starttime}</td>
+                <td>${item.endtime}</td>
+                <td>${startLocation}</td>
+                <td>${endLocation}</td>
+                <td>${item.MaxSpeed} km/h</td>
+                <td>${item.duration}</td>
+                <td>${item.AvgSpeed} km/h</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+        // Format time from milliseconds/seconds to hours and minutes
+        function formatTime(time) {
+            if (!time || isNaN(time)) return '0 hours 0 mins';
+            
+            // Convert to minutes first (assuming time is in milliseconds)
+            let minutes = Math.floor(time / (1000 * 60));
+            const hours = Math.floor(minutes / 60);
+            minutes = minutes % 60;
+            
+            return `${hours} hours ${minutes} mins`;
+        }
+
+        function formatDuration(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours} hour${hours !== 1 ? 's' : ''} ${mins} min${mins !== 1 ? 's' : ''}`;
+        }
+
+        // Add export functionality
+        function exportCopy() {
+            const table = document.querySelector('.report-table');
+            const range = document.createRange();
+            range.selectNode(table);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+            alert('Table copied to clipboard!');
+        }
+
+        function exportExcel() {
+            // Get headers
+            const headers = ['vehicle Group', 'vehicle Name', 'Distance Travelled(km)', 'Max. Speed(km/h)', 'Drive Time', 'Stoppage Time'];
+            
+            // Get data rows
+            const rows = document.querySelectorAll('#reportData tr');
+            const data = Array.from(rows).map(row => {
+                const cells = row.querySelectorAll('td');
+                return Array.from(cells).map(cell => cell.textContent);
+            });
+
+            // Combine headers and data
+            const workSheetData = [headers, ...data];
+
+            // Create a new workbook and worksheet
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(workSheetData);
+
+            // Add styling
+            const headerStyle = {
+                font: { bold: true, color: { rgb: "FFFFFF" } },
+                fill: { fgColor: { rgb: "2C3E50" } },
+                alignment: { horizontal: "center" }
+            };
+
+            // Apply column widths
+            const colWidths = [15, 20, 20, 15, 15, 15];
+            ws['!cols'] = colWidths.map(width => ({ width }));
+
+            // Apply header styling
+            for (let i = 0; i < headers.length; i++) {
+                const cellRef = XLSX.utils.encode_cell({ r: 0, c: i });
+                if (!ws[cellRef]) ws[cellRef] = {};
+                ws[cellRef].s = headerStyle;
+            }
+
+            // Add the worksheet to the workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'Fleet Report');
+
+            // Get current date for filename
+            const date = new Date().toLocaleDateString().replace(/\//g, '-');
+            
+            // Generate Excel file
+            XLSX.writeFile(wb, `fleet_report_${date}.xlsx`);
+        }
+
+        // Export as CSV
+        function exportCSV() {
+            // Get the table data
+            const table = document.querySelector('.report-table');
+            const rows = table.querySelectorAll('tr');
+            let csv = [];
+            
+            // Convert table to CSV format
+            rows.forEach(row => {
+                const rowData = [];
+                const cols = row.querySelectorAll('td, th');
+                cols.forEach(col => rowData.push('"' + col.textContent.trim() + '"'));
+                csv.push(rowData.join(','));
+            });
+
+            // Create and trigger download
+            const csvContent = csv.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'fleet_report.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportPDF() {
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4');
+
+        // Add title
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(20);
+        doc.text("Speed Monitoring Report", doc.internal.pageSize.width / 2, 15, { align: 'center' });
+
+        // Add date range
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        const startDate = document.getElementById('startDate').value;
+        const startTime = document.getElementById('startTime').value;
+        const endDate = document.getElementById('endDate').value;
+        const endTime = document.getElementById('endTime').value;
+        const speedLimit = document.getElementById('speedLimit').value;
+        
+        doc.text(`Report Period: ${startDate} ${startTime} to ${endDate} ${endTime}`, 15, 25);
+        doc.text(`Speed Limit: ${speedLimit} km/h`, 15, 30);
+
+        // Define table headers
+        const headers = [[
+            'Srno',
+            'Vehicle Name',
+            'Start Time',
+            'End Time',
+            'Start Location',
+            'End Location',
+            'Max Speed',
+            'Total Time',
+            'Avg Speed'
+        ]];
+
+        // Get table data
+        const rows = document.querySelectorAll('table tr:not(:first-child)');
+        const data = Array.from(rows).map(row => {
+            const cells = row.querySelectorAll('td');
+            return Array.from(cells).map(cell => cell.textContent.trim());
+        });
+
+        // Add table
+        doc.autoTable({
+            head: headers,
+            body: data,
+            startY: 35,
+            theme: 'grid',
+            styles: {
+                fontSize: 7,
+                cellPadding: 2,
+                overflow: 'linebreak',
+                cellWidth: 'wrap'
+            },
+            headStyles: {
+                fillColor: [41, 128, 185],
+                textColor: 255,
+                fontSize: 8,
+                fontStyle: 'bold',
+                halign: 'center',
+                valign: 'middle'
+            },
+            columnStyles: {
+                0: { cellWidth: 10 },  // Srno
+                1: { cellWidth: 25 },  // Vehicle Name
+                2: { cellWidth: 25 },  // Start Time
+                3: { cellWidth: 25 },  // End Time
+                4: { cellWidth: 35 },  // Start Location
+                5: { cellWidth: 35 },  // End Location
+                6: { cellWidth: 20, halign: 'right' },  // Max Speed
+                7: { cellWidth: 20, halign: 'right' },  // Total Time
+                9: { cellWidth: 20, halign: 'right' }   // Avg Speed
+            }
+        });
+
+        // Save the PDF
+        const now = new Date();
+        const dateStr = now.toLocaleDateString().replace(/\//g, '-');
+        const timeStr = now.toLocaleTimeString().replace(/:/g, '-');
+        doc.save(`speed_report_${dateStr}_${timeStr}.pdf`);
+
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert(`Error generating PDF: ${error.message}\nPlease check the console for more details.`);
+    }
+}  
+    
+    </script>
+</body>
+</html>
