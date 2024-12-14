@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Input History Report</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        #navbar-container {
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 0;
+        }
+
+        .content {
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        /* Report Controls */
+        .report-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #2c3e50;
+            border-radius: 8px;
+        }
+
+        .date-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-group label,
+        .device-selector label {
+            color: white;
+            font-size: 13px;
+        }
+
+        .form-select {
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            min-width: 200px;
+        }
+
+        .submit-btn,
+        .reset-btn {
+            padding: 6px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .submit-btn {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .reset-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .date-input input[type="date"],
+        .date-input input[type="time"] {
+            padding: 5px 8px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #2c3e50;
+            background-color: white;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .date-input input[type="date"] {
+            width: 130px;
+        }
+
+        .date-input input[type="time"] {
+            width: 100px;
+        }
+
+        /* Device Selector */
+        .device-selector {
+            position: relative;
+            width: 250px;
+        }
+
+        .device-selector select,
+        .input-selector select {
+            width: 100%;
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 13px;
+            background: white;
+            color: #333;
+        }
+
+        /* Report Summary */
+        .report-summary {
+            margin: 15px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .total-summary {
+            text-align: center;
+            font-size: 14px;
+        }
+
+        /* Export Buttons */
+        .export-buttons {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .export-buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            background: #34495e;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .export-buttons button:hover {
+            background: #2c3e50;
+        }
+
+        /* Report Table */
+        .report-table {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .report-table table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .report-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 12px 15px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .report-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .report-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Search Box */
+        .search-box {
+            float: right;
+            margin: 5px;
+        }
+
+        .search-box input {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            width: 200px;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px;
+            gap: 5px;
+        }
+
+        .pagination button {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .totals-header {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .totals-count span {
+            font-weight: 500;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .report-controls {
+                flex-wrap: wrap;
+            }
+
+            .device-selector {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navbar Container -->
+        <div id="navbar-container"></div>
+
+        <div class="content">
+            <div class="report-controls">
+                <!-- Start DateTime -->
+                <div class="date-group">
+                    <label>Start DateTime:</label>
+                    <input type="date" id="startDate">
+                    <input type="time" id="startTime" value="00:00">
+                </div>
+
+                <!-- End DateTime -->
+                <div class="date-group">
+                    <label>End DateTime:</label>
+                    <input type="date" id="endDate">
+                    <input type="time" id="endTime" value="23:59">
+                </div>
+
+                <!-- Device Selector -->
+                <div class="device-selector">
+                    <label>Device:</label>
+                    <select id="deviceSelect">
+                        <option value="">Select Device</option>
+                    </select>
+                </div>
+
+                <!-- Input Selector -->
+                <div class="device-selector">
+                    <label>Input:</label>
+                    <select id="inputSelect">
+                        <option value="">Select Input</option>
+                    </select>
+                </div>
+
+                <!-- Buttons -->
+                <button class="submit-btn" onclick="generateReport()">Submit</button>
+                <button class="reset-btn" onclick="resetForm()">Reset</button>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="report-summary" id="reportSummary"></div>
+
+            <!-- Export Buttons -->
+            <div class="export-buttons">
+                <button onclick="exportCopy()">Copy</button>
+                <button onclick="exportExcel()">Excel</button>
+                <button onclick="exportCSV()">CSV</button>
+                <button onclick="exportPDF()">PDF</button>
+                <button onclick="window.print()">Print</button>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search..." onkeyup="searchTable()">
+                </div>
+            </div>
+
+            <!-- Report Table -->
+            <div class="report-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>On</th>
+                            <th>Off</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportData"></tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <button onclick="firstPage()">First</button>
+                <button onclick="previousPage()">Previous</button>
+                <span id="currentPage">1</span>
+                <button onclick="nextPage()">Next</button>
+                <button onclick="lastPage()">Last</button>
+            </div>
+        </div>
+    </div>
+    <script src="js/api.js"></script>
+    <script>
+
+// Initialize when document is ready
+document.addEventListener('DOMContentLoaded', function() {
+    if (!localStorage.getItem('mid')) {
+                // Redirect to login page if 'mid' is not found
+                window.location.href = '/index.html';  
+            }
+
+            console.log("Document ready, initializing..."); // Debug log
+
+            $("#navbar-container").load("navbarola.html", function() {
+                console.log("Navbar loaded successfully!");
+            });
+    setDefaultDates();
+    fetchDevices(); // Fetch devices first
+
+    // Add event listener for device selection
+    const deviceSelect = document.getElementById('deviceSelect');
+    deviceSelect.addEventListener('change', () => {
+        const inputSelect = document.getElementById('inputSelect');
+        inputSelect.innerHTML = '<option value="">Select Input</option>';
+        if (deviceSelect.value) {
+            fetchDigitalInputs();
+        }
+    });
+    initializeEventListeners();
+});
+
+function setDefaultDates() {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    
+    document.getElementById('startDate').value = today;
+    document.getElementById('endDate').value = today;
+    document.getElementById('startTime').value = '00:00';
+    document.getElementById('endTime').value = '23:59';
+}
+
+function fetchDevices() {
+    const mid = localStorage.getItem("mid");
+    if (!mid) {
+        console.error("No member ID found");
+        return;
+    }
+
+    fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+        .then(response => response.json())
+        .then(data => {
+            const deviceSelect = document.getElementById('deviceSelect');
+            deviceSelect.innerHTML = '<option value="">Select Device</option>';
+            
+            if (Array.isArray(data)) {
+                data.forEach(device => {
+                    const option = document.createElement('option');
+                    option.value = device.did;
+                    option.textContent = device.dname || 'Unnamed Device';
+                    deviceSelect.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error fetching devices:', error));
+}
+
+function fetchDigitalInputs() {
+    const deviceSelect = document.getElementById('deviceSelect');
+    const selectedDevice = deviceSelect.value;
+    
+    if (!selectedDevice) {
+        alert("Please select a device first");
+        return;
+    }
+
+    fetch(`${API}opr=getdigitalinput&did=${selectedDevice}`)
+        .then(response => response.json())
+        .then(data => {
+            const inputSelect = document.getElementById('inputSelect');
+            inputSelect.innerHTML = '<option value="">Select Input</option>'; 
+            
+            // Handle case where data is an array
+            
+                // Filter out null values and convert to string
+                const validInputs = data[0].filter(input => 
+                    input !== null && 
+                    input !== undefined && 
+                    String(input) !== "Null" &&
+                    String(input) !== "null"
+                );
+
+                validInputs.forEach(input => {
+                    const option = document.createElement('option');
+                    option.value = String(input);
+                    option.textContent = String(input);
+                    inputSelect.appendChild(option);
+                });
+            
+            
+            // Enable input select if we have valid options
+            inputSelect.disabled = inputSelect.options.length <= 1;
+        })
+        .catch(error => {
+            console.error('Error fetching inputs:', error);
+            const inputSelect = document.getElementById('inputSelect');
+            inputSelect.innerHTML = '<option value="">Error loading inputs</option>';
+            inputSelect.disabled = true;
+        });
+}
+
+function generateReport() {
+    const deviceSelect = document.getElementById('deviceSelect');
+    const selectedDevice = deviceSelect.value;
+    
+    if (!selectedDevice) {
+        alert("Please select a device");
+        return;
+    }
+
+    const startDate = document.getElementById('startDate').value;
+    const startTime = document.getElementById('startTime').value;
+    const endDate = document.getElementById('endDate').value;
+    const endTime = document.getElementById('endTime').value;
+    const input = document.getElementById('inputSelect').value;
+
+    if (!input) {
+        alert("Please select an input");
+        return;
+    }
+
+    if (!startDate || !endDate) {
+        alert("Please select dates");
+        return;
+    }
+
+    const fromdate = `${startDate} ${startTime}`;
+    const todate = `${endDate} ${endTime}`;
+
+    const url = `${API}opr=getinputhistoryreport&ioreport=${input}&fromdate=${fromdate}&todate=${todate}&did=${selectedDevice}`;
+
+    // Show loading state
+    const reportBody = document.getElementById('reportData');
+    reportBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Loading...</td></tr>';
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            displayReport(data);
+        })
+        .catch(error => {
+            console.error('Error fetching report:', error);
+            reportBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: red;">Error loading report: ${error.message}</td></tr>`;
+        });
+}
+
+
+function displayReport(data) {
+    const reportBody = document.getElementById('reportData');
+    const summaryDiv = document.getElementById('reportSummary');
+    
+    if (!Array.isArray(data) || data.length === 0) {
+        reportBody.innerHTML = '<tr><td colspan="4" class="text-center">No data available</td></tr>';
+        return;
+    }
+
+    let totalOnTime = 0;
+    let totalOffTime = 0;
+    let onCount = 0;
+    let offCount = 0;
+
+    // Generate table rows
+    const rows = data.map(item => {
+        // Count status occurrences
+        if (item.status === 'on') {
+            onCount++;
+            totalOnTime += parseInt(item.timestamp) || 0;
+        } else {
+            offCount++;
+            totalOffTime += parseInt(item.timestamp) || 0;
+        }
+
+        return `
+            <tr>
+                <td>${item.starttime}</td>
+                <td>${item.endtime}</td>
+                <td>${item.status === 'on' ? item.time : ''}</td>
+                <td>${item.status === 'off' ? item.time : ''}</td>
+            </tr>
+        `;
+    });
+
+    // Display the rows
+    reportBody.innerHTML = rows.join('');
+
+    // Add total times above the table
+    displayTotalTimes(onCount, offCount)
+
+    // Update summary with total durations
+    let totalOnFormatted = formatMillisecondsToTime(totalOnTime);
+    let totalOffFormatted = formatMillisecondsToTime(totalOffTime);
+
+    summaryDiv.innerHTML = `
+        <div class="total-summary">
+            <span>Total On Time: ${totalOnFormatted}</span> & 
+            <span>Total Off Time: ${totalOffFormatted}</span>
+        </div>
+    `;
+}
+
+function displayTotalTimes(onCount, offCount) {
+    // Remove existing totals if any
+    const existingTotals = document.querySelector('.totals-header');
+    if (existingTotals) {
+        existingTotals.remove();
+    }
+
+    const totalTimesRow = document.createElement('div');
+    totalTimesRow.className = 'totals-header';
+    totalTimesRow.innerHTML = `
+        <div style="text-align: right; padding-right: 10px;">
+            Total Times: 
+            <span style="color: #2ecc71;">On: ${onCount}</span> 
+            <span style="color: #e74c3c; margin-left: 10px;">Off: ${offCount}</span>
+        </div>
+    `;
+
+    // Add the CSS for the totals header
+    const style = document.createElement('style');
+    style.textContent = `
+        .totals-header {
+            background: transparent;
+            padding: 5px 0;
+            margin: 0;
+            border: none;
+        }
+        
+        .totals-header div {
+            font-size: 13px;
+            color: #333;
+        }
+        
+        .report-table {
+            margin-top: 5px;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Insert before the table
+    const table = document.querySelector('.report-table');
+    table.parentNode.insertBefore(totalTimesRow, table);
+}
+
+function formatMillisecondsToTime(ms) {
+    const totalMinutes = Math.floor(ms / (1000 * 60));
+    const days = Math.floor(totalMinutes / (24 * 60));
+    const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+    const minutes = totalMinutes % 60;
+
+    let result = '';
+    if (days > 0) result += `${days} day `;
+    if (hours > 0) result += `${hours} hour `;
+    if (minutes > 0) result += `${minutes} mins`;
+    
+    return result.trim() || '0 mins';
+}
+
+function updateSummary(data) {
+    let totalOn = 0;
+    let totalOff = 0;
+
+    data.forEach(item => {
+        totalOn += convertDurationToMinutes(item.onDuration);
+        totalOff += convertDurationToMinutes(item.offDuration);
+    });
+
+    const summary = document.getElementById('reportSummary');
+    summary.innerHTML = `Total On Time: ${formatDuration(totalOn)} & Total Off Time: ${formatDuration(totalOff)}`;
+}
+
+function convertDurationToMinutes(duration) {
+    if (!duration) return 0;
+    const parts = duration.split(' ');
+    let minutes = 0;
+    for (let i = 0; i < parts.length; i += 2) {
+        const value = parseInt(parts[i]);
+        const unit = parts[i + 1].toLowerCase();
+        if (unit.includes('hour')) minutes += value * 60;
+        if (unit.includes('min')) minutes += value;
+    }
+    return minutes;
+}
+
+function formatDuration(minutes) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours} hour${hours !== 1 ? 's' : ''} ${mins} min${mins !== 1 ? 's' : ''}`;
+}
+
+function formatDateTime(dateTime) {
+    if (!dateTime) return '';
+    return new Date(dateTime).toLocaleString();
+}
+
+function resetForm() {
+    setDefaultDates();
+    document.getElementById('inputSelect').selectedIndex = 0;
+    document.getElementById('reportData').innerHTML = '';
+    document.getElementById('reportSummary').innerHTML = '';
+}
+
+// Export functions
+function exportCopy() {
+    const table = document.querySelector('.report-table');
+    const range = document.createRange();
+    range.selectNode(table);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+    alert('Table copied to clipboard!');
+}
+
+function exportCSV() {
+    const table = document.querySelector('.report-table');
+    const rows = table.querySelectorAll('tr');
+    const csv = [];
+    
+    rows.forEach(row => {
+        const rowData = [];
+        row.querySelectorAll('th, td').forEach(cell => {
+            rowData.push('"' + cell.textContent.trim() + '"');
+        });
+        csv.push(rowData.join(','));
+    });
+
+    downloadFile(csv.join('\n'), 'input_history_report.csv', 'text/csv');
+}
+
+function exportExcel() {
+    // Get headers
+    const headers = ['Start Time', 'End Time', 'On', 'Off'];
+    
+    // Get data rows
+    const rows = document.querySelectorAll('#reportData tr');
+    const data = Array.from(rows).map(row => {
+        const cells = row.querySelectorAll('td');
+        return Array.from(cells).map(cell => cell.textContent.trim());
+    });
+
+    // Get summary data
+    const summaryDiv = document.getElementById('reportSummary');
+    const summaryText = summaryDiv.textContent;
+
+    // Create a new workbook
+    const wb = XLSX.utils.book_new();
+
+    // Add report data
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+
+    // Add styling
+    const headerStyle = {
+        font: { bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "2C3E50" } },
+        alignment: { horizontal: "center" }
+    };
+
+    // Set column widths
+    const colWidths = [25, 25, 20, 20];
+    ws['!cols'] = colWidths.map(width => ({ width }));
+
+    // Apply header styling
+    for (let i = 0; i < headers.length; i++) {
+        const cellRef = XLSX.utils.encode_cell({ r: 0, c: i });
+        if (!ws[cellRef]) ws[cellRef] = {};
+        ws[cellRef].s = headerStyle;
+    }
+
+    // Add summary at the bottom
+    const summaryRow = data.length + 2;
+    ws[XLSX.utils.encode_cell({ r: summaryRow, c: 0 })] = { v: summaryText, t: 's' };
+    ws['!merges'] = [{ s: { r: summaryRow, c: 0 }, e: { r: summaryRow, c: 3 } }];
+
+    // Add the worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Input History Report');
+
+    // Generate filename with current date
+    const date = new Date().toLocaleDateString().replace(/\//g, '-');
+    const filename = `input_history_report_${date}.xlsx`;
+
+    // Save the file
+    XLSX.writeFile(wb, filename);
+}
+
+function exportPDF() {
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4');
+
+        // Add title
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(20);
+        doc.text("Input History Report", doc.internal.pageSize.width / 2, 15, { align: 'center' });
+
+        // Add report parameters
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        const startDate = document.getElementById('startDate').value;
+        const startTime = document.getElementById('startTime').value;
+        const endDate = document.getElementById('endDate').value;
+        const endTime = document.getElementById('endTime').value;
+        const deviceSelect = document.getElementById('deviceSelect');
+        const inputSelect = document.getElementById('inputSelect');
+
+        doc.text(`Report Period: ${startDate} ${startTime} to ${endDate} ${endTime}`, 15, 25);
+        doc.text(`Device: ${deviceSelect.options[deviceSelect.selectedIndex].text}`, 15, 30);
+        doc.text(`Input: ${inputSelect.options[inputSelect.selectedIndex].text}`, 15, 35);
+
+        // Get summary data
+        const summaryDiv = document.getElementById('reportSummary');
+        const summaryText = summaryDiv.textContent;
+        doc.text(summaryText, 15, 40);
+
+        // Define table headers
+        const headers = [[
+            'Start Time',
+            'End Time',
+            'On',
+            'Off'
+        ]];
+
+        // Get table data
+        const rows = document.querySelectorAll('#reportData tr');
+        const data = Array.from(rows).map(row => {
+            const cells = row.querySelectorAll('td');
+            return Array.from(cells).map(cell => cell.textContent.trim());
+        });
+
+        // Add table
+        doc.autoTable({
+            head: headers,
+            body: data,
+            startY: 45,
+            theme: 'grid',
+            styles: {
+                fontSize: 8,
+                cellPadding: 2
+            },
+            headStyles: {
+                fillColor: [44, 62, 80],
+                textColor: 255,
+                fontSize: 9,
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            columnStyles: {
+                0: { cellWidth: 40 }, // Start Time
+                1: { cellWidth: 40 }, // End Time
+                2: { cellWidth: 30 }, // On
+                3: { cellWidth: 30 }  // Off
+            },
+            didDrawPage: function(data) {
+                // Add footer with timestamp and page number
+                doc.setFontSize(8);
+                doc.setFont("helvetica", "italic");
+                
+                // Add generation timestamp
+                const timestamp = new Date().toLocaleString();
+                doc.text(
+                    `Generated on: ${timestamp}`,
+                    doc.internal.pageSize.width - 15,
+                    doc.internal.pageSize.height - 10,
+                    { align: 'right' }
+                );
+                
+                // Add page numbers
+                const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
+                const totalPages = doc.internal.getNumberOfPages();
+                doc.text(
+                    `Page ${pageNumber} of ${totalPages}`,
+                    15,
+                    doc.internal.pageSize.height - 10
+                );
+            }
+        });
+
+        // Generate filename with timestamp
+        const now = new Date();
+        const dateStr = now.toLocaleDateString().replace(/\//g, '-');
+        const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+        
+        // Save the PDF
+        doc.save(`input_history_report_${dateStr}_${timeStr}.pdf`);
+
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Error generating PDF. Please check the console for details.');
+    }
+}
+
+function downloadFile(content, fileName, contentType) {
+    const blob = new Blob([content], { type: contentType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// Search functionality
+function searchTable() {
+    const input = document.getElementById('searchInput');
+    const filter = input.value.toLowerCase();
+    const tbody = document.getElementById('reportData');
+    const rows = tbody.getElementsByTagName('tr');
+
+    for (let row of rows) {
+        const cells = row.getElementsByTagName('td');
+        let found = false;
+        for (let cell of cells) {
+            if (cell.textContent.toLowerCase().indexOf(filter) > -1) {
+                found = true;
+                break;
+            }
+        }
+        row.style.display = found ? '' : 'none';
+    }
+}
+
+// Pagination variables and functions
+let currentPage = 1;
+const rowsPerPage = 10;
+
+function showPage(page) {
+    const tbody = document.getElementById('reportData');
+    const rows = tbody.getElementsByTagName('tr');
+    const start = (page - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+
+    for (let i = 0; i < rows.length; i++) {
+        rows[i].style.display = (i >= start && i < end) ? '' : 'none';
+    }
+    document.getElementById('currentPage').textContent = page;
+}
+
+function nextPage() {
+    const tbody = document.getElementById('reportData');
+    const totalPages = Math.ceil(tbody.getElementsByTagName('tr').length / rowsPerPage);
+    if (currentPage < totalPages) {
+        currentPage++;
+        showPage(currentPage);
+    }
+}
+
+function previousPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        showPage(currentPage);
+    }
+}
+
+function firstPage() {
+    currentPage = 1;
+    showPage(currentPage);
+}
+
+function lastPage() {
+    const tbody = document.getElementById('reportData');
+    currentPage = Math.ceil(tbody.getElementsByTagName('tr').length / rowsPerPage);
+    showPage(currentPage);
+}
+    </script>
+</body>
+</html>
