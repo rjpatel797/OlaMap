@@ -500,11 +500,35 @@
 
         function resetForm() {
             setDefaultDates();
-            document.getElementById('deviceSelect').value = '';
-            document.getElementById('minStop').value = '15';
-            document.getElementById('locationPoi').checked = false;
-            document.getElementById('reportData').innerHTML = '';
+
+            // Reset the device selector
+            selectedDevices.clear(); // Clear the Map of selected devices
+            updateSelectedDevicesDisplay(); // Update the UI for selected devices
+            populateVehicleList(devices); // Repopulate the dropdown list
+
+            // Reset the search input field
+            document.getElementById('vehicleSearch').value = '';
+
+            // Reset the Select All checkbox
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            }
+
+            // Clear report data table
+            const reportBody = document.getElementById('reportData');
+            if (reportBody) {
+                reportBody.innerHTML = ''; // Remove all rows
+            }
+
+            // Clear other inputs
+            document.getElementById('timeInterval').value = '1'; // Reset interval to default
+            document.getElementById('detailLocation').checked = false; // Uncheck detailed location option
+
+            console.log("Form and table have been reset!");
         }
+
 
         function setDefaultDates() {
             const now = new Date();

@@ -481,12 +481,36 @@
         });
 
         function resetForm() {
-            document.getElementById('deviceSelect').value = '';
-            setDefaultDates();
-            document.getElementById('minTripTime').value = '15';
-            // Clear any existing report data
-            document.getElementById('reportData').innerHTML = '';
-        }
+    // Reset date and time inputs to default
+    setDefaultDates();
+
+    // Reset selected devices
+    selectedDevices.clear(); // Clear the Map of selected devices
+    updateSelectedDevicesDisplay(); // Refresh the UI for selected devices
+    populateVehicleList(devices); // Repopulate the dropdown list
+
+    // Reset the select all checkbox
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    }
+
+    // Reset other input fields
+    document.getElementById('vehicleSearch').value = ''; // Clear search input
+    document.getElementById('minTripTime').value = '15'; // Reset minimum trip time to default
+
+    // Clear the report data table
+    const reportBody = document.getElementById('reportData');
+    reportBody.innerHTML = `
+        <tr>
+            <td colspan="9" style="text-align: center;">No data available</td>
+        </tr>
+    `;
+
+    console.log("Form has been reset successfully!");
+}
+
 
         function setDefaultDates() {
             const now = new Date();
