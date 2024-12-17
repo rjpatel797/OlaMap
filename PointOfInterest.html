@@ -62,7 +62,7 @@
         }
 
         input, select {
-            padding: 8px;
+            padding: 5px;
             border: 1px solid #ddd;
             border-radius: 4px;
         }
@@ -76,6 +76,27 @@
             cursor: pointer;
         }
 
+        /* Make the Submit button green */
+        #submit {
+            background-color: #2ecc71; /* Green */
+            color: white;
+        }
+
+        #submit:hover {
+            background-color: #27ae60; /* Darker green on hover */
+        }
+
+        /* Make the Disable All button red */
+        #disableAll {
+            background-color: #e74c3c; /* Red */
+            color: white;
+        }
+
+        #disableAll:hover {
+            background-color: #c0392b; /* Darker red on hover */
+        }
+
+
         button:hover {
             background-color: #2980b9;
         }
@@ -83,12 +104,11 @@
         .poi-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
         }
 
         .poi-table th, .poi-table td {
-            padding: 10px;
-            text-align: left;
+            padding: 3px;
+            text-align: center;
             border: 1px solid #ddd;
         }
 
@@ -189,9 +209,9 @@
                     <option value="Enable">Enable</option>
                     <option value="Disable">Disable</option>
                 </select>
-                <button onclick="addPOI()">Submit</button>
-                <button onclick="enableAll()">Enable All</button>
-                <button onclick="disableAll()">Disable All</button>
+                <button onclick="addPOI()" id="submit">Submit</button>
+                <button onclick="enableAll()" id="enableAll">Enable All</button>
+                <button onclick="disableAll()" id="disableAll">Disable All</button>
             </div>
         </div>
     
