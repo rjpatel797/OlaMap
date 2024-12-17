@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POI Management System</title>
+    <!-- Ola Maps SDK -->
+    <script src="olamap/olamaps-js-sdk.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            background-color: #2d3e50;
+            padding: 10px 20px;
+            color: white;
+        }
+
+        .navbar-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nav-item {
+            color: white;
+            text-decoration: none;
+            padding: 5px 10px;
+        }
+
+        .nav-item:hover {
+            background-color: #34495e;
+            border-radius: 4px;
+        }
+
+        .container {
+            height: calc(100% - 60px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #map {
+            height: 60%;
+            width: 100%;
+        }
+
+        .controls {
+            padding: 10px;
+            background-color: #f5f6f7;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        input, select {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 8px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Make the Submit button green */
+        #submit {
+            background-color: #2ecc71; /* Green */
+            color: white;
+        }
+
+        #submit:hover {
+            background-color: #27ae60; /* Darker green on hover */
+        }
+
+        /* Make the Disable All button red */
+        #disableAll {
+            background-color: #e74c3c; /* Red */
+            color: white;
+        }
+
+        #disableAll:hover {
+            background-color: #c0392b; /* Darker red on hover */
+        }
+
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .poi-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .poi-table th, .poi-table td {
+            padding: 3px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .poi-table th {
+            background-color: #34495e;
+            color: white;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            margin: 0 2px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .enable-btn {
+            color: #27ae60;
+        }
+
+        .disable-btn {
+            color: #e74c3c;
+        }
+
+        .delete-btn {
+            color: #c0392b;
+        }
+
+        .search-bar {
+            padding: 5px;
+            background: #f5f6f7;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .search-container {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        #placeSearch {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 0 0 4px 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .search-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        .search-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navbar -->
+        <div id="navbar-container"></div>
+        
+        <!-- Add search bar here -->
+        <div class="search-bar">
+            <div class="search-container">
+                <input type="text" id="placeSearch" placeholder="Search place...">
+                <div id="searchResults" class="search-results"></div>
+            </div>
+        </div>
+        
+        <div id="map"></div>
+        
+        <div class="controls">
+            <div class="input-group">
+                <input type="text" id="location" placeholder="Location">
+                <input type="text" id="latitude" placeholder="Latitude">
+                <input type="text" id="longitude" placeholder="Longitude">
+                <input type="text" id="address" placeholder="Address">
+                <select id="status">
+                    <option value="Enable">Enable</option>
+                    <option value="Disable">Disable</option>
+                </select>
+                <button onclick="addPOI()" id="submit">Submit</button>
+                <button onclick="enableAll()" id="enableAll">Enable All</button>
+                <button onclick="disableAll()" id="disableAll">Disable All</button>
+            </div>
+        </div>
+    
+        <div class="table-container">
+            <table class="poi-table">
+                <thead>
+                    <tr>
+                        <th>Sr No.</th>
+                        <th>Location</th>
+                        <th>Latitude</th>
+                        <th>Longitude</th>
+                        <th>Address</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="poiTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let markers = [];
+        let searchMarker = null;
+        let markerLayer = null;
+        // Initialize Ola Map
+        const olaMap = new OlaMapsSDK.OlaMaps({
+            apiKey: '0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9'
+        });
+        const map = olaMap.init({
+        style: 'https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json',
+        container: 'map',
+        center: [77.2090, 28.6139], // Delhi coordinates
+        zoom: 12
+        });
+
+        map.on('load', () => {
+        console.log('Map loaded');
+        loadLocationMarkerIcon().catch(error => {
+        console.error('Error l oading initial location er icon:', error);
+        });
+        });
+
+        // Fetch POIs from API
+        async function fetchPOIs() {
+            const mid = localStorage.getItem("mid");
+            try {
+                const response = await fetch('${API}?opr=getpois&mid=${mid}');
+                const data = await response.json();
+                updatePOITable(data);
+                updateMapMarkers(data);
+            } catch (error) {
+                console.error('Error fetching POIs:', error);
+            }
+        }
+
+        // Add new POI
+        async function addPOI() {
+            const location = document.getElementById('location').value;
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
+            const address = document.getElementById('address').value;
+            const status = document.getElementById('status').value;
+
+            const url = `${API}opr=addpoi&latitude=${latitude}&langitude=${longitude}&status=${status}&location=${location}&address=${address}&mid=53`;
+
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    fetchPOIs();
+                    clearInputs();
+                }
+            } catch (error) {
+                console.error('Error adding POI:', error);
+            }
+        }
+
+        function updatePOITable(pois) {
+            const tbody = document.getElementById('poiTableBody');
+            tbody.innerHTML = '';
+
+            pois.forEach((poi, index) => {
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${poi.location}</td>
+                        <td>${poi.latitude}</td>
+                        <td>${poi.longitude}</td>
+                        <td>${poi.address}</td>
+                        <td>${poi.status}</td>
+                        <td>
+                            <span class="action-btn enable-btn" onclick="updateStatus(${poi.id}, 'Enable')">Enable</span>
+                            <span class="action-btn disable-btn" onclick="updateStatus(${poi.id}, 'Disable')">Disable</span>
+                            <span class="action-btn delete-btn" onclick="deletePOI(${poi.id})">Delete</span>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        function updateMapMarkers(pois) {
+            // Remove existing markers
+            markers.forEach(marker => marker.remove());
+            markers = [];
+
+            // Add new markers
+            pois.forEach(poi => {
+                const marker = olaMap.addMarker({
+                    lngLat: [poi.longitude, poi.latitude],
+                    popup: { text: poi.location, open: false },
+                    color: poi.status === 'Enable' ? '#27ae60' : '#e74c3c'
+                });
+                markers.push(marker);
+            });
+        }
+
+        async function updateStatus(id, status) {
+            const mid = localStorage.getItem("mid");
+            try {
+                const response = await fetch(`${API}opr=updatepoi&id=${id}&status=${status}&mid=${mid}`);
+                if (response.ok) {
+                    fetchPOIs();
+                }
+            } catch (error) {
+                console.error('Error updating POI status:', error);
+            }
+        }
+
+        async function deletePOI(id) {
+            if (confirm('Are you sure you want to delete this POI?')) {
+                try {
+                    const response = await fetch(`${API}opr=deletepoi&id=${id}&mid=${mid}`);
+                    if (response.ok) {
+                        fetchPOIs();
+                    }
+                } catch (error) {
+                    console.error('Error deleting POI:', error);
+                }
+            }
+        }
+
+        function enableAll() {
+            document.querySelectorAll('.poi-table tbody tr').forEach(row => {
+                const id = row.getAttribute('data-id');
+                updateStatus(id, 'Enable');
+            });
+        }
+
+        function disableAll() {
+            document.querySelectorAll('.poi-table tbody tr').forEach(row => {
+                const id = row.getAttribute('data-id');
+                updateStatus(id, 'Disable');
+            });
+        }
+
+        $(document).ready(function () {
+            // Load navbar from external file
+            $("#navbar-container").load("navbarola.html", function () {
+                console.log("Navbar loaded successfully!");
+            });
+
+            // Check if 'mid' is available in localStorage
+            if (!localStorage.getItem("mid")) {
+                window.location.href = "/index.html";
+            }
+
+        });
+
+        function clearInputs() {
+            document.getElementById('location').value = '';
+            document.getElementById('latitude').value = '';
+            document.getElementById('longitude').value = '';
+            document.getElementById('address').value = '';
+            document.getElementById('status').value = 'Enable';
+        }
+
+        let searchTimeout;
+
+document.getElementById('placeSearch').addEventListener('input', function(e) {
+    clearTimeout(searchTimeout);
+    const query = e.target.value.trim();
+
+    if (query.length < 3) {
+        document.getElementById('searchResults').style.display = 'none';
+        return;
+    }
+
+    searchTimeout = setTimeout(() => {
+        searchPlaces(query);
+    }, 300);
+});
+
+async function searchPlaces(query) {
+    try {
+        const response = await fetch(
+            `https://api.olamaps.io/places/v1/autocomplete?input=${encodeURIComponent(query)}&api_key=0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9`,
+            {
+                headers: {
+                    'X-Request-Id': generateRequestId()
+                }
+            }
+        );
+
+        const data = await response.json();
+        showSearchResults(data.predictions || []);
+    } catch (error) {
+        console.error('Error searching places:', error);
+    }
+}
+
+function showSearchResults(predictions) {
+    const resultsDiv = document.getElementById('searchResults');
+    resultsDiv.innerHTML = '';
+
+    if (predictions.length === 0) {
+        resultsDiv.style.display = 'none';
+        return;
+    }
+
+    predictions.forEach(place => {
+        const div = document.createElement('div');
+        div.className = 'search-item';
+        div.textContent = place.description;
+        div.onclick = () => selectPlace(place);
+        resultsDiv.appendChild(div);
+    });
+
+    resultsDiv.style.display = 'block';
+}
+
+// Add this function at the top level to load the custom location marker icon
+function loadLocationMarkerIcon() {
+// Create a teardrop SVG icon with a white dot
+const locationMarkerSVG = `
+<svg width="30" height="45" viewBox="0 0 30 45" xmlns="http://www.w3.org/2000/svg">
+    <!-- Main teardrop shape -->
+    <path d="M15 0C6.716 0 0 6.716 0 15c0 8.284 15 30 15 30s15-21.716 15-30c0-8.284-6.716-15-15-15z" fill="#FF0000"
+        stroke="#FFFFFF" stroke-width="2" />
+    <!-- White dot in upper part -->
+    <circle cx="15" cy="15" r="4" fill="#FFFFFF" />
+</svg>
+`;
+
+// Convert SVG to data URL
+const svgUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(locationMarkerSVG);
+
+// Load the image into the map
+return new Promise((resolve, reject) => {
+const img = new Image();
+img.onload = () => {
+map.addImage('location-marker', img);
+resolve();
+};
+img.onerror = reject;
+img.src = svgUrl;
+});
+}
+
+function selectPlace(place) {
+const searchInput = document.getElementById('placeSearch');
+searchInput.value = place.description;
+document.getElementById('searchResults').style.display = 'none';
+
+// Update form fields with location details
+document.getElementById('location').value = place.structured_formatting?.main_text || '';
+document.getElementById('address').value = place.description;
+
+if (place.geometry && place.geometry.location) {
+const lat = parseFloat(place.geometry.location.lat);
+const lng = parseFloat(place.geometry.location.lng);
+
+console.log("Retrieved coordinates:", lat, lng);
+
+// Update form fields
+document.getElementById('latitude').value = lat;
+document.getElementById('longitude').value = lng;
+
+try {
+// Remove existing marker layers and sources if they exist
+if (map.getLayer('selected-place-marker')) {
+map.removeLayer('selected-place-marker');
+}
+if (map.getSource('selected-place')) {
+map.removeSource('selected-place');
+}
+
+// Create a point feature
+const markerFeature = {
+type: 'Feature',
+geometry: {
+type: 'Point',
+coordinates: [lng, lat]
+},
+properties: {
+title: place.description,
+description: place.description
+}
+};
+
+// Add the source
+map.addSource('selected-place', {
+type: 'geojson',
+data: markerFeature
+});
+
+// Ensure the location marker icon is loaded, then add the marker
+loadLocationMarkerIcon().then(() => {
+// Add the location marker layer
+map.addLayer({
+id: 'selected-place-marker',
+type: 'symbol',
+source: 'selected-place',
+layout: {
+'icon-image': 'location-marker',
+'icon-size': 0.8,
+'icon-anchor': 'bottom',
+'icon-allow-overlap': true
+}
+});
+
+// Fly to the location
+map.flyTo({
+center: [lng, lat],
+zoom: 16,
+speed: 1.2
+});
+
+console.log('Location marker added successfully');
+}).catch(error => {
+console.error('Error loading location marker icon:', error);
+});
+
+} catch (error) {
+console.error('Error adding marker:', error);
+console.error(error.stack);
+}
+}
+}
+
+
+// Add this at the top of your script to track marker creation
+olaMap.on('marker.add', (marker) => {
+console.log('Marker added to map:', marker);
+});
+
+// Add this to check if map style is loaded
+map.on('style.load', () => {
+console.log('Map style loaded completely');
+});
+async function getPlaceDetails(placeId) {
+try {
+const response = await fetch(
+`https://api.olamaps.io/places/v1/details?place_id=${placeId}&api_key=0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9`,
+{
+headers: {
+'X-Request-Id': generateRequestId()
+}
+}
+);
+const data = await response.json();
+return data.result;
+} catch (error) {
+console.error('Error fetching place details:', error);
+return null;
+}
+}
+function generateRequestId() {
+    return 'xxxx-xxxx-xxxx-xxxx'.replace(/[x]/g, () => {
+        return (Math.random() * 16 | 0).toString(16);
+    });
+}
+
+// Close search results when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.search-container')) {
+        document.getElementById('searchResults').style.display = 'none';
+    }
+});
+
+        // Initial load
+        fetchPOIs();
+    </script>
+</body>
+</html>
