@@ -326,20 +326,6 @@
 
         <div class="content">
             <div class="report-controls">
-                <div class="datetime-selector">
-                    <div class="date-input">
-                        <label>Start Date:</label>
-                        <input type="date" id="startDate">
-                        <label>Time:</label>
-                        <input type="time" id="startTime" value="00:00">
-                    </div>
-                    <div class="date-input">
-                        <label>End Date:</label>
-                        <input type="date" id="endDate">
-                        <label>Time:</label>
-                        <input type="time" id="endTime" value="23:59">
-                    </div>
-                </div>
                 <div class="device-selector">
                     <div class="dropdown-container">
                         <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
@@ -365,6 +351,21 @@
                         </div>
                     </div>
                 </div>
+                <div class="datetime-selector">
+                    <div class="date-input">
+                        <label>Start Date:</label>
+                        <input type="date" id="startDate">
+                        <label>Time:</label>
+                        <input type="time" id="startTime" value="00:00">
+                    </div>
+                    <div class="date-input">
+                        <label>End Date:</label>
+                        <input type="date" id="endDate">
+                        <label>Time:</label>
+                        <input type="time" id="endTime" value="23:59">
+                    </div>
+                </div>
+                
                 <button class="submit-btn" onclick="generateReport()">Submit</button>
                 <button class="reset-btn" onclick="resetForm()">Reset</button>
             </div>

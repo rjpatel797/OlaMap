@@ -141,8 +141,8 @@
         /* Update the device selector styles */
         .device-selector {
             position: relative;
-            width: 255px;
-            top: 5px;
+            width: 205px;
+            top: 1px;
         }
 
         .dropdown-container {
@@ -376,6 +376,13 @@
 
         <div class="content">
             <div class="report-controls">
+                <!-- Device Selector with correct structure -->
+                <div class="device-selector">
+                    <select id="deviceSelect" class="form-select">
+                        <option value="">Select Vehicle</option>
+                    </select>
+                </div>
+
                 <!-- Start DateTime -->
                 <div class="date-group">
                     <label>Start DateTime:</label>
@@ -388,14 +395,6 @@
                     <label>End DateTime:</label>
                     <input type="date" id="endDate">
                     <input type="time" id="endTime" value="23:59">
-                </div>
-            
-                <!-- Device Selector with correct structure -->
-                <div class="device-selector">
-                    <label>Device:</label>
-                    <select id="deviceSelect" class="form-select">
-                        <option value="">Select Vehicle</option>
-                    </select>
                 </div>
             
                 <!-- Trip Time -->

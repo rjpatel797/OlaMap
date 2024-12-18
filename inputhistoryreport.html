@@ -259,6 +259,13 @@
 
         <div class="content">
             <div class="report-controls">
+                <!-- Device Selector -->
+                <div class="device-selector">
+                    <select id="deviceSelect">
+                        <option value="">Select Device</option>
+                    </select>
+                </div>
+
                 <!-- Start DateTime -->
                 <div class="date-group">
                     <label>Start DateTime:</label>
@@ -273,17 +280,8 @@
                     <input type="time" id="endTime" value="23:59">
                 </div>
 
-                <!-- Device Selector -->
-                <div class="device-selector">
-                    <label>Device:</label>
-                    <select id="deviceSelect">
-                        <option value="">Select Device</option>
-                    </select>
-                </div>
-
                 <!-- Input Selector -->
                 <div class="device-selector">
-                    <label>Input:</label>
                     <select id="inputSelect">
                         <option value="">Select Input</option>
                     </select>
@@ -304,9 +302,9 @@
                 <button onclick="exportCSV()">CSV</button>
                 <button onclick="exportPDF()">PDF</button>
                 <button onclick="window.print()">Print</button>
-                <div class="search-box">
+                <!-- <div class="search-box">
                     <input type="text" id="searchInput" placeholder="Search..." onkeyup="searchTable()">
-                </div>
+                </div> -->
             </div>
 
             <!-- Report Table -->
