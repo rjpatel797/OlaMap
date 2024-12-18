@@ -579,21 +579,21 @@ function selectPlace(place) {
 
 
 async function getPlaceDetails(placeId) {
-try {
-const response = await fetch(
-`https://api.olamaps.io/places/v1/details?place_id=${placeId}&api_key=0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9`,
-{
-headers: {
-'X-Request-Id': generateRequestId()
-}
-}
-);
-const data = await response.json();
-return data.result;
-} catch (error) {
-console.error('Error fetching place details:', error);
-return null;
-}
+    try {
+        const response = await fetch(
+            `https://api.olamaps.io/places/v1/details?place_id=${placeId}&api_key=0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9`,
+            {
+                headers: {
+                    'X-Request-Id': generateRequestId()
+                }
+            }
+        );
+        const data = await response.json();
+        return data.result;
+    } catch (error) {
+        console.error('Error fetching place details:', error);
+        return null;
+    }
 }
 function generateRequestId() {
     return 'xxxx-xxxx-xxxx-xxxx'.replace(/[x]/g, () => {
