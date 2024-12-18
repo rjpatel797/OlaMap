@@ -1716,6 +1716,8 @@ function getCarEmoji(device) {
         }, ${
           device.coordinates[0]
         })" class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">Share Location</button>
+        <button onclick="addPOIForDevice('${device.name}', ${device.coordinates[1]}, ${device.coordinates[0]})" 
+            class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">Add POI</button>
         <div id="shareModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -2631,6 +2633,15 @@ function handleCheckboxChange(e) {
     document.getElementById('selectAllCheckbox').checked = allChecked;
     
     filterMarkers();
+}
+
+function addPOIForDevice(deviceName, lat, lng) {
+    const params = new URLSearchParams({
+        deviceName: deviceName,
+        lat: lat,
+        lng: lng
+    });
+    window.open(`PointOfInterest.html?${params.toString()}`);
 }
 
 document.querySelectorAll('.status-item').forEach(item => {
