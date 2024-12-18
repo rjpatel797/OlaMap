@@ -141,8 +141,8 @@
         /* Update the device selector styles */
         .device-selector {
             position: relative;
-            width: 255px;
-            top: 5px;
+            width: 205px;
+            top: 1px;
         }
 
         .dropdown-container {
@@ -367,6 +367,76 @@
     border: 1px solid #ddd;
     font-size: 13px;
 }
+
+.device-selector {
+    position: relative;
+    width: 205px;
+    top: 1px;
+}
+
+.dropdown-container {
+    position: relative;
+}
+
+.dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    display: none;
+    z-index: 1000;
+}
+
+.dropdown-search {
+    padding: 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-search input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    color: #333;
+    font-size: 13px;
+}
+
+.dropdown-items {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.dropdown-item {
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.selected-vehicle {
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    color: #333;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.selected-vehicle:after {
+    content: '▼';
+    font-size: 10px;
+    margin-left: 8px;
+}
     </style>
 </head>
 <body>
@@ -376,6 +446,27 @@
 
         <div class="content">
             <div class="report-controls">
+                <!-- Device Selector with correct structure -->
+                <div class="device-selector">
+                    <div class="dropdown-container">
+                        <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
+                            Select Vehicle
+                        </div>
+                        <div class="dropdown-list" id="deviceDropdown">
+                            <div class="dropdown-search">
+                                <input type="text" 
+                                       placeholder="Search vehicle..." 
+                                       id="vehicleSearch"
+                                       onclick="event.stopPropagation()"
+                                       onkeyup="filterVehicles(this.value)">
+                            </div>
+                            <div class="dropdown-items" id="vehicleList">
+                                <!-- Vehicles will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Start DateTime -->
                 <div class="date-group">
                     <label>Start DateTime:</label>
@@ -388,14 +479,6 @@
                     <label>End DateTime:</label>
                     <input type="date" id="endDate">
                     <input type="time" id="endTime" value="23:59">
-                </div>
-            
-                <!-- Device Selector with correct structure -->
-                <div class="device-selector">
-                    <label>Device:</label>
-                    <select id="deviceSelect" class="form-select">
-                        <option value="">Select Vehicle</option>
-                    </select>
                 </div>
             
                 <!-- Trip Time -->
@@ -412,7 +495,7 @@
             
                 <!-- Buttons -->
                 <button class="submit-btn">Submit</button>
-                <button class="reset-btn">Reset</button>
+                <button class="reset-btn" >Reset</button>
             </div>
 
             <div class="export-buttons">
@@ -482,10 +565,36 @@
         });
 
         function resetForm() {
-            document.getElementById('deviceSelect').value = '';
+            // Reset device selection
+            selectedDeviceId = null;
+            document.getElementById('selectedVehicle').textContent = 'Select Vehicle';
+            
+            // Reset date and time inputs
             setDefaultDates();
-            // Clear any existing report data
+            
+            // Reset speed limit to first option
+            document.getElementById('speedLimit').value = '30';
+            
+            // Clear search input if exists
+            const searchInput = document.getElementById('vehicleSearch');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            
+            // Hide dropdown if open
+            const dropdown = document.getElementById('deviceDropdown');
+            if (dropdown) {
+                dropdown.style.display = 'none';
+            }
+            
+            // Clear the report data
             document.getElementById('reportData').innerHTML = '';
+            
+            // If using selectedDevices Map (for multi-select)
+            if (typeof selectedDevices !== 'undefined') {
+                selectedDevices.clear();
+                updateSelectedDevicesDisplay();
+            }
         }
 
         function setDefaultDates() {
@@ -500,24 +609,16 @@
         }
 
         function toggleDropdown() {
-            const dropdown = document.getElementById("deviceDropdown");
-            const currentDisplay = dropdown.style.display;
-            dropdown.style.display = currentDisplay === "block" ? "none" : "block";
-            
-            if (dropdown.style.display === "block") {
-                document.getElementById("vehicleSearch").value = "";
-                populateVehicleList(devices);
-            }
+            const dropdown = document.getElementById('deviceDropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
         }
 
         function filterVehicles(searchText) {
-            const filteredDevices = devices.filter((device) =>
-                device.name.toLowerCase().includes(searchText.toLowerCase())
+            const vehicleList = document.getElementById('vehicleList');
+            const filteredDevices = devices.filter(device => 
+                device.dname.toLowerCase().includes(searchText.toLowerCase())
             );
             populateVehicleList(filteredDevices);
-            
-            // Update Select All checkbox state based on filtered items
-            updateSelectAllCheckbox();
         }
 
         function updateSelectAllCheckbox() {
@@ -532,42 +633,22 @@
 
         function selectVehicle(deviceId, deviceName) {
             selectedDeviceId = deviceId;
-            document.getElementById("deviceSelect").textContent = deviceName;
-            document.getElementById("deviceSelect").value = deviceId;
-            document.getElementById("deviceDropdown").style.display = "none";
+            document.getElementById('selectedVehicle').textContent = deviceName;
+            document.getElementById('deviceDropdown').style.display = 'none';
         }
 
         let selectedDevices = new Map();
 
         function populateVehicleList(devicesList) {
             const vehicleList = document.getElementById('vehicleList');
-            if (!vehicleList) return;
-            
             vehicleList.innerHTML = '';
             
             devicesList.forEach(device => {
                 const item = document.createElement('div');
                 item.className = 'dropdown-item';
-                item.style.color = '#333';
-                
-                // Add checkbox
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.className = 'device-checkbox';
-                checkbox.checked = selectedDevices.has(device.did);
-                
-                const label = document.createElement('span');
-                label.textContent = device.name;
-                
-                item.appendChild(checkbox);
-                item.appendChild(label);
-                
-                item.onclick = (e) => {
-                    e.stopPropagation();
-                    checkbox.checked = !checkbox.checked;
-                    updateSelectedDevices(device, checkbox.checked);
-                };
-                
+                item.textContent = device.dname;
+                item.style.color = '#333'; // Set text color to dark
+                item.onclick = () => selectVehicle(device.did, device.dname);
                 vehicleList.appendChild(item);
             });
         }
@@ -703,32 +784,26 @@
         });
 
         function fetchDeviceData() {
-    const mid = localStorage.getItem("mid");
-    console.log("Fetching vehicles with mid:", mid);
+            const mid = localStorage.getItem("mid");
+            fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+                .then(response => response.json())
+                .then(data => {
+                    devices = data;
+                    populateVehicleList(data);
+                })
+                .catch(error => console.error("Error fetching devices:", error));
+        }
 
-    fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
-        .then(response => response.json())
-        .then(data => {
-            console.log("Vehicle data received:", data);
+        document.addEventListener('click', (e) => {
+            const searchInput = document.getElementById('vehicleSearch');
+            const deviceDropdown = document.getElementById('deviceDropdown');
+            const selectedVehicle = document.getElementById('selectedVehicle');
             
-            const deviceSelect = document.getElementById('deviceSelect');
-            deviceSelect.innerHTML = '<option value="">Select Vehicle</option>';
-            
-            if (Array.isArray(data)) {
-                data.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.did;
-                    option.textContent = item.dname || 'Unnamed vehicle';
-                    deviceSelect.appendChild(option);
-                });
-            } else {
-                console.error('Invalid data format received:', data);
+            if (!searchInput.contains(e.target) && !deviceDropdown.contains(e.target) && !selectedVehicle.contains(e.target)) {
+                deviceDropdown.style.display = 'none';
             }
-        })
-        .catch(error => {
-            console.error("Error fetching vehicles:", error);
         });
-}
+
         // document.addEventListener('click', function(event) {
         //     const dropdown = document.getElementById('deviceDropdown');
         //     const selectedVehicle = document.getElementById('selectedVehicle');
@@ -789,31 +864,32 @@
         }
 
         function generateReport() {
-    const startDate = document.getElementById('startDate').value;
-    const startTime = document.getElementById('startTime').value;
-    const endDate = document.getElementById('endDate').value;
-    const endTime = document.getElementById('endTime').value;
-    const speedLimit = document.getElementById('speedLimit').value;
-    const deviceId = document.getElementById('deviceSelect').value;
+            const startDate = document.getElementById('startDate').value;
+            const startTime = document.getElementById('startTime').value;
+            const endDate = document.getElementById('endDate').value;
+            const endTime = document.getElementById('endTime').value;
+            const speedLimit = document.getElementById('speedLimit').value;
 
-    if (!startDate || !endDate) {
-        alert("Please select dates");
-        return;
-    }
+            if (!startDate || !endDate) {
+                alert("Please select dates");
+                return;
+            }
 
-    if (!deviceId) {
-        alert("Please select a vehicle");
-        return;
-    }
+            if (!selectedDeviceId) {
+                alert("Please select a vehicle");
+                return;
+            }
 
-    const startDateTime = `${startDate} ${startTime}`;
-    const endDateTime = `${endDate} ${endTime}`;
+            const startDateTime = `${startDate} ${startTime}`;
+            const endDateTime = `${endDate} ${endTime}`;
 
-    const formattedStartDate = formatDateForApi(startDateTime);
-    const formattedEndDate = formatDateForApi(endDateTime);
+            const formattedStartDate = formatDateForApi(startDateTime);
+            const formattedEndDate = formatDateForApi(endDateTime);
 
-    fetchSpeedReport(formattedStartDate, formattedEndDate, deviceId, speedLimit);
-}
+            fetchSpeedReport(formattedStartDate, formattedEndDate, selectedDeviceId, speedLimit);
+        }
+
+
         function formatDateForApi(dateTimeString) {
             const date = new Date(dateTimeString);
             const year = date.getFullYear();
@@ -826,57 +902,57 @@
         }
 
         function fetchSpeedReport(fromdate, todate, deviceid, speedlimit) {
-    console.log("Fetching speed report data...");
-    
-    const reportBody = document.getElementById('reportData');
-    reportBody.innerHTML = `
-        <tr>
-            <td colspan="10" style="text-align: center;">Loading...</td>
-        </tr>
-    `;
-
-    const url = `${API}opr=getspeedmoniteringReport&speedlimit=${speedlimit}&fromdate=${fromdate}&todate=${todate}&deviceid=${deviceid}`;
-    
-    fetch(url)
-        .then(response => response.text())
-        .then(data => {
-            try {
-                // Parse the JSON response directly without any text manipulation
-                const parsedData = JSON.parse(data);
-                console.log("Parsed Speed Report Data:", parsedData);
-                
-                if (Array.isArray(parsedData)) {
-                    displaySpeedReportData(parsedData);
-                } else {
-                    displaySpeedReportData([parsedData]);
-                }
-            } catch (parseError) {
-                console.error("JSON Parse Error:", parseError);
-                reportBody.innerHTML = `
-                    <tr>
-                        <td colspan="10" style="text-align: center; color: red;">
-                            Error loading report data: ${parseError.message}
-                        </td>
-                    </tr>
-                `;
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching speed report data:", error);
+            console.log("Fetching speed report data...");
+            
+            const reportBody = document.getElementById('reportData');
             reportBody.innerHTML = `
                 <tr>
-                    <td colspan="10" style="text-align: center; color: red;">
-                        Error loading report data: ${error.message}
-                    </td>
+                    <td colspan="10" style="text-align: center;">Loading...</td>
                 </tr>
             `;
-        });
-}
 
-function formatLocation(latitude, longitude) {
-    if (!latitude || !longitude) return 'Unknown';
-    return `${latitude}, ${longitude}`;
-}
+            const url = `${API}opr=getspeedmoniteringReport&speedlimit=${speedlimit}&fromdate=${fromdate}&todate=${todate}&deviceid=${deviceid}`;
+            
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    try {
+                        // Parse the JSON response directly without any text manipulation
+                        const parsedData = JSON.parse(data);
+                        console.log("Parsed Speed Report Data:", parsedData);
+                        
+                        if (Array.isArray(parsedData)) {
+                            displaySpeedReportData(parsedData);
+                        } else {
+                            displaySpeedReportData([parsedData]);
+                        }
+                    } catch (parseError) {
+                        console.error("JSON Parse Error:", parseError);
+                        reportBody.innerHTML = `
+                            <tr>
+                                <td colspan="10" style="text-align: center; color: red;">
+                                    Error loading report data: ${parseError.message}
+                                </td>
+                            </tr>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching speed report data:", error);
+                    reportBody.innerHTML = `
+                        <tr>
+                            <td colspan="10" style="text-align: center; color: red;">
+                                Error loading report data: ${error.message}
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+
+        function formatLocation(latitude, longitude) {
+            if (!latitude || !longitude) return 'Unknown';
+            return `${latitude}, ${longitude}`;
+        }
 
 
         function formatReportItem(item) {
@@ -914,36 +990,36 @@ function formatLocation(latitude, longitude) {
         }
 
         function displaySpeedReportData(data) {
-    const reportBody = document.getElementById('reportData');
-    
-    if (!data || data.length === 0) {
-        reportBody.innerHTML = `
-            <tr>
-                <td colspan="10" style="text-align: center;">No data available</td>
-            </tr>
-        `;
-        return;
-    }
+            const reportBody = document.getElementById('reportData');
+            
+            if (!data || data.length === 0) {
+                reportBody.innerHTML = `
+                    <tr>
+                        <td colspan="10" style="text-align: center;">No data available</td>
+                    </tr>
+                `;
+                return;
+            }
 
-    reportBody.innerHTML = data.map((item, index) => {
-        const startLocation = formatLocation(item.startlocaitonlatitude, item.startlocaitonlangitude);
-        const endLocation = formatLocation(item.endlocationlatitude, item.endlocationlangitude);
-        
-        return `
-            <tr>
-                <td>${index + 1}</td>
-                <td>${item.deviceName || 'N/A'}</td>
-                <td>${item.starttime}</td>
-                <td>${item.endtime}</td>
-                <td>${startLocation}</td>
-                <td>${endLocation}</td>
-                <td>${item.MaxSpeed} km/h</td>
-                <td>${item.duration}</td>
-                <td>${item.AvgSpeed} km/h</td>
-            </tr>
-        `;
-    }).join('');
-}
+            reportBody.innerHTML = data.map((item, index) => {
+                const startLocation = formatLocation(item.startlocaitonlatitude, item.startlocaitonlangitude);
+                const endLocation = formatLocation(item.endlocationlatitude, item.endlocationlangitude);
+                
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.deviceName || 'N/A'}</td>
+                        <td>${item.starttime}</td>
+                        <td>${item.endtime}</td>
+                        <td>${startLocation}</td>
+                        <td>${endLocation}</td>
+                        <td>${item.MaxSpeed} km/h</td>
+                        <td>${item.duration}</td>
+                        <td>${item.AvgSpeed} km/h</td>
+                    </tr>
+                `;
+            }).join('');
+        }
 
         // Format time from milliseconds/seconds to hours and minutes
         function formatTime(time) {
@@ -1051,91 +1127,91 @@ function formatLocation(latitude, longitude) {
         }
 
         function exportPDF() {
-    try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'mm', 'a4');
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('l', 'mm', 'a4');
 
-        // Add title
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(20);
-        doc.text("Speed Monitoring Report", doc.internal.pageSize.width / 2, 15, { align: 'center' });
+                // Add title
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(20);
+                doc.text("Speed Monitoring Report", doc.internal.pageSize.width / 2, 15, { align: 'center' });
 
-        // Add date range
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        const startDate = document.getElementById('startDate').value;
-        const startTime = document.getElementById('startTime').value;
-        const endDate = document.getElementById('endDate').value;
-        const endTime = document.getElementById('endTime').value;
-        const speedLimit = document.getElementById('speedLimit').value;
-        
-        doc.text(`Report Period: ${startDate} ${startTime} to ${endDate} ${endTime}`, 15, 25);
-        doc.text(`Speed Limit: ${speedLimit} km/h`, 15, 30);
+                // Add date range
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                const startDate = document.getElementById('startDate').value;
+                const startTime = document.getElementById('startTime').value;
+                const endDate = document.getElementById('endDate').value;
+                const endTime = document.getElementById('endTime').value;
+                const speedLimit = document.getElementById('speedLimit').value;
+                
+                doc.text(`Report Period: ${startDate} ${startTime} to ${endDate} ${endTime}`, 15, 25);
+                doc.text(`Speed Limit: ${speedLimit} km/h`, 15, 30);
 
-        // Define table headers
-        const headers = [[
-            'Srno',
-            'Vehicle Name',
-            'Start Time',
-            'End Time',
-            'Start Location',
-            'End Location',
-            'Max Speed',
-            'Total Time',
-            'Avg Speed'
-        ]];
+                // Define table headers
+                const headers = [[
+                    'Srno',
+                    'Vehicle Name',
+                    'Start Time',
+                    'End Time',
+                    'Start Location',
+                    'End Location',
+                    'Max Speed',
+                    'Total Time',
+                    'Avg Speed'
+                ]];
 
-        // Get table data
-        const rows = document.querySelectorAll('table tr:not(:first-child)');
-        const data = Array.from(rows).map(row => {
-            const cells = row.querySelectorAll('td');
-            return Array.from(cells).map(cell => cell.textContent.trim());
-        });
+                // Get table data
+                const rows = document.querySelectorAll('table tr:not(:first-child)');
+                const data = Array.from(rows).map(row => {
+                    const cells = row.querySelectorAll('td');
+                    return Array.from(cells).map(cell => cell.textContent.trim());
+                });
 
-        // Add table
-        doc.autoTable({
-            head: headers,
-            body: data,
-            startY: 35,
-            theme: 'grid',
-            styles: {
-                fontSize: 7,
-                cellPadding: 2,
-                overflow: 'linebreak',
-                cellWidth: 'wrap'
-            },
-            headStyles: {
-                fillColor: [41, 128, 185],
-                textColor: 255,
-                fontSize: 8,
-                fontStyle: 'bold',
-                halign: 'center',
-                valign: 'middle'
-            },
-            columnStyles: {
-                0: { cellWidth: 10 },  // Srno
-                1: { cellWidth: 25 },  // Vehicle Name
-                2: { cellWidth: 25 },  // Start Time
-                3: { cellWidth: 25 },  // End Time
-                4: { cellWidth: 35 },  // Start Location
-                5: { cellWidth: 35 },  // End Location
-                6: { cellWidth: 20, halign: 'right' },  // Max Speed
-                7: { cellWidth: 20, halign: 'right' },  // Total Time
-                9: { cellWidth: 20, halign: 'right' }   // Avg Speed
+                // Add table
+                doc.autoTable({
+                    head: headers,
+                    body: data,
+                    startY: 35,
+                    theme: 'grid',
+                    styles: {
+                        fontSize: 7,
+                        cellPadding: 2,
+                        overflow: 'linebreak',
+                        cellWidth: 'wrap'
+                    },
+                    headStyles: {
+                        fillColor: [41, 128, 185],
+                        textColor: 255,
+                        fontSize: 8,
+                        fontStyle: 'bold',
+                        halign: 'center',
+                        valign: 'middle'
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 10 },  // Srno
+                        1: { cellWidth: 25 },  // Vehicle Name
+                        2: { cellWidth: 25 },  // Start Time
+                        3: { cellWidth: 25 },  // End Time
+                        4: { cellWidth: 35 },  // Start Location
+                        5: { cellWidth: 35 },  // End Location
+                        6: { cellWidth: 20, halign: 'right' },  // Max Speed
+                        7: { cellWidth: 20, halign: 'right' },  // Total Time
+                        9: { cellWidth: 20, halign: 'right' }   // Avg Speed
+                    }
+                });
+
+                // Save the PDF
+                const now = new Date();
+                const dateStr = now.toLocaleDateString().replace(/\//g, '-');
+                const timeStr = now.toLocaleTimeString().replace(/:/g, '-');
+                doc.save(`speed_report_${dateStr}_${timeStr}.pdf`);
+
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                alert(`Error generating PDF: ${error.message}\nPlease check the console for more details.`);
             }
-        });
-
-        // Save the PDF
-        const now = new Date();
-        const dateStr = now.toLocaleDateString().replace(/\//g, '-');
-        const timeStr = now.toLocaleTimeString().replace(/:/g, '-');
-        doc.save(`speed_report_${dateStr}_${timeStr}.pdf`);
-
-    } catch (error) {
-        console.error('Error generating PDF:', error);
-        alert(`Error generating PDF: ${error.message}\nPlease check the console for more details.`);
-    }
-}  
+        }  
     
     </script>
 </body>

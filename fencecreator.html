@@ -258,6 +258,7 @@
         </div>
     </div>
 
+    <script src="js/api.js"></script>
     <script>
         // Initialize Ola Maps
         const olaMaps = new OlaMapsSDK.OlaMaps({
@@ -272,6 +273,7 @@
             zoom: 6
         });
 
+        const mid = localStorage.getItem("mid");
         let currentDrawingMode = null;
         let currentShape = null;
         let drawingLayers = [];
@@ -282,6 +284,11 @@
             $("#navbar-container").load("navbarola.html", function () {
                 console.log("Navbar loaded successfully!");
             });
+
+            // Check if 'mid' is available in localStorage
+            if (!localStorage.getItem("mid")) {
+                window.location.href = "/index.html";
+            }
         });
 
         // Wait for map to load before adding layers
@@ -630,7 +637,7 @@
 
                 // Construct URL for circle fence
                 // &fvalue=lat,long,radius
-                url = `https://ttsgps.in/getandrojsonforNewIphone.jsp?opr=savefence&fvalue=${lat},${lng},${radius}&fname=${encodeURIComponent(name)}&ftype=circle&mid=${encodeURIComponent(mid)}`;
+                url = `${API}opr=savefence&fvalue=${lat},${lng},${radius}&fname=${encodeURIComponent(name)}&ftype=circle&mid=${encodeURIComponent(mid)}`;
 
             } else if (currentDrawingMode === 'polygon') {
                 // Polygon shape: currentShape = { type: 'Feature', geometry: { type: 'Polygon', coordinates: [ [ [lng, lat], [lng, lat], ... ] ] } }
@@ -643,7 +650,7 @@
 
                 // Construct URL for polygon fence
                 // &fvalue=point1lat,point1long,point2lat,point2long,...etc.
-                url = `https://ttsgps.in/getandrojsonforNewIphone.jsp?opr=savefence&fvalue=${coordPairs}&fname=${encodeURIComponent(name)}&ftype=polygon&mid=${encodeURIComponent(mid)}`;
+                url = `${API}opr=savefence&fvalue=${coordPairs}&fname=${encodeURIComponent(name)}&ftype=polygon&mid=${encodeURIComponent(mid)}`;
             } else {
                 console.error('Unsupported fence type:', currentDrawingMode);
                 return;

@@ -250,6 +250,76 @@
                 width: 100%;
             }
         }
+
+        .device-selector {
+            position: relative;
+            width: 205px;
+            top: 1px;
+        }
+
+        .dropdown-container {
+            position: relative;
+        }
+
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1000;
+        }
+
+        .dropdown-search {
+            padding: 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .dropdown-search input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .dropdown-items {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .dropdown-item {
+            padding: 8px 10px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .selected-vehicle {
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            color: #333;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .selected-vehicle:after {
+            content: '▼';
+            font-size: 10px;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
@@ -259,6 +329,27 @@
 
         <div class="content">
             <div class="report-controls">
+                <!-- Device Selector -->
+                <div class="device-selector">
+                    <div class="dropdown-container">
+                        <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
+                            Select Vehicle
+                        </div>
+                        <div class="dropdown-list" id="deviceDropdown">
+                            <div class="dropdown-search">
+                                <input type="text" 
+                                    placeholder="Search vehicle..." 
+                                    id="vehicleSearch"
+                                    onclick="event.stopPropagation()"
+                                    onkeyup="filterVehicles(this.value)">
+                            </div>
+                            <div class="dropdown-items" id="vehicleList">
+                                <!-- Vehicles will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Start DateTime -->
                 <div class="date-group">
                     <label>Start DateTime:</label>
@@ -273,17 +364,8 @@
                     <input type="time" id="endTime" value="23:59">
                 </div>
 
-                <!-- Device Selector -->
-                <div class="device-selector">
-                    <label>Device:</label>
-                    <select id="deviceSelect">
-                        <option value="">Select Device</option>
-                    </select>
-                </div>
-
                 <!-- Input Selector -->
                 <div class="device-selector">
-                    <label>Input:</label>
                     <select id="inputSelect">
                         <option value="">Select Input</option>
                     </select>
@@ -304,9 +386,9 @@
                 <button onclick="exportCSV()">CSV</button>
                 <button onclick="exportPDF()">PDF</button>
                 <button onclick="window.print()">Print</button>
-                <div class="search-box">
+                <!-- <div class="search-box">
                     <input type="text" id="searchInput" placeholder="Search..." onkeyup="searchTable()">
-                </div>
+                </div> -->
             </div>
 
             <!-- Report Table -->
@@ -334,8 +416,9 @@
             </div>
         </div>
     </div>
-    <script src="js/api.js"></script>
-    <script>
+
+<script src="js/api.js"></script>
+<script>
 
 // Initialize when document is ready
 document.addEventListener('DOMContentLoaded', function() {
@@ -364,6 +447,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
 });
 
+let selectedDeviceId = null;
+let devices = [];
+
 function setDefaultDates() {
     const now = new Date();
     const today = now.toISOString().split('T')[0];
@@ -374,65 +460,74 @@ function setDefaultDates() {
     document.getElementById('endTime').value = '23:59';
 }
 
+function toggleDropdown() {
+    const dropdown = document.getElementById('deviceDropdown');
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+}
+
+function filterVehicles(searchText) {
+    const vehicleList = document.getElementById('vehicleList');
+    const filteredDevices = devices.filter(device => 
+        device.dname.toLowerCase().includes(searchText.toLowerCase())
+    );
+    populateVehicleList(filteredDevices);
+}
+
+function selectVehicle(deviceId, deviceName) {
+    selectedDeviceId = deviceId;
+    document.getElementById('selectedVehicle').textContent = deviceName;
+    document.getElementById('deviceDropdown').style.display = 'none';
+    
+    // Fetch digital inputs for the selected device
+    fetchDigitalInputs(deviceId);
+}
+
+function populateVehicleList(devicesList) {
+    const vehicleList = document.getElementById('vehicleList');
+    vehicleList.innerHTML = '';
+    
+    devicesList.forEach(device => {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item';
+        item.textContent = device.dname;
+        item.onclick = () => selectVehicle(device.did, device.dname);
+        vehicleList.appendChild(item);
+    });
+}
+
 function fetchDevices() {
     const mid = localStorage.getItem("mid");
-    if (!mid) {
-        console.error("No member ID found");
-        return;
-    }
-
     fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
         .then(response => response.json())
         .then(data => {
-            const deviceSelect = document.getElementById('deviceSelect');
-            deviceSelect.innerHTML = '<option value="">Select Device</option>';
-            
-            if (Array.isArray(data)) {
-                data.forEach(device => {
-                    const option = document.createElement('option');
-                    option.value = device.did;
-                    option.textContent = device.dname || 'Unnamed Device';
-                    deviceSelect.appendChild(option);
-                });
-            }
+            devices = data;
+            populateVehicleList(data);
         })
-        .catch(error => console.error('Error fetching devices:', error));
+        .catch(error => console.error("Error fetching devices:", error));
 }
 
-function fetchDigitalInputs() {
-    const deviceSelect = document.getElementById('deviceSelect');
-    const selectedDevice = deviceSelect.value;
-    
-    if (!selectedDevice) {
-        alert("Please select a device first");
-        return;
-    }
-
-    fetch(`${API}opr=getdigitalinput&did=${selectedDevice}`)
+function fetchDigitalInputs(deviceId) {
+    fetch(`${API}opr=getdigitalinput&did=${deviceId}`)
         .then(response => response.json())
         .then(data => {
             const inputSelect = document.getElementById('inputSelect');
-            inputSelect.innerHTML = '<option value="">Select Input</option>'; 
+            inputSelect.innerHTML = '<option value="">Select Input</option>';
             
-            // Handle case where data is an array
-            
-                // Filter out null values and convert to string
+            if (Array.isArray(data[0])) {
                 const validInputs = data[0].filter(input => 
                     input !== null && 
                     input !== undefined && 
-                    String(input) !== "Null" &&
+                    String(input) !== "Null" && 
                     String(input) !== "null"
                 );
-
                 validInputs.forEach(input => {
                     const option = document.createElement('option');
                     option.value = String(input);
                     option.textContent = String(input);
                     inputSelect.appendChild(option);
                 });
+            }
             
-            
-            // Enable input select if we have valid options
             inputSelect.disabled = inputSelect.options.length <= 1;
         })
         .catch(error => {
@@ -444,10 +539,7 @@ function fetchDigitalInputs() {
 }
 
 function generateReport() {
-    const deviceSelect = document.getElementById('deviceSelect');
-    const selectedDevice = deviceSelect.value;
-    
-    if (!selectedDevice) {
+    if (!selectedDeviceId) {
         alert("Please select a device");
         return;
     }
@@ -471,7 +563,7 @@ function generateReport() {
     const fromdate = `${startDate} ${startTime}`;
     const todate = `${endDate} ${endTime}`;
 
-    const url = `${API}opr=getinputhistoryreport&ioreport=${input}&fromdate=${fromdate}&todate=${todate}&did=${selectedDevice}`;
+    const url = `${API}opr=getinputhistoryreport&ioreport=${input}&fromdate=${fromdate}&todate=${todate}&did=${selectedDeviceId}`;
 
     // Show loading state
     const reportBody = document.getElementById('reportData');
@@ -488,6 +580,15 @@ function generateReport() {
         });
 }
 
+// Close dropdown when clicking outside
+document.addEventListener("click", function(event) {
+    const dropdown = document.getElementById("deviceDropdown");
+    const deviceSelect = document.getElementById("deviceSelect");
+    
+    if (!event.target.closest(".device-selector")) {
+        dropdown.style.display = "none";
+    }
+});
 
 function displayReport(data) {
     const reportBody = document.getElementById('reportData');
@@ -637,10 +738,36 @@ function formatDateTime(dateTime) {
 }
 
 function resetForm() {
+    // Reset device selection
+    selectedDeviceId = null;
+    document.getElementById('selectedVehicle').textContent = 'Select Vehicle';
+    
+    // Reset date and time inputs
     setDefaultDates();
-    document.getElementById('inputSelect').selectedIndex = 0;
+    
+    // Reset input selection
+    document.getElementById('inputSelect').innerHTML = '<option value="">Select Input</option>';
+    
+    // Clear search input if exists
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
+    // Hide dropdown if open
+    const dropdown = document.getElementById('deviceDropdown');
+    if (dropdown) {
+        dropdown.style.display = 'none';
+    }
+    
+    // Clear the report data
     document.getElementById('reportData').innerHTML = '';
+    
+    // Clear the report summary
     document.getElementById('reportSummary').innerHTML = '';
+    
+    // Reset total times
+    displayTotalTimes(0, 0);
 }
 
 // Export functions

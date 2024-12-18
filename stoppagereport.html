@@ -351,22 +351,8 @@
 
         <div class="content">
             <div class="report-controls">
-                <!-- Start DateTime -->
-                <div class="date-group">
-                    <label>Start DateTime:</label>
-                    <input type="date" id="startDate">
-                    <input type="time" id="startTime" value="00:00">
-                </div>
-
-                <!-- End DateTime -->
-                <div class="date-group">
-                    <label>End DateTime:</label>
-                    <input type="date" id="endDate">
-                    <input type="time" id="endTime" value="23:59">
-                </div>
-
-                <!-- Device Selector -->
-                <div class="device-selector">
+                 <!-- Device Selector -->
+                 <div class="device-selector">
                     <div class="dropdown-container">
                         <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
                             Select Vehicles
@@ -389,6 +375,20 @@
                             <div class="dropdown-items" id="vehicleList"></div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Start DateTime -->
+                <div class="date-group">
+                    <label>Start DateTime:</label>
+                    <input type="date" id="startDate">
+                    <input type="time" id="startTime" value="00:00">
+                </div>
+
+                <!-- End DateTime -->
+                <div class="date-group">
+                    <label>End DateTime:</label>
+                    <input type="date" id="endDate">
+                    <input type="time" id="endTime" value="23:59">
                 </div>
 
                 <!-- Minimum Stop -->
@@ -420,9 +420,9 @@
                 <button onclick="exportPDF()">PDF</button>
             </div>
 
-            <div class="search-box">
+            <!-- <div class="search-box">
                 <input type="text" placeholder="Search..." id="searchInput">
-            </div>
+            </div> -->
 
             <div class="report-table">
                 <table>
