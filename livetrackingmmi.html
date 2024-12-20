@@ -817,6 +817,11 @@ function filterVehicles(searchText) {
 }
 
 function selectVehicle(deviceId, deviceName) {
+
+    hidePopup(true);
+    isPopupOpen = false;
+    currentPopupDid = null;
+    
     // Stop existing tracking
     if (isTracking) {
         stopTracking();
@@ -943,6 +948,10 @@ function fetchVehicleLocation(did) {
         });
 }
 
+let isPopupOpen = false;
+let currentPopupDid = null;
+
+// Modify the updateVehicleMarker function to handle popup behavior
 function updateVehicleMarker(vehicleData) {
     if (!vehicleData || vehicleData.length === 0) return;
 
@@ -953,59 +962,59 @@ function updateVehicleMarker(vehicleData) {
     }
 
     try {
-        // Parse coordinates
         const [lat, lng] = data.latlang.split(",").map(coord => parseFloat(coord));
         const position = {
-            lat: lat || 23.0225,  // Default if parsing fails
-            lng: lng || 72.5714   // Default if parsing fails
+            lat: lat || 23.0225,
+            lng: lng || 72.5714
         };
 
         if (!currentMarker) {
-          
-              console.log("Creating new marker at position:", position);
-                          
-              // Create marker using MapMyIndia's recommended syntax
-              currentMarker = new mappls.Marker({
-                  map: map,
-                  position: {
-                      lat: position.lat,
-                      lng: position.lng
-                  },
-                  fitbounds: true,
-                  icon: './deviceTracking/images/car_image_transparent.png',
-                  rotateWithMap: true, // Enable rotation with map movements
-                  popupHtml: generatePopupContent(data)
-              });
-              
-              // Center and zoom the map
-              map.flyTo({
-                  center: [position.lng, position.lat],
-                  zoom: 15,
-                  essential: true
-              });
-              lastPosition = position;
-              console.log('Marker created successfully:', currentMarker);
-              console.log('Current marker position:', [position.lng, position.lat]);
+            currentMarker = new mappls.Marker({
+                map: map,
+                position: {
+                    lat: position.lat,
+                    lng: position.lng
+                },
+                fitbounds: true,
+                icon: './deviceTracking/images/car_image_transparent.png',
+                rotateWithMap: true,
+                clickable: true // Make sure marker is clickable
+            });
+
+            // Add click event listener to marker
+            currentMarker.addListener('click', () => {
+                if (!isPopupOpen || currentPopupDid !== data.did) {
+                    showVehicleInfo(vehicleData, true);
+                    currentPopupDid = data.did;
+                    isPopupOpen = true;
+                }
+            });
+
+            map.flyTo({
+                center: [position.lng, position.lat],
+                zoom: 15,
+                essential: true
+            });
+            lastPosition = position;
         } else {
-            // Handle marker movement
+            // Update existing marker position and rotation
             if (lastPosition && !isAnimating) {
                 const angle = calculateBearing(lastPosition, position);
                 animateMarkerMovement(lastPosition, position, angle);
             } else {
-                // Direct update without animation
                 currentMarker.setPosition(position);
                 if (data.angle !== undefined) {
                     currentMarker.setRotation(data.angle);
                 }
             }
-
-            lastPosition = {...position}; // Create a copy of the position object
-
-            currentMarker.setPopupContent(generatePopupContent(data));
+            lastPosition = {...position};
         }
 
-        showVehicleInfo(vehicleData, true); // Show popup
-        updatePopupPosition();
+        // Only update popup if it's currently open
+        if (isPopupOpen && currentPopupDid === data.did) {
+            showVehicleInfo(vehicleData, true);
+            updatePopupPosition();
+        }
     } catch (error) {
         console.error('Error updating vehicle marker:', error);
     }
@@ -1125,17 +1134,23 @@ function showVehicleInfo(vehicleData, showPopup = false) {
     if (!vehicleData || vehicleData.length === 0) return;
 
     const data = vehicleData[0];
-
-    popupContent.innerHTML = generatePopupContent(data);
-
-    if (showPopup) {
+    
+    // Only show popup if explicitly requested and not already open
+    if (showPopup && (!isPopupOpen || currentPopupDid !== data.did)) {
+        popupContent.innerHTML = generatePopupContent(data);
         popup.style.display = "block";
+        updatePopupPosition();
+        isPopupOpen = true;
+        currentPopupDid = data.did;
+    } else if (isPopupOpen && currentPopupDid === data.did) {
+        // Update content if popup is already open for this device
+        popupContent.innerHTML = generatePopupContent(data);
         updatePopupPosition();
     }
 }
 
 function updatePopupPosition() {
-    if (currentMarker && popup.style.display === "block" && lastPosition) {
+    if (currentMarker && isPopupOpen && lastPosition) {
         const point = map.project(lastPosition);
         popup.style.left = `${point.x}px`;
         popup.style.top = `${point.y + 110}px`;
@@ -1144,6 +1159,13 @@ function updatePopupPosition() {
 
 function hidePopup(manuallyClosed = false) {
     popup.style.display = "none";
+    isPopupOpen = false;
+    currentPopupDid = null;
+    
+    // If manually closed, we want to prevent auto-showing
+    if (manuallyClosed) {
+        isPopupOpen = false;
+    }
 }
 
 function updateVehicleInfo(data) {
