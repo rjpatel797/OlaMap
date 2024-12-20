@@ -910,20 +910,20 @@
     
     // Initialize when document is ready
     $(document).ready(function() {
-        if (!localStorage.getItem('mid')) {
-            window.location.href = '/index.html';
-        }
-    
-        $("#navbar-container").load("navbarola.html", function() {
-            console.log("Navbar loaded successfully!");
+            if (!localStorage.getItem('mid')) {
+                window.location.href = '/index.html';
+            }
+
+            $("#navbar-container").load("navbarola.html", function() {
+                console.log("Navbar loaded successfully!");
+            });
+
+            const mid = localStorage.getItem("mid");
+            console.log("mid:::" + mid);
+
+            setDefaultDates();
+            loadMapScript();
         });
-    
-        const mid = localStorage.getItem("mid");
-        console.log("mid:::" + mid);
-    
-        setDefaultDates();
-        loadMapScript();
-    });
     
     // Load MapMyIndia SDK
     function loadMapScript() {
@@ -952,14 +952,14 @@
     
     // Initialize map
     function initMap1() {
-        map = new MapmyIndia.Map('map', { 
-            center: [28.638698386592438, 77.27604556863412],
-            zoomControl: true,
-            hybrid: true,
-            location: true,
-            zoom: 15
-        });
-    }
+            map = new MapmyIndia.Map('map', { 
+                center: [28.638698386592438, 77.27604556863412],
+                zoomControl: true,
+                hybrid: true,
+                location: true,
+                zoom: 15
+            });
+        }
     
     // Date handling functions
     function setDefaultDates() {
@@ -1100,107 +1100,234 @@
     
     // Marker and polyline functions
     function addPolyline() {
-        if (!playbackData || playbackData.length === 0) {
-            console.warn("No playback data available for polyline");
-            return;
-        }
-    
-        if (polyline) {
-            polyline.remove();
-        }
-    
-        try {
+            if (!playbackData || playbackData.length === 0) {
+                console.warn("No playback data available for polyline");
+                return;
+            }
+
+            // Remove existing polyline if it exists
+            if (polyline) {
+                map.removeLayer(polyline);
+            }
+
+            // Format coordinates to the required format with lat and lng properties
+            const path = playbackData.map(point => ({
+                lat: point.coordinates[0],  // latitude
+                lng: point.coordinates[1]   // longitude
+            }));
+
+            // Create polyline using the correct syntax
             polyline = new MapmyIndia.Polyline({
                 map: map,
-                path: pathCoordinates,
+                path: path,
                 strokeColor: '#FF0000',
                 strokeOpacity: 0.8,
                 strokeWeight: 3
             });
-    
-            const bounds = new MapmyIndia.LatLngBounds();
-            pathCoordinates.forEach(coord => bounds.extend(new MapmyIndia.LatLng(coord[0], coord[1])));
-    
-            map.fitBounds(bounds, { padding: 50 });
-        } catch (error) {
-            console.error("Error adding polyline:", error);
         }
-    }
+
+// Helper function to calculate bounds
+function getBoundsFromPath(path) {
+    let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+    path.forEach(coord => {
+        const lng = coord[0], lat = coord[1];
+        minLat = Math.min(minLat, lat);
+        maxLat = Math.max(maxLat, lat);
+        minLng = Math.min(minLng, lng);
+        maxLng = Math.max(maxLng, lng);
+    });
+    return [[minLng, minLat], [maxLng, maxLat]];
+}
+
+function addStartEndMarkers() {
+    if (!playbackData || playbackData.length < 2) return;
+
+    // Remove existing markers
+    if (startMarker) startMarker.remove();
+    if (endMarker) endMarker.remove();
+
+    const startPoint = playbackData[0];
+    const endPoint = playbackData[playbackData.length - 1];
+
+    // Create start marker
+    startMarker = new MapmyIndia.marker({
+        map: map,
+        position: [startPoint.coordinates[1], startPoint.coordinates[0]], // [longitude, latitude]
+        icon: createCustomMarker('S', '#2ecc71', startPoint.date),
+        draggable: false,
+        size: { width: 35, height: 45 }
+    });
+
+    // Create end marker
+    endMarker = new MapmyIndia.marker({
+        map: map,
+        position: [endPoint.coordinates[1], endPoint.coordinates[0]], // [longitude, latitude]
+        icon: createCustomMarker('E', '#e74c3c', endPoint.date),
+        draggable: false,
+        size: { width: 35, height: 45 }
+    });
+}
+
+function createCustomMarker(label, color, timestamp) {
+    // Create marker container
+    const markerElement = document.createElement('div');
+    markerElement.style.position = 'relative';
     
-    function createVehicleMarker() {
-        const markerElement = document.createElement('div');
-        markerElement.className = 'vehicle-marker';
-        markerElement.style.position = 'relative';
+    // Add timestamp display
+    const timeContainer = document.createElement('div');
+    timeContainer.style.backgroundColor = 'white';
+    timeContainer.style.padding = '4px 8px';
+    timeContainer.style.borderRadius = '4px';
+    timeContainer.style.fontSize = '12px';
+    timeContainer.style.marginBottom = '5px';
+    timeContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+    timeContainer.style.whiteSpace = 'nowrap';
+    timeContainer.textContent = timestamp.split('.')[0];
     
-        const img = document.createElement('img');
-        img.src = 'images/truck1.png';
-        img.style.width = '40px';
-        img.style.height = '20px';
-        img.style.transform = 'translate(-50%, -50%)';
-        img.style.position = 'absolute';
-        img.style.top = '50%';
-        img.style.left = '50%';
+    // Create marker circle
+    const circle = document.createElement('div');
+    circle.style.width = '24px';
+    circle.style.height = '24px';
+    circle.style.backgroundColor = color;
+    circle.style.borderRadius = '50%';
+    circle.style.color = 'white';
+    circle.style.display = 'flex';
+    circle.style.alignItems = 'center';
+    circle.style.justifyContent = 'center';
+    circle.style.fontWeight = 'bold';
+    circle.style.border = '2px solid white';
+    circle.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+    circle.textContent = label;
+
+    markerElement.appendChild(timeContainer);
+    markerElement.appendChild(circle);
     
-        markerElement.appendChild(img);
-        return markerElement;
-    }
+    return markerElement;
+}
+
+function createVehicleMarker() {
+    const markerElement = document.createElement('div');
+    markerElement.className = 'customMarkerClass';
+    
+    const carImage = document.createElement('img');
+    carImage.src = 'images/truck1.png';
+    carImage.className = 'carImage';
+    carImage.alt = 'Vehicle';
+    
+    carImage.onload = () => {
+        markerElement.style.display = 'block';
+    };
+    
+    carImage.onerror = () => {
+        console.error('Error loading vehicle image');
+        // Fallback to a simple circle if image fails to load
+        const fallback = document.createElement('div');
+        fallback.style.width = '20px';
+        fallback.style.height = '20px';
+        fallback.style.backgroundColor = 'red';
+        fallback.style.borderRadius = '50%';
+        markerElement.appendChild(fallback);
+    };
+    
+    markerElement.appendChild(carImage);
+    return markerElement;
+}
+
     
     // Playback control functions
     function startPlayback() {
-        if (!selectedDeviceId) {
-            alert('Please select a vehicle');
-            return;
+    if (!selectedDeviceId) {
+        alert('Please select a vehicle first');
+        return;
+    }
+
+    if (!playbackData || playbackData.length === 0) {
+        alert('No playback data available');
+        return;
+    }
+
+    if (playbackInterval) {
+        clearInterval(playbackInterval);
+    }
+
+    if (!isPaused) {
+        index = 0;
+        totalDistance = 0;
+    }
+    isPaused = false;
+
+    try {
+        // Create or update vehicle marker
+        if (!vehicleMarker) {
+            vehicleMarker = new MapmyIndia.marker({
+                map: map,
+                position: [
+                    playbackData[0].coordinates[1],
+                    playbackData[0].coordinates[0]
+                ],
+                icon: createVehicleMarker(),
+                draggable: false,
+                size: { width: 40, height: 40 }
+            });
         }
-    
-        if (!playbackData || playbackData.length === 0) {
-            alert('No playback data available');
-            return;
-        }
-    
-        if (playbackInterval) {
-            clearInterval(playbackInterval);
-        }
-    
-        if (!isPaused) {
-            index = 0;
-        }
-        isPaused = false;
-    
-        try {
-            if (!vehicleMarker) {
-                const markerElement = createVehicleMarker();
-                vehicleMarker = new MapmyIndia.Marker({
-                    map: map,
-                    position: playbackData[0].coordinates,
-                    icon: markerElement,
-                    draggable: false,
-                    rotationAngle: playbackData[0].angle
-                });
+
+        playbackInterval = setInterval(() => {
+            if (index >= playbackData.length) {
+                stopPlayback();
+                return;
             }
-    
-            playbackInterval = setInterval(() => {
-                if (index >= playbackData.length) {
-                    stopPlayback();
-                    return;
-                }
-    
-                const point = playbackData[index];
-    
-                vehicleMarker.setPosition(point.coordinates);
-                vehicleMarker.setRotation(point.angle);
-                map.setCenter(point.coordinates);
-    
-                updateInfoDisplay(point);
-    
-                index++;
-            }, 1000);
-    
-        } catch (error) {
-            console.error("Error in startPlayback:", error);
-            alert("Error starting playback. Please try again.");
+
+            const currentPoint = playbackData[index];
+            
+            // Update marker position
+            vehicleMarker.setPosition([
+                currentPoint.coordinates[1],
+                currentPoint.coordinates[0]
+            ]);
+
+            // Update map center
+            map.setCenter([
+                currentPoint.coordinates[1],
+                currentPoint.coordinates[0]
+            ]);
+
+            // Update rotation
+            updateVehicleRotation(currentPoint.angle);
+
+            // Calculate distance
+            if (index > 0) {
+                const prevPoint = playbackData[index - 1];
+                totalDistance += calculateDistance(
+                    prevPoint.coordinates[0],
+                    prevPoint.coordinates[1],
+                    currentPoint.coordinates[0],
+                    currentPoint.coordinates[1]
+                );
+            }
+
+            // Update info displays
+            updateVehicleInfo(currentPoint, totalDistance);
+
+            index++;
+        }, 1000);
+
+    } catch (error) {
+        console.error('Error in startPlayback:', error);
+        alert('Error starting playback. Please try again.');
+    }
+}
+
+function updateVehicleRotation(angle) {
+    const markerElement = vehicleMarker.getElement();
+    if (markerElement) {
+        const imageElement = markerElement.querySelector('.carImage');
+        if (imageElement) {
+            const rotationAngle = (angle + 90) % 360;
+            imageElement.style.transform = `translate(-50%, -50%) rotate(${rotationAngle}deg)`;
         }
     }
-    
+}
+
     function pausePlayback() {
         if (playbackInterval) {
             clearInterval(playbackInterval);
@@ -1209,15 +1336,31 @@
     }
     
     function stopPlayback() {
-        clearInterval(playbackInterval);
-        if (vehicleMarker) {
-            vehicleMarker.remove();
-            vehicleMarker = null;
-        }
-        index = 0;
-        isPaused = false;
-        updateInfoDisplay(null);
+    clearInterval(playbackInterval);
+    playbackInterval = null;
+    
+    if (vehicleMarker) {
+        vehicleMarker.setMap(null);
+        vehicleMarker = null;
     }
+    
+    index = 0;
+    isPaused = false;
+    totalDistance = 0;
+    
+    // Reset info displays
+    document.getElementById('speedDisplay').textContent = '0 km/h';
+    document.getElementById('dateTimeDisplay').textContent = '--';
+    document.getElementById('distanceDisplay').textContent = '0.00 km';
+    
+    // Center map on first coordinate if available
+    if (playbackData && playbackData.length > 0) {
+        map.setCenter(new MapmyIndia.LatLng(
+            playbackData[0].coordinates[0],
+            playbackData[0].coordinates[1]
+        ));
+    }
+}
     
     // Helper functions
     function isValidCoordinate(lng, lat) {
@@ -1233,17 +1376,26 @@
         );
     }
     
-    function updateInfoDisplay(point) {
-        if (!point) {
-            document.getElementById('speedDisplay').textContent = '0 km/h';
-            document.getElementById('dateTimeDisplay').textContent = '--';
-            document.getElementById('distanceDisplay').textContent = '0 km';
-            return;
-        }
-    
-        document.getElementById('speedDisplay').textContent = `${Math.round(point.speed)} km/h`;
-        document.getElementById('dateTimeDisplay').textContent = point.date.split('.')[0];
-    }
+    function updateVehicleInfo(data, distance) {
+    document.getElementById('speedDisplay').textContent = 
+        `${Math.round(data.speed)} km/h`;
+    document.getElementById('dateTimeDisplay').textContent = 
+        data.date.split('.')[0];
+    document.getElementById('distanceDisplay').textContent = 
+        `${distance.toFixed(2)} km`;
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
     
     // Event listeners
     document.addEventListener('click', function(event) {
