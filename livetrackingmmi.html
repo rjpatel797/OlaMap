@@ -196,7 +196,7 @@
       text-align: left;
       transform: translate(-50%, -100%);
       /* Center horizontally and move up */
-      margin-top: -40px;
+      margin-top: 70px;
       /* Increased negative margin to move higher */
     }
 
@@ -746,16 +746,16 @@
 
       <script src="js/api.js"></script>
       <script>
-        let map;
-let currentMarker = null;
-let trackingInterval = null;
-let isTracking = false;
-let lastPosition = null;
-let isAnimating = false;
-let isMapDragging = false;
-let devices = [];
-const popup = document.getElementById("customPopup");
-const popupContent = document.getElementById("popupContent");
+      let map;
+      let currentMarker = null;
+      let trackingInterval = null;
+      let isTracking = false;
+      let lastPosition = null;
+      let isAnimating = false;
+      let isMapDragging = false;
+      let devices = [];
+      const popup = document.getElementById("customPopup");
+      const popupContent = document.getElementById("popupContent");
 
 // Create and append MapMyIndia script dynamically
 const script = document.createElement('script');
@@ -968,7 +968,10 @@ function updateVehicleMarker(vehicleData) {
             lng: lng || 72.5714
         };
 
+        const initialAngle = parseFloat(data.angle) || 0;
+
         if (!currentMarker) {
+            // Create new marker
             currentMarker = new mappls.Marker({
                 map: map,
                 position: {
@@ -978,41 +981,60 @@ function updateVehicleMarker(vehicleData) {
                 fitbounds: true,
                 icon: './deviceTracking/images/car_image_transparent.png',
                 rotateWithMap: true,
-                clickable: true // Make sure marker is clickable
+                clickable: true
             });
 
-            // Add click event listener to marker
+            currentMarker.setRotation(initialAngle);
+
+            // Add click event listener
             currentMarker.addListener('click', () => {
                 if (!isPopupOpen || currentPopupDid !== data.did) {
                     showVehicleInfo(vehicleData, true);
                     currentPopupDid = data.did;
                     isPopupOpen = true;
+                    
+                    // Force immediate popup position update
+                    setTimeout(() => {
+                        updatePopupPosition();
+                    }, 100);
                 }
             });
 
+            // Center map on marker
             map.flyTo({
                 center: [position.lng, position.lat],
                 zoom: 15,
                 essential: true
             });
+            
             lastPosition = position;
+            
+            // Update popup position after map movement completes
+            map.once('moveend', () => {
+                if (isPopupOpen) {
+                    updatePopupPosition();
+                }
+            });
         } else {
-            // Update existing marker position and rotation
+            // Update existing marker
             if (lastPosition && !isAnimating) {
-                const angle = calculateBearing(lastPosition, position);
-                animateMarkerMovement(lastPosition, position, angle);
+                let targetAngle = initialAngle;
+                
+                if (lastPosition.lat !== position.lat || lastPosition.lng !== position.lng) {
+                    targetAngle = calculateBearing(lastPosition, position);
+                }
+
+                animateMarkerMovement(lastPosition, position, targetAngle);
             } else {
                 currentMarker.setPosition(position);
-                if (data.angle !== undefined) {
-                    currentMarker.setRotation(data.angle);
-                }
+                currentMarker.setRotation(initialAngle);
             }
             lastPosition = {...position};
         }
 
-        // Only update popup if it's currently open
+        // Update popup if open
         if (isPopupOpen && currentPopupDid === data.did) {
-            showVehicleInfo(vehicleData, true);
+            showVehicleInfo(vehicleData, false);
             updatePopupPosition();
         }
     } catch (error) {
@@ -1043,7 +1065,7 @@ function calculateBearing(start, end) {
         Math.sin(startLat) * Math.cos(endLat) * Math.cos(dLng);
 
     let bearing = Math.atan2(y, x) * 180 / Math.PI;
-    bearing = (bearing + 360) % 360; // Normalize to 0-360
+    bearing = (bearing + 360) % 360;
 
     return bearing;
 }
@@ -1053,11 +1075,14 @@ function animateMarkerMovement(from, to, finalAngle) {
     isAnimating = true;
 
     const startTime = performance.now();
-    const duration = 20000;
+    const duration = 15000; // Reduced duration for smoother updates
 
     const startAngle = currentMarker.getRotation() || 0;
     let angleDiff = ((finalAngle - startAngle + 180) % 360) - 180;
+    
+    // Choose shortest rotation path
     if (angleDiff < -180) angleDiff += 360;
+    if (angleDiff > 180) angleDiff -= 360;
 
     function animate(currentTime) {
         if (isMapDragging) {
@@ -1078,6 +1103,12 @@ function animateMarkerMovement(from, to, finalAngle) {
 
         currentMarker.setPosition(currentPosition);
         currentMarker.setRotation(currentAngle);
+        
+        lastPosition = currentPosition;
+        
+        if (isPopupOpen) {
+            updatePopupPosition();
+        }
 
         if (progress < 1) {
             requestAnimationFrame(animate);
@@ -1135,25 +1166,62 @@ function showVehicleInfo(vehicleData, showPopup = false) {
 
     const data = vehicleData[0];
     
-    // Only show popup if explicitly requested and not already open
     if (showPopup && (!isPopupOpen || currentPopupDid !== data.did)) {
         popupContent.innerHTML = generatePopupContent(data);
         popup.style.display = "block";
-        updatePopupPosition();
+        
+        // Force layout recalculation before positioning
+        popup.getBoundingClientRect();
+        
+        requestAnimationFrame(() => {
+            updatePopupPosition();
+        });
+        
         isPopupOpen = true;
         currentPopupDid = data.did;
     } else if (isPopupOpen && currentPopupDid === data.did) {
-        // Update content if popup is already open for this device
         popupContent.innerHTML = generatePopupContent(data);
         updatePopupPosition();
     }
 }
 
 function updatePopupPosition() {
-    if (currentMarker && isPopupOpen && lastPosition) {
-        const point = map.project(lastPosition);
-        popup.style.left = `${point.x}px`;
-        popup.style.top = `${point.y + 110}px`;
+    if (!currentMarker || !isPopupOpen || !lastPosition || !map) return;
+
+    try {
+        // Get the marker's pixel coordinates on the map
+        const markerPoint = map.project([lastPosition.lng, lastPosition.lat]);
+        
+        // Get the map container dimensions
+        const mapContainer = map.getContainer();
+        const mapRect = mapContainer.getBoundingClientRect();
+        
+        // Calculate popup position relative to the map container
+        const popupLeft = markerPoint.x;
+        const popupTop = markerPoint.y - 15; // Offset to position above marker
+        
+        // Update popup position
+        popup.style.left = `${popupLeft}px`;
+        popup.style.top = `${popupTop}px`;
+        
+        // Ensure popup stays within map bounds
+        const popupRect = popup.getBoundingClientRect();
+        const mapBounds = {
+            left: mapRect.left,
+            right: mapRect.right,
+            top: mapRect.top,
+            bottom: mapRect.bottom
+        };
+        
+        // Adjust if popup goes outside map bounds
+        if (popupLeft + popupRect.width > mapBounds.right) {
+            popup.style.left = `${mapBounds.right - popupRect.width - 10}px`;
+        }
+        if (popupTop < mapBounds.top) {
+            popup.style.top = `${markerPoint.y + 30}px`; // Show below marker instead
+        }
+    } catch (error) {
+        console.error('Error updating popup position:', error);
     }
 }
 
