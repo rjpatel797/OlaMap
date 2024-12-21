@@ -929,37 +929,42 @@
     function loadMapScript() {
         const key = localStorage.getItem("key");
         if (!key) {
-            console.error("No API key found");
+            console.error("No API key found in localStorage.");
             return;
         }
-    
+
         const script = document.createElement('script');
-        script.src = `https://apis.mapmyindia.com/advancedmaps/v1/${key}/map_load?v=1.5`;
+        script.src = `https://apis.mapmyindia.com/advancedmaps/api/${key}/map_sdk?layer=vector&v=2.0&callback=initMap1`;
         script.defer = true;
         script.async = true;
-    
+
         script.onload = function() {
-            initMap1();
+            console.log("MapmyIndia SDK loaded successfully.");
+            // No need to call initMap1 here as it's invoked by the callback
             fetchDeviceData();
         };
-    
+
         script.onerror = function() {
-            console.error("Error loading MapMyIndia SDK");
+            console.error("Error loading MapmyIndia SDK.");
         };
-    
+
         document.head.appendChild(script);
     }
+
     
     // Initialize map
     function initMap1() {
-            map = new MapmyIndia.Map('map', { 
+        map = new MapmyIndia.Map('map', { 
                 center: [28.638698386592438, 77.27604556863412],
                 zoomControl: true,
                 hybrid: true,
                 location: true,
-                zoom: 15
+                zoom: 15,
+                scrollWheelZoom: true,
+                continuousWorld: true
             });
         }
+    
     
     // Date handling functions
     function setDefaultDates() {
@@ -1100,110 +1105,213 @@
     
     // Marker and polyline functions
     function addPolyline() {
-            if (!playbackData || playbackData.length === 0) {
-                console.warn("No playback data available for polyline");
-                return;
-            }
+    if (!playbackData || playbackData.length === 0) {
+        console.warn("No playback data available for polyline");
+        return;
+    }
 
-            // Remove existing polyline if it exists
-            if (polyline) {
-                map.removeLayer(polyline);
-            }
+    // Debug log to check polyline state
+    console.log("Current polyline object:", polyline);
 
-            // Format coordinates to the required format with lat and lng properties
-            const path = playbackData.map(point => ({
-                lat: point.coordinates[0],  // latitude
-                lng: point.coordinates[1]   // longitude
-            }));
-
-            // Create polyline using the correct syntax
-            polyline = new MapmyIndia.Polyline({
-                map: map,
-                path: path,
-                strokeColor: '#FF0000',
-                strokeOpacity: 0.8,
-                strokeWeight: 3
-            });
+    try {
+        // If a polyline exists, attempt to remove it
+        if (polyline) {
+            polyline.setMap(null);  // Try to remove polyline from map
+            polyline = null;        // Clear the reference
         }
 
-// Helper function to calculate bounds
-function getBoundsFromPath(path) {
+        // Format coordinates to the required format
+        const path = playbackData.map(point => ({
+            lat: point.coordinates[0],
+            lng: point.coordinates[1]
+        }));
+
+        // Create new polyline
+        polyline = new MapmyIndia.Polyline({
+            map: map,
+            path: path,
+            strokeColor: '#FF0000',
+            strokeOpacity: 0.8,
+            strokeWeight: 3
+        });
+
+        // Debug log for new polyline
+        console.log("New polyline created:", polyline);
+
+        // Calculate and set bounds to fit the polyline
+        setMapBounds(path);
+
+    } catch (error) {
+        console.error("Error with polyline management:", error);
+        // Attempt recovery
+        polyline = null;
+    }
+}
+
+function setMapBounds(path) {
+    if (!path || path.length === 0) return;
+
     let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+
     path.forEach(coord => {
-        const lng = coord[0], lat = coord[1];
-        minLat = Math.min(minLat, lat);
-        maxLat = Math.max(maxLat, lat);
-        minLng = Math.min(minLng, lng);
-        maxLng = Math.max(maxLng, lng);
+        const lat = coord.lat;
+        const lng = coord.lng;
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+        if (lng < minLng) minLng = lng;
+        if (lng > maxLng) maxLng = lng;
     });
-    return [[minLng, minLat], [maxLng, maxLat]];
+
+    // Calculate center of the bounds
+    const centerLat = (minLat + maxLat) / 2;
+    const centerLng = (minLng + maxLng) / 2;
+    const center = [centerLng, centerLat]; // [longitude, latitude]
+
+    // Optional: Define padding in pixels
+    const padding = [50, 50]; // [topBottom, leftRight]
+
+    // Use flyTo to center the map on the calculated center point
+    // map.flyTo({
+    //     center: center,
+    //     zoom: 15, // Adjust zoom level as needed
+    //     essential: true
+    // });
+
+    console.log("map", map.fitBounds)
+
+    // Alternatively, if you prefer to ensure the entire polyline is visible,
+    // you can use flyToBounds instead of calculating the center.
+    
+    const bounds = [
+    [minLng, minLat], // [lng, lat] for southwest corner
+    [maxLng, maxLat] 
+    ];
+    map.fitBounds(bounds, {
+        padding: 50, // Optional padding in pixels
+        duration: 5   // Optional animation duration in seconds
+    });
+    
 }
 
 function addStartEndMarkers() {
-    if (!playbackData || playbackData.length < 2) return;
+    if (!playbackData || playbackData.length < 2) {
+        console.warn("Insufficient playback data for markers");
+        return;
+    }
 
     // Remove existing markers
-    if (startMarker) startMarker.remove();
-    if (endMarker) endMarker.remove();
+    if (startMarker) {
+        startMarker.remove();
+    }
+    if (endMarker) {
+        endMarker.remove();
+    }
 
     const startPoint = playbackData[0];
     const endPoint = playbackData[playbackData.length - 1];
 
-    // Create start marker
-    startMarker = new MapmyIndia.marker({
-        map: map,
-        position: [startPoint.coordinates[1], startPoint.coordinates[0]], // [longitude, latitude]
-        icon: createCustomMarker('S', '#2ecc71', startPoint.date),
-        draggable: false,
-        size: { width: 35, height: 45 }
-    });
+    try {
+        // Create start marker
+        startMarker = new MapmyIndia.Marker({
+            map: map,
+            position: {
+                lat: startPoint.coordinates[0],
+                lng: startPoint.coordinates[1]
+            },
+            fitbounds: true,
+            icon: createStartEndIcon('S', '#2ecc71', startPoint.date),
+            iconSize: [40, 40],
+            draggable: false,
+            popupHtml: `Start Time: ${startPoint.date}`
+        });
 
-    // Create end marker
-    endMarker = new MapmyIndia.marker({
-        map: map,
-        position: [endPoint.coordinates[1], endPoint.coordinates[0]], // [longitude, latitude]
-        icon: createCustomMarker('E', '#e74c3c', endPoint.date),
-        draggable: false,
-        size: { width: 35, height: 45 }
-    });
+        // Create end marker
+        endMarker = new MapmyIndia.Marker({
+            map: map,
+            position: {
+                lat: endPoint.coordinates[0],
+                lng: endPoint.coordinates[1]
+            },
+            fitbounds: true,
+            icon: createStartEndIcon('E', '#e74c3c', endPoint.date),
+            iconSize: [40, 40],
+            draggable: false,
+            popupHtml: `End Time: ${endPoint.date}`
+        });
+
+        console.log("Start marker coordinates:", startPoint.coordinates);
+        console.log("End marker coordinates:", endPoint.coordinates);
+    } catch (error) {
+        console.error("Error creating markers:", error);
+        console.error("Start point data:", startPoint);
+        console.error("End point data:", endPoint);
+    }
 }
 
-function createCustomMarker(label, color, timestamp) {
-    // Create marker container
-    const markerElement = document.createElement('div');
-    markerElement.style.position = 'relative';
-    
-    // Add timestamp display
-    const timeContainer = document.createElement('div');
-    timeContainer.style.backgroundColor = 'white';
-    timeContainer.style.padding = '4px 8px';
-    timeContainer.style.borderRadius = '4px';
-    timeContainer.style.fontSize = '12px';
-    timeContainer.style.marginBottom = '5px';
-    timeContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-    timeContainer.style.whiteSpace = 'nowrap';
-    timeContainer.textContent = timestamp.split('.')[0];
-    
-    // Create marker circle
-    const circle = document.createElement('div');
-    circle.style.width = '24px';
-    circle.style.height = '24px';
-    circle.style.backgroundColor = color;
-    circle.style.borderRadius = '50%';
-    circle.style.color = 'white';
-    circle.style.display = 'flex';
-    circle.style.alignItems = 'center';
-    circle.style.justifyContent = 'center';
-    circle.style.fontWeight = 'bold';
-    circle.style.border = '2px solid white';
-    circle.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-    circle.textContent = label;
+function createStartEndIcon(label, color, timestamp) {
+    // Create a canvas to draw the marker
+    const canvas = document.createElement('canvas');
+    canvas.width = 40;
+    canvas.height = 40;
+    const ctx = canvas.getContext('2d');
 
-    markerElement.appendChild(timeContainer);
-    markerElement.appendChild(circle);
-    
-    return markerElement;
+    // Draw circle
+    ctx.beginPath();
+    ctx.arc(20, 20, 15, 0, 2 * Math.PI);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Add label
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, 20, 20);
+
+    // Convert canvas to image URL
+    return canvas.toDataURL();
 }
+
+
+// function createCustomMarker(label, color, timestamp) {
+//     // Create marker container
+//     const markerElement = document.createElement('div');
+//     markerElement.style.position = 'relative';
+    
+//     // Add timestamp display
+//     const timeContainer = document.createElement('div');
+//     timeContainer.style.backgroundColor = 'white';
+//     timeContainer.style.padding = '4px 8px';
+//     timeContainer.style.borderRadius = '4px';
+//     timeContainer.style.fontSize = '12px';
+//     timeContainer.style.marginBottom = '5px';
+//     timeContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+//     timeContainer.style.whiteSpace = 'nowrap';
+//     timeContainer.textContent = timestamp.split('.')[0];
+    
+//     // Create marker circle
+//     const circle = document.createElement('div');
+//     circle.style.width = '24px';
+//     circle.style.height = '24px';
+//     circle.style.backgroundColor = color;
+//     circle.style.borderRadius = '50%';
+//     circle.style.color = 'white';
+//     circle.style.display = 'flex';
+//     circle.style.alignItems = 'center';
+//     circle.style.justifyContent = 'center';
+//     circle.style.fontWeight = 'bold';
+//     circle.style.border = '2px solid white';
+//     circle.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+//     circle.textContent = label;
+
+//     markerElement.appendChild(timeContainer);
+//     markerElement.appendChild(circle);
+    
+//     return markerElement;
+// }
 
 function createVehicleMarker() {
     const markerElement = document.createElement('div');
@@ -1259,7 +1367,7 @@ function createVehicleMarker() {
     try {
         // Create or update vehicle marker
         if (!vehicleMarker) {
-            vehicleMarker = new MapmyIndia.marker({
+            vehicleMarker = new MapmyIndia.Marker({
                 map: map,
                 position: [
                     playbackData[0].coordinates[1],
