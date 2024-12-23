@@ -797,7 +797,7 @@
                     
                     if (Array.isArray(data)) {
                         const formattedData = data.map(item => ({
-                            deviceGroup: 'Personal', // or any default group
+                            deviceGroup: item.deviceGroup, // or any default group
                             devicename: item.devicename || 'undefined',
                             distance: item.distance || item.mileage || 0,
                             MaxSpeed: item.MaxSpeed || item.AvgSpeed || 0,
@@ -808,7 +808,7 @@
                     } else if (data && typeof data === 'object') {
                         // If single object, wrap in array
                         const formattedData = [{
-                            deviceGroup: 'Personal',
+                            deviceGroup: data.deviceGroup,
                             devicename: data.devicename || 'undefined',
                             distance: data.distance || data.mileage || 0,
                             MaxSpeed: data.MaxSpeed || data.AvgSpeed || 0,
@@ -850,7 +850,7 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${item.deviceGroup || 'N/A'}</td>
-                    <td>${item.devicesname || 'N/A'}</td>
+                    <td>${item.devicename || 'N/A'}</td>
                     <td>${item.distance || item.mileage || '0'}</td>
                     <td>${item.MaxSpeed || item.AvgSpeed || '0'}</td>
                     <td>${formatTime(item.DriveTime)}</td>
