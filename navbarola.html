@@ -482,6 +482,8 @@
           $("#custom-alert").css("display", "none");
            // Delete user data from local storage
           localStorage.removeItem('mid');
+          localStorage.removeItem('key');
+          localStorage.removeItem('keyType');
           window.location.href = "index.html";
           window.history.replaceState(null, null, "index.html");
         });

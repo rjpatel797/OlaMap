@@ -1219,10 +1219,7 @@ function addStartEndMarkers() {
                 lng: startPoint.coordinates[1]
             },
             fitbounds: true,
-            icon: createStartEndIcon('S', '#2ecc71', startPoint.date),
-            iconSize: [40, 40],
-            draggable: false,
-            popupHtml: `Start Time: ${startPoint.date}`
+            icon: createStartEndIcon('S', '#2ecc71')
         });
 
         // Create end marker
@@ -1233,23 +1230,19 @@ function addStartEndMarkers() {
                 lng: endPoint.coordinates[1]
             },
             fitbounds: true,
-            icon: createStartEndIcon('E', '#e74c3c', endPoint.date),
-            iconSize: [40, 40],
-            draggable: false,
-            popupHtml: `End Time: ${endPoint.date}`
+            icon: createStartEndIcon('E', '#e74c3c')
         });
 
-        console.log("Start marker coordinates:", startPoint.coordinates);
-        console.log("End marker coordinates:", endPoint.coordinates);
+        // Add permanent timestamp labels without prefixes
+        addPermanentLabel(startMarker, startPoint.date);
+        addPermanentLabel(endMarker, endPoint.date);
+
     } catch (error) {
         console.error("Error creating markers:", error);
-        console.error("Start point data:", startPoint);
-        console.error("End point data:", endPoint);
     }
 }
 
-function createStartEndIcon(label, color, timestamp) {
-    // Create a canvas to draw the marker
+function createStartEndIcon(label, color) {
     const canvas = document.createElement('canvas');
     canvas.width = 40;
     canvas.height = 40;
@@ -1271,9 +1264,47 @@ function createStartEndIcon(label, color, timestamp) {
     ctx.textBaseline = 'middle';
     ctx.fillText(label, 20, 20);
 
-    // Convert canvas to image URL
     return canvas.toDataURL();
 }
+
+function addPermanentLabel(marker, timestamp) {
+    const markerElement = marker.getElement();
+    if (!markerElement) return;
+
+    // Create label container
+    const labelContainer = document.createElement('div');
+    labelContainer.style.position = 'absolute';
+    labelContainer.style.top = '-35px';  // Position above marker
+    labelContainer.style.left = '50%';
+    labelContainer.style.transform = 'translateX(-50%)';
+    labelContainer.style.backgroundColor = 'white';
+    labelContainer.style.padding = '4px 8px';
+    labelContainer.style.borderRadius = '4px';
+    labelContainer.style.fontSize = '12px';
+    labelContainer.style.fontWeight = '600';  // Made font bolder
+    labelContainer.style.whiteSpace = 'nowrap';
+    labelContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+    labelContainer.style.zIndex = '1000';
+    labelContainer.style.pointerEvents = 'none';
+
+    // Set the timestamp without prefix
+    labelContainer.textContent = timestamp.split('.')[0];
+
+    // Append label to marker
+    markerElement.appendChild(labelContainer);
+}
+
+// Optional: Add this to your map event listener to ensure labels stay visible
+map.on('zoom', function() {
+    if (startMarker) {
+        const startLabel = startMarker.getElement().querySelector('div');
+        if (startLabel) startLabel.style.display = 'block';
+    }
+    if (endMarker) {
+        const endLabel = endMarker.getElement().querySelector('div');
+        if (endLabel) endLabel.style.display = 'block';
+    }
+});
 
 
 // function createCustomMarker(label, color, timestamp) {
