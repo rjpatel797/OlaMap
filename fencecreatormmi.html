@@ -1221,19 +1221,45 @@ searchInput.addEventListener('input', (e) => {
     }, 300);
 });
 
-        async function searchPlaces(query) {
-            const key = localStorage.getItem("key");
-            try {
-                const response = await fetch(`https://apis.mapmyindia.com/advancedmaps/v1/${key}/geo_code?addr=${encodeURIComponent(query)}`);
-                const data = await response.json();
+async function getAccessToken() {
+  
+    const response = await fetch('https://outpost.mapmyindia.com/api/security/oauth/token?grant_type=client_credentials&client_id=96dHZVzsAusCpR-_JQkI9mKrLq7dwaVjySpE_HOwNnH5eb2BGLuRL7qhUNxikRtPCyjTxNYxapFWLu60JlXKpe48uFsJHRcK&client_secret=lrFxI-iSEg9upCTBAPswuyca4nw5ZmE2mCqgQ2g7IViy0cttGh6aE9DmoPrPSG2qqmHu0_9ukWOo-NgfT1JYsLz1q9OUR9dT0GYS1vNLE_M=', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded'
+  }
+});
 
-                if (data.results && Array.isArray(data.results)) {
-                    displaySuggestions(data.results);
-                }
-            } catch (error) {
-                console.error('Error searching places:', error);
-            }
-        }
+    const data = await response.json();
+    return data.access_token;
+  } 
+  let access_token;
+  getAccessToken().then((response => access_token = response.data));
+  console.log(access_token);
+
+async function searchPlaces(query) {
+    
+        
+
+        // const response = await fetch(`https://atlas.mapmyindia.com/api/places/geocode?address=${encodeURIComponent(query)}&itemCount=5`, {
+        //     headers: {
+        //         'Authorization': `Bearer ${access_token}`
+        //     }
+        // });
+
+        // // if (!response.ok) {
+        // //     throw new Error(`HTTP error! status: ${response.status}`);
+        // // }
+
+        // const data = await response.json();
+        // console.log(data);
+
+        // if (data.results && Array.isArray(data.results)) {
+        //     displaySuggestions(data.results);
+        // } else {
+        //     console.log('No results found.');
+        // }
+    } 
 
         function displaySuggestions(results) {
             suggestionsContainer.innerHTML = '';
