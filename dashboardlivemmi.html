@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <<meta charset="utf-8" />
+    <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>Vehicle Location Map</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -1164,9 +1164,9 @@ function initMap() {
     }
 
     try {
-      map = new MapmyIndia.Map('map', {
-            center: {lat:28.612964,lng:77.229463},
-            zoom: 15,
+        map = new mappls.Map('map', {
+            center: {lat: 28.612964, lng: 77.229463},
+            zoom: 5,  // Start with a wider view to show clusters
             zoomControl: true,
             hybrid: true
         });
@@ -1177,7 +1177,6 @@ function initMap() {
             fetchDeviceData();
         });
 
-        // Error handler
         map.on('error', function(e) {
             console.error('Map error:', e);
         });
@@ -1187,6 +1186,7 @@ function initMap() {
     }
 }
 
+
 function loadMapScript() {
     const key = localStorage.getItem("key");
     if (!key) {
@@ -1195,7 +1195,7 @@ function loadMapScript() {
     }
 
     const script = document.createElement('script');
-    script.src = `https://apis.mapmyindia.com/advancedmaps/api/${key}/map_sdk?layer=vector&v=2.0&callback=initMap`;
+    script.src = `https://apis.mappls.com/advancedmaps/api/${key}/map_sdk?layer=vector&v=3.0&callback=initMap`;
     script.defer = true;
     script.async = true;
     document.head.appendChild(script);
@@ -1219,8 +1219,8 @@ function loadMapScript() {
           this.markers = [];
           this.clusters = [];
           this.options = {
-            radius: options.radius || 500,
-            maxZoom: options.maxZoom || 14,
+            radius: options.radius || 100,
+            maxZoom: options.maxZoom || 5,
             minPoints: options.minPoints || 2,
           };
 
@@ -1316,23 +1316,23 @@ function loadMapScript() {
 
           // Add click handler to zoom in
           clusterElement.addEventListener("click", () => {
-            // this.map.flyTo({
-            //   center: center,
-            //   zoom: Math.min(this.map.getZoom() + 2, this.options.maxZoom),
-            //   speed: 1.5,
-            // });
+            this.map.flyTo({
+              center: center,
+              zoom: Math.min(this.map.getZoom() + 2, this.options.maxZoom),
+              speed: 1.5,
+            });
           });
 
           // Create and add cluster marker
-          const cluster = olaMaps
-            .addMarker({
-              element: clusterElement,
-              anchor: "center",
-            })
-            .setLngLat(center)
-            .addTo(this.map);
+          // const cluster = olaMaps
+          //   .addMarker({
+          //     element: clusterElement,
+          //     anchor: "center",
+          //   })
+          //   .setLngLat(center)
+          //   .addTo(this.map);
 
-          this.clusters.push(cluster);
+          // this.clusters.push(cluster);
         }
 
         // Calculate distance between two points
@@ -1896,84 +1896,296 @@ function updatePopupPosition() {
     });
     markers = [];
 
-    devices.forEach((device, index) => {
-        if (!device.coordinates || device.coordinates[0] === 0 || device.coordinates[1] === 0) {
-            return;
-        }
+    console.log('Total devices:', devices.length);
+    console.log('Selected devices:', selectedDevices.size);
 
-        try {
-            // Determine marker icon based on status
+    try {
+    // Prepare data for clustering by marker type
+    const markersByType = {
+        offline: { size: [5, 5], features: [] },
+        stopped: { size: [80, 800], features: [] },
+        moving: { size: [100, 100], features: [] },
+        idle: { size: [100, 100], features: [] }
+    };
+
+    // Group features by type
+    devices
+        .filter(device => {
+            return device.coordinates && 
+                   device.coordinates[0] !== 0 && 
+                   device.coordinates[1] !== 0 &&
+                   selectedDevices.has(device.deviceId);
+        })
+        .forEach(device => {
             const currentDate = new Date();
             const deviceDate = new Date(device.date);
-            const hoursDifferences = (currentDate - deviceDate) / (1000 * 60 * 60);
-            const ignitionStatus = typeof device.ignition === 'string'
-                ? device.ignition.toLowerCase() === 'true'
+            const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+            const ignitionStatus = typeof device.ignition === 'string' 
+                ? device.ignition.toLowerCase() === 'true' 
                 : Boolean(device.ignition);
-
+            
+            let markerType;
             let iconUrl;
-            let iconSize = [25, 25];
 
-            if (hoursDifferences > 2) {
+            if (hoursDifference > 2) {
+                markerType = 'offline';
                 iconUrl = '/deviceTracking/images/blackcar1.png';
             } else if (!ignitionStatus) {
+                markerType = 'stopped';
                 iconUrl = '/images/icon/red/car0.png';
             } else if (ignitionStatus && device.speed > 0) {
+                markerType = 'moving';
                 iconUrl = '/deviceTracking/images/green.png';
-                iconSize = [20, 40]; // Different size for moving vehicle
             } else {
+                markerType = 'idle';
                 iconUrl = '/deviceTracking/images/yellow.png';
             }
 
-            // Create marker with custom click event
-            const marker = new MapmyIndia.Marker({
-                map: map,
-                position: {
-                    lat: device.coordinates[0],
-                    lng: device.coordinates[1]
+            
+
+            const feature = {
+                "type": "Feature",
+                "properties": {
+                    "deviceId": device.deviceId,
+                    "name": device.name,
+                    "icon": iconUrl,
+                    "htmlPopup": generatePopupContent(device)
                 },
-                icon: iconUrl,
-                width: iconSize[0],
-                height: iconSize[1],
-                draggable: false,
-                rotateWithMap: true
-            });
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [device.coordinates[0], device.coordinates[1]]
+                }
+            };
 
-            // Attach device index as a custom property
-            marker.deviceIndex = index;
+            markersByType[markerType].features.push(feature);
+        });
 
-            // Add custom click event handler
-            marker.addListener('click', () => {
-                showPopup(marker.deviceIndex, marker);
-            });
+    // Clear existing markers
+    markers.forEach(marker => {
+        if (marker && marker.remove) {
+            marker.remove();
+        }
+    });
+    markers = [];
+    // console.log("-------------dddd"+ JSON.stringify(devices))
 
-            markers.push(marker);
-        } catch (error) {
-            console.error('Error creating marker:', error, device);
+
+    // Create markers for each type with different sizes
+    Object.entries(markersByType).forEach(([type, data]) => {
+        if (data.features.length > 0) {
+            const geoJson = {
+                "type": "FeatureCollection",
+                "features": data.features
+            };
+            // console.log("-------------"+ JSON.stringify(geoJson))
+
+            const validDevices = devices.filter(device => {
+    // Check if the device has valid coordinates and is selected
+    const isValid = device.coordinates && 
+                   device.coordinates[0] !== 0 && 
+                   device.coordinates[1] !== 0 &&
+                   selectedDevices.has(device.deviceId);
+    
+    // Log invalid devices for debugging
+    if (!isValid && selectedDevices.has(device.deviceId)) {
+        console.log('Invalid device:', device);
+    }
+    
+    return isValid;
+}).map(device => {
+    const matchingFeature = geoJson.features.find(
+        feature => feature.properties.deviceId === device.deviceId
+    );
+    
+    return {
+        ...device,
+        icon: matchingFeature ? matchingFeature.properties.icon : null
+    };
+});
+
+    // console.log('Valid devices for markers:', validDevices.length);
+            let marker = new mappls.Marker({
+        map: map,
+        position: {
+            type: "FeatureCollection",
+            features: validDevices.map(device => ({
+                type: "Feature",
+                geometry: {
+                    type: "Point",
+                    coordinates: device.coordinates // [longitude, latitude]
+                },
+                properties: {
+                    deviceId: device.deviceId,
+                    name: device.name,
+                    icon: device.icon,
+                    "icon-size": data.size[0]/100,
+                    htmlPopup: generatePopupContent(device),
+                    // Include all other device properties needed for popup
+                    ...device
+                }
+            }))
+        },
+        clusters: true,
+        clusterStyle: {
+            color: '#108cff',
+            textColor: '#ffffff',
+            textSize: '14px',
+            border: '2px solid #fff',
+            borderRadius: '50%',
+            boxShadow: '0 0 10px rgba(0,0,0,0.2)'
+        },
+        clusterOptions: {
+            clusterRadius: 80,        // Reduced radius to prevent over-clustering
+            maxZoom: 14,
+            minClusterSize: 2,        // Start clustering from 2 points
+            zoomOnClick: true,
+            clusterBreakpoint: [
+                {
+                    count: 50,        // For very large clusters
+                    color: '#ff6961',
+                    textColor: '#ffffff'
+                },
+                {
+                    count: 20,        // For medium clusters
+                    color: '#FFA726',
+                    textColor: '#ffffff'
+                },
+                {
+                    count: 5,         // For small clusters
+                    color: '#77dd77',
+                    textColor: '#ffffff'
+                }
+            ]
+        },
+        fitbounds: true,
+        animate: true,
+        callback: function(marker) {
+            console.log('Marker added:', marker);
         }
     });
 
-    // Fit map bounds if there are markers
-    if (markers.length > 0) {
-        try {
-            const bounds = new MapmyIndia.LatLngBounds();
-            markers.forEach(marker => {
-                if (marker && marker.getPosition) {
-                    const pos = marker.getPosition();
-                    bounds.extend([pos.lng, pos.lat]);
-                }
-            });
-            map.fitBounds(bounds, {
-                padding: { top: 50, bottom: 50, left: 50, right: 50 }
-            });
-        } catch (error) {
-            console.error('Error fitting bounds:', error);
-            if (markers[0]) {
-                map.setZoom(12);
-            }
+markers.push(marker);
+
+// Update cluster appearance on zoom
+// map.on('zoom', () => {
+//         const zoom = map.getZoom();
+//         if (zoom >= 14) {
+//             // At high zoom levels, reduce cluster radius to show more individual markers
+//             marker.setClusterOptions({ clusterRadius: 50 });
+//         // } else {
+//         //     // At lower zoom levels, increase radius for better overview
+//         //     marker.setClusterRadius(80);
+//         }
+//       });
+//                 // clusterProperties: {
+                //     minPoints: 2,  // Start clustering with just 2 points
+                //     maxZoom: 14,   // Lower max zoom for maintaining clusters longer
+                //     algorithm: 'k-means',
+                //     mergeClusters: true,
+                //     clusterRadius: 150, // Consistent cluster radius
+                //     gridSize: 120, // Grid size for cluster formation
+                //     minDistance: 100, // Minimum distance between clusters
+                //     maxDistance: 200, // Maximum distance for merging clusters
+                // },
+                // offset: [0, 0], // No offset from the exact coordinates
+                // draggable: false, // Prevents marker from being moved
+                // rotateWithMap: false, // Prevents rotation with map movement
+                // clusterclick: function(coordinates, pointCount, clusterMarker) {
+                //     map.setZoom(map.getZoom() + 2);
+                //     map.panTo(coordinates);
+                // },
+                // click: function(marker) {
+                //     const device = devices.find(d => d.deviceId === marker.feature.properties.deviceId);
+                //     if (device) {
+                //         showPopup(devices.indexOf(device), marker);
+                //     }
+                // },
+                // popupHtml: function(marker) {
+                //     return marker.feature.properties.htmlPopup;
+                // }
+         
+
+//             marker.setClusterOptions({
+  // background: [
+  //                   [2, 'rgba(66, 135, 245, 0.8)'],    // Light blue for small clusters
+  //                   [5, 'rgba(52, 168, 83, 0.8)'],     // Green for medium clusters
+  //                   [10, 'rgba(251, 188, 4, 0.8)'],    // Yellow for larger clusters
+  //                   [20, 'rgba(234, 67, 53, 0.8)'],    // Red for very large clusters
+  //               ],
+//     maxZoom: 10,
+//     radius: [
+//         [2, 20],
+//         [5, 25],
+//         [10, 35],
+//         [20, 45],
+//         [35, 55]
+//     ]
+// });
+
         }
+    });
+
+    // Fit bounds considering all markers
+    // if (markers.length > 0) {
+    //     const bounds = new mappls.LatLngBounds();
+    //     devices
+    //         .filter(device => selectedDevices.has(device.deviceId))
+    //         .forEach(device => {
+    //             if (device.coordinates && device.coordinates[0] !== 0 && device.coordinates[1] !== 0) {
+    //               console.log(device.coordinates[1])
+    //                 bounds.extend({
+    //                     lat: device.coordinates[0],
+    //                     lng: device.coordinates[1]
+    //                 });
+    //             }
+    //         });
+    //     map.fitBounds(bounds, {
+    //         padding: { top: 50, bottom: 50, left: 50, right: 50 }
+    //     });
+    // }
+} catch (error) {
+        console.error('Error creating markers:', error);
     }
 }
 
+function getMarkerIcon(feature) {
+    const device = feature.properties;
+    const currentDate = new Date();
+    const deviceDate = new Date(device.date);
+    const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+    const ignitionStatus = typeof device.ignition === 'string' 
+        ? device.ignition.toLowerCase() === 'true' 
+        : Boolean(device.ignition);
+
+    if (hoursDifference > 2) {
+        return '/deviceTracking/images/blackcar1.png';
+    } else if (!ignitionStatus) {
+        return '/images/icon/red/car0.png';
+    } else if (ignitionStatus && device.speed > 0) {
+        return '/deviceTracking/images/green.png';
+    } else {
+        return '/deviceTracking/images/yellow.png';
+    }
+}
+
+// Function to get cluster icon based on cluster size
+function getClusterIcon(count) {
+    // Return cluster icon URL or SVG based on count
+    return {
+        url: count > 10 ? '/cluster-large.png' :
+             count > 5 ? '/cluster-medium.png' :
+             '/cluster-small.png',
+        size: {
+            width: count > 100 ? 50 : count > 50 ? 40 : 30,
+            height: count > 100 ? 50 : count > 50 ? 40 : 30
+        }
+    };
+}
+
+function getPopupContent(feature) {
+    const device = feature.properties;
+    return generatePopupContent(device);
+}
 
 function createMarker(device) {
     const customElement = document.createElement('div');
@@ -2000,7 +2212,7 @@ function createMarker(device) {
     carImage.style.transform = `rotate(${device.angle || 0}deg)`;
     customElement.appendChild(carImage);
 
-    const marker = new MapmyIndia.Marker({
+    const marker = new mappls.Marker({
         map: map,
         position: {
             lat: device.coordinates[0],
@@ -2016,69 +2228,30 @@ function createMarker(device) {
 }
 
 function filterMarkers() {
-    // Remove all existing markers
-    markers.forEach(marker => {
-        if (marker && marker.remove) {
-            marker.remove();
-        }
-    });
+  initializeMarkers();
 
-    // Create array of visible markers based on checkbox state
-    markers = devices.filter((device, index) => {
-        const checkbox = document.querySelector(`.deviceCheckbox[data-index="${index}"]`);
-        return checkbox && checkbox.checked;
-    }).map(device => {
-        if (!device.coordinates || device.coordinates[0] === 0 || device.coordinates[1] === 0) {
-            return null;
-        }
-
-        const customMarker = document.createElement('div');
-        customMarker.className = 'customMarkerClass';
-
-        const carImage = document.createElement('img');
-        const currentDate = new Date();
-        const deviceDate = new Date(device.date);
-        const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-        const ignitionStatus = typeof device.ignition === 'string'
-            ? device.ignition.toLowerCase() === 'true'
-            : Boolean(device.ignition);
-
-        // Set marker icon based on status
-        if (hoursDifference > 2) {
-            carImage.src = '/deviceTracking/images/blackcar1.png';
-        } else if (!ignitionStatus) {
-            carImage.src = '/images/icon/red/car0.png';
-        } else if (ignitionStatus && device.speed > 0) {
-            carImage.src = '/deviceTracking/images/green.png';
-        } else {
-            carImage.src = '/deviceTracking/images/yellow.png';
-        }
-
-        carImage.style.transform = `rotate(${device.angle || 0}deg)`;
-        carImage.style.transformOrigin = 'center';
-        customMarker.appendChild(carImage);
-
-        const marker = new MapmyIndia.Marker({
-            map: map,
-            position: {
-                lat: device.coordinates[0],
-                lng: device.coordinates[1]
+    // Filter features based on selected devices
+    const filteredData = devices
+        .filter(device => selectedDevices.has(device.deviceId))
+        .map(device => ({
+            type: "Feature",
+            properties: {
+                deviceId: device.deviceId,
+                name: device.name,
+                // ... other properties
             },
-            icon: customMarker,
-            draggable: false
-        });
+            geometry: {
+                type: "Point",
+                coordinates: [device.coordinates[0], device.coordinates[1]]
+            }
+        }));
 
-        marker.addListener('click', () => showPopup(device, marker));
-        return marker;
-    }).filter(Boolean);
-
-    // Fit bounds if there are markers
-    if (markers.length > 0) {
-        const bounds = new MapmyIndia.LatLngBounds();
-        markers.forEach(marker => {
-            bounds.extend(marker.getPosition());
+    // Update cluster markers with filtered data
+    if (markers[0]) {
+        markers[0].setData({
+            type: "FeatureCollection",
+            features: filteredData
         });
-        map.fitBounds(bounds);
     }
 }
 
@@ -3046,7 +3219,7 @@ function updateVehicleMarker(vehicleData) {
 
         if (!currentMarker) {
             // Create new marker
-            currentMarker = new MapmyIndia.Marker({
+            currentMarker = new mappls.Marker({
                 map: map,
                 position: {
                     lat: position.lat,
