@@ -1365,6 +1365,8 @@ let fetching = false;
 const MINIMUM_DISTANCE = 0.01;
 let startMarker = null;
 let endMarker = null;
+let stopMarkers = [];
+
 
 const ANGLE_OFFSET = 90;
 const popup = document.getElementById("customPopup");
@@ -1529,12 +1531,12 @@ function fetchPlaybackData(did) {
             .filter(Boolean);
         fetching = false;
         updateStartButtonState();
-        addStartEndMarkers();
+        // addStartEndMarkers();
         console.log("Playback Data Loaded:", playbackData);
         } else {
         fetching = false;
         updateStartButtonState();
-        addStartEndMarkers();
+        // addStartEndMarkers();
         console.error("Unexpected data format: response is not an array");
         }
     })
@@ -1957,188 +1959,305 @@ let startLat = null; // To store the starting position latitude
 let startLon = null; // To store the starting position longitude
 let totalDistance = 0; // To accumulate the distance
 
+function getTimeDifferenceInMinutes(prevTimeStr, currentTimeStr) {
+    // Parse the datetime strings
+    // Assuming the format is "DD-MM-YYYY HH:mm:ss"
+    const [prevDate, prevTime] = prevTimeStr.split(' ');
+    const [currDate, currTime] = currentTimeStr.split(' ');
+
+    // Split date and time components
+    const [prevDay, prevMonth, prevYear] = prevDate.split('-');
+    const [currDay, currMonth, currYear] = currDate.split('-');
+
+    // Split time components
+    const [prevHours, prevMinutes, prevSeconds] = prevTime.split(':');
+    const [currHours, currMinutes, currSeconds] = currTime.split(':');
+
+    // Create Date objects
+    const prevDateTime = new Date(
+        parseInt(prevYear), 
+        parseInt(prevMonth) - 1, // Month is 0-indexed
+        parseInt(prevDay), 
+        parseInt(prevHours), 
+        parseInt(prevMinutes), 
+        parseInt(prevSeconds)
+    );
+
+    const currentDateTime = new Date(
+        parseInt(currYear), 
+        parseInt(currMonth) - 1, // Month is 0-indexed
+        parseInt(currDay), 
+        parseInt(currHours), 
+        parseInt(currMinutes), 
+        parseInt(currSeconds)
+    );
+
+    // Calculate difference in milliseconds and convert to minutes
+    const diffInMilliseconds = currentDateTime - prevDateTime;
+    const diffInMinutes = diffInMilliseconds / (1000 * 60);
+
+    return diffInMinutes;
+}
+
+async function updateLocationPopup(latlang) {
+    const locationCell = document.getElementById(`location-popup`);
+    if (!locationCell) return;
+
+    locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
+
+    try {
+        const location = await fetchLocation(latlang);
+        locationCell.innerHTML = `<span style="font-size: 10px; line-height: 5px">${location}</span>`;
+    } catch (error) {
+        console.error("Error updating location:", error);
+        locationCell.innerHTML = "Error fetching location";
+    }
+}
+
+async function updateDistance(deviceId, prevTime, currentTime) {
+        const distanceSpan = document.getElementById("distance-value");
+        if (!distanceSpan) return; // Guard clause in case element isn't found
+
+        // Show loading state
+        distanceSpan.innerHTML = '<span style="color: #666;">Loading...</span>';
+
+        try {
+          const distance = await fetchDistance(deviceId, prevTime, currentTime);
+          distanceSpan.innerHTML = `${distance} km`;
+        } catch (error) {
+          console.error("Error updating distance:", error);
+          distanceSpan.innerHTML = "0 km";
+        }
+      }
+
+      function updateDateFormat (date){
+        const dateParts = date.split(" ");
+        const datePart = dateParts[0].split("-");
+        const timePart = dateParts[1].split(":");
+        const time = `${timePart[0]}:${timePart[1]}`;
+        const newdate = datePart.reverse().join('-');
+        const newDate = `${newdate} ${time}`;
+        return newDate;
+      }
+
+      async function fetchDistance(deviceId, prevTime, currentTime) {
+
+        try {
+          const response = await fetch(
+            `${API}opr=fleetsummaryreport&fromdate=${updateDateFormat(prevTime)}&todate=${updateDateFormat(currentTime)}&did=${deviceId}`
+          );
+          const data = await response.json();
+
+          // Get the distance from the response
+          if (data && data.length > 0) {
+            return data[0].distance || "0";
+          }
+          return "0";
+        } catch (error) {
+          console.error("Error fetching distance:", error);
+          return "0";
+        }
+      }
+
+
  // **Detect Stop During Playback** (this is the main change)
  function detectStopDuringPlayback(currentIndex) {
-      if (currentIndex === 0) return; // Skip the first point, no previous point to compare
+    if (currentIndex === 0) return; // Skip the first point, no previous point to compare
 
-      const holdTime = parseInt(document.getElementById("holdTime").value); // Get hold time from dropdown
-      const currentPoint = playbackData[currentIndex];
-      const prevPoint = playbackData[currentIndex - 1];
+    const holdTime = parseInt(document.getElementById("holdTime").value); // Get hold time from dropdown
+    const currentPoint = playbackData[currentIndex];
+    const prevPoint = playbackData[currentIndex - 1];
+    console.log(JSON.stringify(prevPoint))
+    const prevTime = prevPoint.date;
+    const currentTime = currentPoint.date;
 
-      const prevTime = new Date(prevPoint.date);
-      const currentTime = new Date(currentPoint.date);
+    const timeDiff = getTimeDifferenceInMinutes(prevTime, currentTime) // Time difference in minutes
 
-      const timeDiff = (currentTime - prevTime) / (1000 * 60); // Time difference in minutes
-      const distance = calculateDistance(
-        prevPoint.coordinates[1],
-        prevPoint.coordinates[0],
-        currentPoint.coordinates[1],
-        currentPoint.coordinates[0]
-      );
+    // console.log(timeDiff)
+    // Check if the vehicle has been stationary for the hold time and the distance is less than the threshold
+    if (timeDiff >= holdTime ) {
+        console.log("detected")
+        // Create a stop marker at the location
+        const stopMarker = new mappls.Marker({
+            map: map,
+            position: {
+                lat: prevPoint.coordinates[1],
+                lng: prevPoint.coordinates[0]
+            },
+            icon: createStopMarkerIcon(timeDiff),
+            popupHtml: "<div style=\"max-height:150px;min-width:200px;\">" +
+                        "<p style=\"font: bold 14px/20px times\">Stop time:</p><p> " + timeDiff.toFixed(0) + " min</p>" +
+                        "<p style=\"font: bold 14px/20px times\">Hold time:</p><p> " + prevTime + " To: " + currentTime + "</p>" +
+                        `<div style="display: flex; align-items: center; gap: 5px;">
+            <b>Distance:</b> <span id="distance-value">
+                <button onclick="updateDistance('${prevPoint.deviceId}', '${playbackData[0].date}', '${currentTime}')" 
+                    style="background: none; border: none; padding: 0; color: #3498db; text-decoration: underline; cursor: pointer; font-size: 11px;">
+                    Get Distance
+                </button>
+            </span>
+        </div>`+
+                        `<div style="display: flex; align-items: center; gap: 5px;">
+            <b>Location:</b> <span id="location-popup">
+                <button onclick="updateLocationPopup('${prevPoint.coordinates}')" 
+                    style="background: none; border: none; padding: 0; color: #3498db; text-decoration: underline; cursor: pointer; font-size: 11px;">
+                    Get Location
+                </button>
+            </span>
+        </div>`,
+        });
 
-      // Check if the vehicle has been stationary for the hold time and the distance is less than the threshold
-      if (timeDiff >= holdTime && distance < MINIMUM_DISTANCE) {
-        // Add stop marker dynamically
-        const stopMarker = olaMaps
-          .addMarker({
-            element: createStopMarkerElement(timeDiff),
-            offset: [0, -18], // Adjusted offset to position above the polyline
-            anchor: "bottom", // Set anchor to bottom
-          })
-          .setLngLat(prevPoint.coordinates)
-          .addTo(map);
-
-        // Add marker to array for tracking
+        // Add marker to array for tracking and potential removal later
         stopMarkers.push(stopMarker);
 
-        // **Set the event listener to show popup when stop marker is clicked**
-        stopMarker.getElement().addEventListener("click", () => {
-          showStopPopup(prevPoint, currentPoint, timeDiff);
+        // Add click event to show stop details
+        stopMarker.addListener('click', () => {
+            showStopPopup(prevPoint, currentPoint, timeDiff);
         });
 
         console.log(
-          `Stop dynamically set at ${prevPoint.coordinates[1]}, ${prevPoint.coordinates[0]}.\n` +
-          `Stop Duration: ${timeDiff.toFixed(2)} minutes.\n` +
-          `Stop Time: ${new Date(prevPoint.date).toLocaleString()} to ${new Date(currentPoint.date).toLocaleString()}`
+            `Stop dynamically set at ${prevPoint.coordinates[1]}, ${prevPoint.coordinates[0]}.\n` +
+            `Stop Duration: ${timeDiff.toFixed(2)} minutes.\n` +
+            `Stop Time: ${prevTime.toLocaleString()} to ${currentTime.toLocaleString()}`
         );
-      }
     }
+}
+
+function createStopMarkerIcon(duration) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 120; // Canvas size for the bigger triangle
+    canvas.height = 140;
+    const ctx = canvas.getContext('2d');
+
+    // Draw bigger triangular shape
+    ctx.beginPath();
+    ctx.moveTo(60, 0); // Top-center of the triangle
+    ctx.lineTo(120, 120); // Bottom-right corner
+    ctx.lineTo(0, 120); // Bottom-left corner
+    ctx.closePath(); // Connect back to the starting point
+
+    ctx.fillStyle = '#FF0000'; // Set the fill color to red
+    ctx.fill(); // Fill the triangle with red
+
+    // Add duration text
+    ctx.fillStyle = 'white';
+    ctx.font = '20px Arial'; // Larger font for duration
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${duration.toFixed(1)}m`, 60, 70); // Position the duration above the "STOP" text
+
+    // Add 'STOP' text
+    ctx.font = 'bold 24px Arial'; // Larger font for "STOP"
+    ctx.fillText('STOP', 60, 100); // Adjusted to center the text properly
+
+    return canvas.toDataURL();
+}
+
 
     // Helper to create the stop marker element
-    function createStopMarkerElement(duration) {
-      const stopElement = document.createElement("div");
-      stopElement.classList.add('stop-marker');
-      stopElement.style.position = "relative";
-      stopElement.style.width = "30px"; // Made smaller for better proportion
-      stopElement.style.height = "40px"; // Adjusted height for proper teardrop shape
-      stopElement.style.display = "flex";
-      stopElement.style.alignItems = "center";
-      stopElement.style.justifyContent = "center";
-      stopElement.style.zIndex = "10"; // Ensure it stays above the polyline
-      stopElement.style.marginLeft = "18px"
+    // function createStopMarkerElement(duration) {
+    //   const stopElement = document.createElement("div");
+    //   stopElement.classList.add('stop-marker');
+    //   stopElement.style.position = "relative";
+    //   stopElement.style.width = "30px"; // Made smaller for better proportion
+    //   stopElement.style.height = "40px"; // Adjusted height for proper teardrop shape
+    //   stopElement.style.display = "flex";
+    //   stopElement.style.alignItems = "center";
+    //   stopElement.style.justifyContent = "center";
+    //   stopElement.style.zIndex = "10"; // Ensure it stays above the polyline
+    //   stopElement.style.marginLeft = "18px"
 
-      // Create main teardrop shape
-      const marker = document.createElement("div");
-      marker.style.position = "absolute";
-      marker.style.width = "30px";
-      marker.style.height = "30px"; // Make the circle part perfectly round
-      marker.style.backgroundColor = "#ff0000"; // Pure red color
-      marker.style.borderRadius = "50% 50% 50% 0"; // Modified border radius
-      marker.style.transform = "rotate(-45deg)"; // Changed rotation
-      marker.style.border = "1.5px solid white"; // Slightly thinner border
-      marker.style.boxShadow = "0 2px 4px rgba(0,0,0,0.25)";
-      marker.style.top = "0";
+    //   // Create main teardrop shape
+    //   const marker = document.createElement("div");
+    //   marker.style.position = "absolute";
+    //   marker.style.width = "30px";
+    //   marker.style.height = "30px"; // Make the circle part perfectly round
+    //   marker.style.backgroundColor = "#ff0000"; // Pure red color
+    //   marker.style.borderRadius = "50% 50% 50% 0"; // Modified border radius
+    //   marker.style.transform = "rotate(-45deg)"; // Changed rotation
+    //   marker.style.border = "1.5px solid white"; // Slightly thinner border
+    //   marker.style.boxShadow = "0 2px 4px rgba(0,0,0,0.25)";
+    //   marker.style.top = "0";
 
-      // Container for text
-      const textContainer = document.createElement("div");
-      textContainer.style.position = "absolute";
-      textContainer.style.width = "100%";
-      textContainer.style.height = "100%";
-      textContainer.style.display = "flex";
-      textContainer.style.alignItems = "center";
-      textContainer.style.justifyContent = "center";
-      textContainer.style.transform = "rotate(45deg)"; // Counter-rotate to make text straight
-      textContainer.style.color = "white";
-      textContainer.style.fontSize = "8px"; // Slightly smaller text
-      textContainer.style.fontWeight = "bold";
-      textContainer.style.fontFamily = "Arial, sans-serif";
-      textContainer.textContent = "STOP";
+    //   // Container for text
+    //   const textContainer = document.createElement("div");
+    //   textContainer.style.position = "absolute";
+    //   textContainer.style.width = "100%";
+    //   textContainer.style.height = "100%";
+    //   textContainer.style.display = "flex";
+    //   textContainer.style.alignItems = "center";
+    //   textContainer.style.justifyContent = "center";
+    //   textContainer.style.transform = "rotate(45deg)"; // Counter-rotate to make text straight
+    //   textContainer.style.color = "white";
+    //   textContainer.style.fontSize = "8px"; // Slightly smaller text
+    //   textContainer.style.fontWeight = "bold";
+    //   textContainer.style.fontFamily = "Arial, sans-serif";
+    //   textContainer.textContent = "STOP";
 
-      marker.appendChild(textContainer);
-      stopElement.appendChild(marker);
+    //   marker.appendChild(textContainer);
+    //   stopElement.appendChild(marker);
 
-      return stopElement;
-    }
+    //   return stopElement;
+    // }
 
     let popupMarker;
 
     // Function to show the popup when a stop marker is clicked
     function showStopPopup(startPoint, endPoint, duration) {
-      const startTime = new Date(startPoint.date).toLocaleString();
-      const endTime = new Date(endPoint.date).toLocaleString();
-      const stopDuration = formatDuration(duration);
-      const stopIndex = playbackData.findIndex(point =>
-        point.coordinates[0] === startPoint.coordinates[0] &&
-        point.coordinates[1] === startPoint.coordinates[1]
-      );
-      const cumulativeDistance = calculateCumulativeDistance(stopIndex);
-      const coordinates = `${startPoint.coordinates[1]},${startPoint.coordinates[0]}`;
+    const startTime = new Date(startPoint.date).toLocaleString();
+    const endTime = new Date(endPoint.date).toLocaleString();
+    const stopDuration = formatDuration(duration);
+    const coordinates = `${startPoint.coordinates[1]},${startPoint.coordinates[0]}`;
 
-      const popup = document.getElementById("stopMarkerPopup");
-      const popupContent = document.getElementById("stopPopupContent");
-
-      // Function to update location text in the popup
-      async function updateLocationText(coords) {
-        const locationSpan = document.getElementById('locationText');
-        const locationLink = document.getElementById('getLocationLink');
-
-        // Disable link while fetching
-        locationLink.style.pointerEvents = 'none';
-        locationLink.style.opacity = '0.6';
-
-        // Fetch and display location
-        const location = await fetchLocation(coords);
-
-        // Update UI with result
-        if (locationSpan) {
-          locationSpan.textContent = location;
-          locationSpan.style.color = location.includes("Error") ? "#e74c3c" : "#2c3e50";
-        }
-
-        // Re-enable link
-        locationLink.style.pointerEvents = 'auto';
-        locationLink.style.opacity = '1';
-      }
-
-      popupContent.innerHTML = `
+    const popupContent = `
         <div style="font-family: Arial, sans-serif;">
-            <b>Stop Duration:</b> 
-            <span style="color: #e74c3c;">${stopDuration}</span>
-            <br><br>
+            <h3 style="color: #e74c3c; margin-bottom: 10px;">Stop Details</h3>
             
-            <b>Stop Time:</b> 
-            <span style="color: #3498db;">${startTime} - ${endTime}</span>
-            <br><br>
+            <div><strong>Duration:</strong> ${stopDuration}</div>
+            <div><strong>Start Time:</strong> ${startTime}</div>
+            <div><strong>End Time:</strong> ${endTime}</div>
             
-            <b>Location:</b> 
-            <a href="#" id="getLocationLink" 
-               style="color: #2980b9; text-decoration: underline; cursor: pointer; display: inline-block;">
-               Get Location
-            </a>
-            <span id="locationText" 
-                  style="display: block; margin-top: 5px; color: #666; font-size: 13px;">
-            </span>
-            <br>
+            <div style="margin-top: 10px;">
+                <a href="#" onclick="fetchStopLocation('${coordinates}'); return false;">
+                    Get Location Details
+                </a>
+            </div>
             
-            <b>Distance Covered:</b> 
-            <span style="color: #f39c12;">${cumulativeDistance.toFixed(2)} km</span>
-            <br>
+            <div id="stopLocationDetails" style="margin-top: 10px; color: #666;"></div>
         </div>
     `;
 
-      // Add click event listener to the Get Location link
-      const locationLink = popup.querySelector('#getLocationLink');
-      locationLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        updateLocationText(coordinates);
-      });
+    // Create and show popup
+    const popup = new mappls.Popup({
+        content: popupContent,
+        position: {
+            lat: startPoint.coordinates[1],
+            lng: startPoint.coordinates[0]
+        }
+    });
 
-      // Create marker and show popup
-      if (popupMarker) {
-        popupMarker.remove();
-      }
+    popup.addTo(map);
+}
 
-      popupMarker = olaMaps
-        .addMarker({
-          element: popup,
-          offset: [0, -120],
-          anchor: "bottom",
+function fetchStopLocation(coordinates) {
+    const [lat, lng] = coordinates.split(',');
+    const locationDetailsEl = document.getElementById('stopLocationDetails');
+    
+    locationDetailsEl.innerHTML = 'Fetching location...';
+
+    fetch(`${API}opr=getLoc&lat=${lat}&lang=${lng}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                locationDetailsEl.innerHTML = `<strong>Location:</strong> ${data[0].location}`;
+            } else {
+                locationDetailsEl.innerHTML = 'Location details not available.';
+            }
         })
-        .setLngLat(startPoint.coordinates)
-        .addTo(map);
-
-      popup.style.display = "block";
-    }
+        .catch(error => {
+            console.error('Error fetching location:', error);
+            locationDetailsEl.innerHTML = 'Failed to fetch location details.';
+        });
+}
 
     function isValidCoordinates(lat, lng) {
       return !isNaN(lat) && !isNaN(lng) &&
@@ -2147,98 +2266,35 @@ let totalDistance = 0; // To accumulate the distance
     }
 
     // Function to fetch location from coordinates
-    async function fetchLocation(latlng) {
-      try {
-        // Initial validation
-        if (!latlng) {
-          console.error("No coordinates provided");
-          return "Location not available";
-        }
-
-        // Parse coordinates
-        const [lat, lng] = latlng.split(",").map(coord => parseFloat(coord.trim()));
-
-        // Validate coordinates
-        if (!isValidCoordinates(lat, lng)) {
-          console.error("Invalid coordinates:", lat, lng);
-          return "Invalid coordinates";
-        }
-
-        // Get UI elements
-        const locationSpan = document.getElementById('locationText');
-        const locationLink = document.getElementById('getLocationLink');
-
-        // Show loading state in UI
-        if (locationSpan) {
-          locationSpan.textContent = "Fetching location...";
-          locationSpan.style.color = "#666";
-        }
-
-        // Make API call
-        const response = await fetch(`${API}opr=getLoc&lat=${lat}&lang=${lng}`);
-
-        // Check if response is ok
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        // Parse response
+    async function fetchLocation(latlang) {
+    try {
+        if (!latlang) return "Location not available";
+        console.log(latlang)
+        const [lat, lng] = latlang
+            .split(",")
+            .map((coord) => parseFloat(coord));
+        if (isNaN(lat) || isNaN(lng)) return "Invalid coordinates";
+        
+        const response = await fetch(
+            `${API}opr=getLoc&lat=${lng}&lang=${lat}`
+        );
         const data = await response.json();
-
-        // Validate response data
-        if (!data || !Array.isArray(data) || data.length === 0) {
-          console.error("Invalid response data:", data);
-          return "Location not available";
-        }
-
-        // Get location
-        const location = data[0].location || "Location not available";
-
-        // Update UI
-        if (locationSpan) {
-          locationSpan.textContent = location;
-          locationSpan.style.color = "#2c3e50";
-        }
-
-        // Hide the "Get Location" link after successful fetch
-        if (locationLink && !location.includes("not available")) {
-          locationLink.style.display = 'none';
-        }
-
-        return location;
-
-      } catch (error) {
+        return data[0].location || "Location not available";
+    } catch (error) {
         console.error("Error fetching location:", error);
-        const locationSpan = document.getElementById('locationText');
-        const locationLink = document.getElementById('getLocationLink');
-
-        if (locationSpan) {
-          locationSpan.textContent = "Error fetching location";
-          locationSpan.style.color = "#e74c3c";
-        }
-
-        // Keep link visible in case of error
-        if (locationLink) {
-          locationLink.style.display = 'inline-block';
-          locationLink.style.pointerEvents = 'auto';
-          locationLink.style.opacity = '1';
-        }
-
         return "Error fetching location";
-      }
     }
-
-
+}
     // Helper function to calculate the duration in hours, minutes, and seconds
     function formatDuration(durationInMinutes) {
-      const totalSeconds = Math.floor(durationInMinutes * 60);
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-
-      // Format as HH:MM:SS
-      return `${hours}h ${minutes}m ${seconds}s`;
+    const hours = Math.floor(durationInMinutes / 60);
+    const minutes = Math.floor(durationInMinutes % 60);
+    
+    if (hours > 0) {
+        return `${hours} hour${hours > 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''}`;
     }
+    return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+}
 
     // Function to position the popup above the stop marker
     //     function updateStopPopupPosition(coordinates) {
@@ -2364,12 +2420,16 @@ function updateStartTimeDisplay(startDateTime) {
                 lat: playbackData[index].coordinates[1],
                 lng: playbackData[index].coordinates[0]
             },
-            icon: '/images/truck1.png',
-            width: 35,
-            height: 35,
+            
+                html: `<img src="/images/truck1.png" style="width: 40px; height: 20px; margin-top:25px; transform: rotate(${playbackData[index].angle}deg);" />`,
+                width: 35,
+                height: 35,
+        
             draggable: false,
             rotateWithMap: true
         });
+
+        
 
         // Create starting marker
         if (!startingMarker) {
@@ -2413,19 +2473,19 @@ function updateStartTimeDisplay(startDateTime) {
                 lat: coordinates[1],
                 lng: coordinates[0]
             });
-            
-            // Update map center
-            map.setCenter(coordinates);
 
-            // Update rotation
             const markerElement = vehicleMarker.getElement();
             if (markerElement) {
                 const imgElement = markerElement.querySelector('img');
                 if (imgElement) {
+                    // Adjust angle if needed (similar to the previous code with ANGLE_OFFSET)
                     const adjustedAngle = angle + ANGLE_OFFSET;
                     imgElement.style.transform = `rotate(${adjustedAngle}deg)`;
                 }
             }
+            
+            // Update map center
+            map.setCenter(coordinates);
 
             // Add to polyline data
             dynamicPlaybackData.push(currentPoint);
@@ -2519,7 +2579,6 @@ function createStartMarker(coordinates, startDateTime) {
       return cumulativeDistance;
     }
 
-    let stopMarkers = [];
 
     function stopPlayback() {
       // Disable stop/pause buttons and enable start button
@@ -2577,6 +2636,11 @@ function createStartMarker(coordinates, startDateTime) {
       document.getElementById("distanceDisplay").textContent = `${(0).toFixed(
         2
       )} km`;
+
+      stopMarkers.forEach(marker => {
+        if (marker) marker.remove();
+    });
+    stopMarkers = [];
     }
 
     // Add this when page loads to set initial state
@@ -2783,19 +2847,19 @@ function addStartEndMarkers() {
         });
 
         // Create end marker
-        endMarker = new mappls.Marker({
-            map: map,
-            position: {
-                lat: endPoint.coordinates[1],
-                lng: endPoint.coordinates[0]
-            },
-            fitbounds: true,
-            icon: createStartEndIcon('E', '#e74c3c')
-        });
+        // endMarker = new mappls.Marker({
+        //     map: map,
+        //     position: {
+        //         lat: endPoint.coordinates[1],
+        //         lng: endPoint.coordinates[0]
+        //     },
+        //     fitbounds: true,
+        //     icon: createStartEndIcon('E', '#e74c3c')
+        // });
 
         // Add permanent timestamp labels without prefixes
         addPermanentLabel(startMarker, startPoint.date);
-        addPermanentLabel(endMarker, endPoint.date);
+        // addPermanentLabel(endMarker, endPoint.date);
 
     } catch (error) {
         console.error("Error creating markers:", error);
