@@ -299,6 +299,19 @@
       }
 
       /* Status indicators */
+
+      .popup-content {
+        position: absolute;
+        width: 50px;
+        right: 55px;
+        top: 7px;
+      }
+
+      .status {
+        display: flex;
+        margin-left: 100px;
+      }
+
       .status-indicator {
         display: inline-block;
         padding: 2px 8px;
@@ -310,9 +323,9 @@
 
       .status-indicator-status {
         display: inline-block;
-        padding: 0.2px 5px;
+        padding: 0.2px 3px;
         border-radius: 4px;
-        font-size: 12px;
+        font-size: 10px;
         font-weight: 500;
       }
       .status-indicator-list {
@@ -640,8 +653,8 @@
 
       .distance-btn,
       .nearby-btn {
-        padding: 4px 8px;
-        font-size: 11px;
+        padding: 2px 4px;
+        font-size: 5px;
         /* min-width: 60px; */
       }
 
@@ -650,14 +663,14 @@
       }
 
       .distance-btn {
-        margin-top: 10px;
-        padding: 6px 12px;
+        margin-top: 0px;
+        padding: 2px 4px;
         background-color: #4caf50;
         color: white;
         border: none;
         border-radius: 4px;
         cursor: pointer;
-        font-size: 12px;
+        font-size: 10px;
         transition: background-color 0.3s;
       }
 
@@ -676,13 +689,13 @@
       }
 
       .nearby-btn {
-        padding: 6px 12px;
+        padding: 2px 4px;
         background-color: #3498db;
         color: white;
         border: none;
         border-radius: 4px;
         cursor: pointer;
-        font-size: 12px;
+        font-size: 10px;
         transition: background-color 0.3s;
       }
 
@@ -692,7 +705,7 @@
 
       .status {
         display: flex;
-        margin-left: 5px;
+        margin-left: auto;
       }
 
       .status b {
@@ -705,12 +718,12 @@
 
       .status-indicator {
         display: inline-block;
-        padding: 1px 4px;
+        padding: 0px 4px;
         border-radius: 7px;
         font-size: 8px;
         font-weight: 500;
         margin-left: 5px;
-        padding-top: 3px;
+        padding-top: 0px;
         margin-bottom: 3px;
         margin-top: 2px;
       }
@@ -1390,7 +1403,7 @@ let currentPopupDid = null;
 let lastPosition = null;
 let isAnimating = false;
 
-      function formatHoldTime(ms) {
+function formatHoldTime(ms) {
         const hours = Math.floor(ms / 3600000);
         const minutes = Math.floor((ms % 3600000) / 60000);
         const seconds = Math.floor((ms % 60000) / 1000);
@@ -1420,7 +1433,7 @@ let isAnimating = false;
 
     try {
         const location = await fetchLocation(latlang);
-        locationCell.innerHTML = location;
+        locationCell.innerHTML = `<span style="font-size: 10px; line-height: 5px">${location}</span>`;
     } catch (error) {
         console.error("Error updating location:", error);
         locationCell.innerHTML = "Error fetching location";
@@ -1476,7 +1489,8 @@ async function fetchLocation(latlang) {
             gps: item.gps,
             power: item.power,
             latlang: item.latlang,
-            devicegroup: item.devicegroup
+            devicegroup: item.devicegroup,
+            holdtime: item.holdtime
         }));
 
         if (isInitialLoad) {
@@ -1832,29 +1846,28 @@ function updatePopupPosition() {
 
       function generatePopupContent(device) {
         return `
-                    <div class="popup-content" style="max-height:1500px;man-width:1000px;overflow-y: scroll;">
-                        <div class="title">${device.name}
+                    <div class="popup-content" style="">
                             <div class="status">
-                                <b>GPS:</b> <span class="status-indicator ${device.gps == true ? "status-on" : "status-off"}">
-                                    ${device.gps == true ? "ON" : "OFF"}
+                                <b></b> <span class="status-indicator ${device.gps == true ? "status-on" : "status-off"}">
+                                    GPS
                                 </span><br/>
-                                <b>Engine:</b> <span class="status-indicator ${device.ignition == "true" ? "status-on" : "status-off"}">
-                                    ${device.ignition == "true" ? "ON" : "OFF"}
+                                <b></b> <span class="status-indicator ${device.ignition == "true" ? "status-on" : "status-off"}">
+                                    Eng
                                 </span><br/>
-                                <b>Power:</b> <span class="status-indicator ${device.power === "true" ? "status-on" : "status-off"}">
-                                    ${device.power === "true" ? "ON" : "OFF"}
+                                <b></b> <span class="status-indicator ${device.power === "true" ? "status-on" : "status-off"}">
+                                    Pow
                                 </span><br/>
                             </div>
                         </div>
                         <div class="popup-details">
                             <b>Date:</b> ${device.dateNew}<br/>
                             <b>Speed:</b> ${device.speed} km/h<br/>
-                            <b>Hold Time:</b> ${device.holdtime}<br/>
+                            <b>Hold Time:</b> ${formatHoldTime(parseInt(device.holdtime))}<br/>
                             <b>Status:</b> <span class="status-indicator-status ${device.status == "Online" ? "status-on" : "status-off"}">${device.status}</span><br/>
                             <b>Battery:</b> ${device.battery}V<br/>
                             <div style="display: flex; align-items: center; gap: 5px;">
                                 <b>Location:</b> 
-                                <span id="location-popup-${device.deviceId}">
+                                <span id="location-popup-${device.deviceId}" style="max-width: 140px">
                                     <button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" 
                                         style="background: none; border: none; padding: 0; color: #3498db; 
                                         text-decoration: underline; cursor: pointer; font-size: 11px;">
@@ -1947,9 +1960,9 @@ function updatePopupPosition() {
                 "type": "Feature",
                 "properties": {
                     "deviceId": device.deviceId,
-                    "name": device.name,
+                    // "name": device.name,
                     "icon": iconUrl,
-                    "htmlPopup": generatePopupContent(device)
+                    // "htmlPopup": generatePopupContent(device)
                 },
                 "geometry": {
                     "type": "Point",
@@ -1971,181 +1984,182 @@ function updatePopupPosition() {
 
 
     // Create markers for each type with different sizes
-    Object.entries(markersByType).forEach(([type, data]) => {
-        if (data.features.length > 0) {
-            const geoJson = {
-                "type": "FeatureCollection",
-                "features": data.features
-            };
-            // console.log("-------------"+ JSON.stringify(geoJson))
+// First, let's process the markers by type with proper angle handling
+// First, let's process the markers by type with proper angle handling
+Object.entries(markersByType).forEach(([type, data]) => {
+    if (data.features.length > 0) {
+        const geoJson = {
+            "type": "FeatureCollection",
+            "features": data.features
+        };
 
-            const validDevices = devices.filter(device => {
-    // Check if the device has valid coordinates and is selected
-    const isValid = device.coordinates && 
-                   device.coordinates[0] !== 0 && 
-                   device.coordinates[1] !== 0 &&
-                   selectedDevices.has(device.deviceId);
-    
-    // Log invalid devices for debugging
-    if (!isValid && selectedDevices.has(device.deviceId)) {
-        console.log('Invalid device:', device);
+        // First, let's process and validate our devices
+        const validDevices = devices.filter(device => {
+            const isValid = device.coordinates && 
+                          device.coordinates[0] !== 0 && 
+                          device.coordinates[1] !== 0 &&
+                          selectedDevices.has(device.deviceId);
+            
+            if (!isValid && selectedDevices.has(device.deviceId)) {
+                console.log('Invalid device:', device);
+            }
+            
+            return isValid;
+        }).map(device => {
+            const matchingFeature = geoJson.features.find(
+                feature => feature.properties.deviceId === device.deviceId
+            );
+            
+            return {
+                ...device,
+                icon: matchingFeature ? matchingFeature.properties.icon : null
+            };
+        });
+
+        console.log('Valid devices for markers:', validDevices.length);
+
+        try {
+            // Create marker with a comprehensive configuration
+            let marker = new mappls.Marker({
+                map: map,
+                position: {
+                    type: "FeatureCollection",
+                    features: validDevices.map(device => ({
+                        type: "Feature",
+                        geometry: {
+                            type: "Point",
+                            coordinates: device.coordinates
+                        },
+                        properties: {
+                            deviceId: device.deviceId,
+                            name: device.name,
+                            icon: device.icon,
+                            "icon-size": data.size[0]/100,
+                            angle: device.angle || 0,
+                            htmlPopup: generatePopupContent(device),
+                            ...device
+                        }
+                    }))
+                },
+                clusters: true,
+                clusterStyle: {
+                    color: '#108cff',
+                    textColor: '#ffffff',
+                    textSize: '14px',
+                    border: '2px solid #fff',
+                    borderRadius: '50%',
+                    boxShadow: '0 0 10px rgba(0,0,0,0.2)'
+                },
+                clusterOptions: {
+                    clusterRadius: 80,
+                    maxZoom: 14,
+                    minClusterSize: 2,
+                    zoomOnClick: true,
+                    clusterBreakpoint: [
+                        {
+                            count: 50,
+                            color: '#ff6961',
+                            textColor: '#ffffff'
+                        },
+                        {
+                            count: 20,
+                            color: '#FFA726',
+                            textColor: '#ffffff'
+                        },
+                        {
+                            count: 5,
+                            color: '#77dd77',
+                            textColor: '#ffffff'
+                        }
+                    ]
+                },
+                fitbounds: true,
+                animate: true,
+                // This callback runs when the marker is added
+                callback: function(marker) {
+                  console.log("adadsadasd")
+                    try {
+                        // Wait a short moment for the marker to be fully initialized
+                        setTimeout(() => {
+                          console.log("fddfdf")
+                            // Apply rotation to the marker if it has an angle
+                            if (marker && typeof marker.setRotation === 'function') {
+                              console.log("hhi")
+                                const markerFeatures = marker.getPosition().features;
+                                if (markerFeatures && markerFeatures.length > 0) {
+                                    const angle = markerFeatures[0].properties.angle || 0;
+                                    console.log(angle)
+                                    marker.setRotation(angle);
+                                }
+                            }
+                        }, 100);
+                    } catch (e) {
+                        console.warn('Error in marker callback:', e);
+                    }
+                }
+            });
+
+            // Store the marker reference for later use
+            markers.push(marker);
+
+            // If you need to handle map-level events, use addListener
+            if (map.addListener) {
+                map.addListener('idle', function() {
+                    // This event fires when the map has finished moving/loading
+                    try {
+                        const markerLayers = marker.getLayers && marker.getLayers();
+                        if (markerLayers) {
+                            markerLayers.forEach(layer => {
+                                if (layer && layer.feature && layer.feature.properties.angle) {
+                                    const angle = layer.feature.properties.angle;
+                                    if (typeof layer.setRotation === 'function') {
+                                        layer.setRotation(angle);
+                                    }
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.warn('Failed to update marker rotations:', e);
+                    }
+                });
+            }
+
+        } catch (error) {
+            console.error('Error creating marker:', error);
+        }
     }
-    
-    return isValid;
-}).map(device => {
-    const matchingFeature = geoJson.features.find(
-        feature => feature.properties.deviceId === device.deviceId
-    );
-    
-    return {
-        ...device,
-        icon: matchingFeature ? matchingFeature.properties.icon : null
-    };
 });
 
-    // console.log('Valid devices for markers:', validDevices.length);
-            let marker = new mappls.Marker({
-        map: map,
-        position: {
-            type: "FeatureCollection",
-            features: validDevices.map(device => ({
-                type: "Feature",
-                geometry: {
-                    type: "Point",
-                    coordinates: device.coordinates // [longitude, latitude]
-                },
-                properties: {
-                    deviceId: device.deviceId,
-                    name: device.name,
-                    icon: device.icon,
-                    "icon-size": data.size[0]/100,
-                    htmlPopup: generatePopupContent(device),
-                    // Include all other device properties needed for popup
-                    ...device
-                }
-            }))
-        },
-        clusters: true,
-        clusterStyle: {
-            color: '#108cff',
-            textColor: '#ffffff',
-            textSize: '14px',
-            border: '2px solid #fff',
-            borderRadius: '50%',
-            boxShadow: '0 0 10px rgba(0,0,0,0.2)'
-        },
-        clusterOptions: {
-            clusterRadius: 80,        // Reduced radius to prevent over-clustering
-            maxZoom: 14,
-            minClusterSize: 2,        // Start clustering from 2 points
-            zoomOnClick: true,
-            clusterBreakpoint: [
-                {
-                    count: 50,        // For very large clusters
-                    color: '#ff6961',
-                    textColor: '#ffffff'
-                },
-                {
-                    count: 20,        // For medium clusters
-                    color: '#FFA726',
-                    textColor: '#ffffff'
-                },
-                {
-                    count: 5,         // For small clusters
-                    color: '#77dd77',
-                    textColor: '#ffffff'
-                }
-            ]
-        },
-        fitbounds: true,
-        animate: true,
-        callback: function(marker) {
-            console.log('Marker added:', marker);
-        }
-    });
-
-markers.push(marker);
-
-// Update cluster appearance on zoom
-// map.on('zoom', () => {
-//         const zoom = map.getZoom();
-//         if (zoom >= 14) {
-//             // At high zoom levels, reduce cluster radius to show more individual markers
-//             marker.setClusterOptions({ clusterRadius: 50 });
-//         // } else {
-//         //     // At lower zoom levels, increase radius for better overview
-//         //     marker.setClusterRadius(80);
-//         }
-//       });
-//                 // clusterProperties: {
-                //     minPoints: 2,  // Start clustering with just 2 points
-                //     maxZoom: 14,   // Lower max zoom for maintaining clusters longer
-                //     algorithm: 'k-means',
-                //     mergeClusters: true,
-                //     clusterRadius: 150, // Consistent cluster radius
-                //     gridSize: 120, // Grid size for cluster formation
-                //     minDistance: 100, // Minimum distance between clusters
-                //     maxDistance: 200, // Maximum distance for merging clusters
-                // },
-                // offset: [0, 0], // No offset from the exact coordinates
-                // draggable: false, // Prevents marker from being moved
-                // rotateWithMap: false, // Prevents rotation with map movement
-                // clusterclick: function(coordinates, pointCount, clusterMarker) {
-                //     map.setZoom(map.getZoom() + 2);
-                //     map.panTo(coordinates);
-                // },
-                // click: function(marker) {
-                //     const device = devices.find(d => d.deviceId === marker.feature.properties.deviceId);
-                //     if (device) {
-                //         showPopup(devices.indexOf(device), marker);
-                //     }
-                // },
-                // popupHtml: function(marker) {
-                //     return marker.feature.properties.htmlPopup;
-                // }
-         
-
-//             marker.setClusterOptions({
-  // background: [
-  //                   [2, 'rgba(66, 135, 245, 0.8)'],    // Light blue for small clusters
-  //                   [5, 'rgba(52, 168, 83, 0.8)'],     // Green for medium clusters
-  //                   [10, 'rgba(251, 188, 4, 0.8)'],    // Yellow for larger clusters
-  //                   [20, 'rgba(234, 67, 53, 0.8)'],    // Red for very large clusters
-  //               ],
-//     maxZoom: 10,
-//     radius: [
-//         [2, 20],
-//         [5, 25],
-//         [10, 35],
-//         [20, 45],
-//         [35, 55]
-//     ]
-// });
-
-        }
-    });
-
-    // Fit bounds considering all markers
-    // if (markers.length > 0) {
-    //     const bounds = new mappls.LatLngBounds();
-    //     devices
-    //         .filter(device => selectedDevices.has(device.deviceId))
-    //         .forEach(device => {
-    //             if (device.coordinates && device.coordinates[0] !== 0 && device.coordinates[1] !== 0) {
-    //               console.log(device.coordinates[1])
-    //                 bounds.extend({
-    //                     lat: device.coordinates[0],
-    //                     lng: device.coordinates[1]
-    //                 });
-    //             }
-    //         });
-    //     map.fitBounds(bounds, {
-    //         padding: { top: 50, bottom: 50, left: 50, right: 50 }
-    //     });
-    // }
 } catch (error) {
         console.error('Error creating markers:', error);
     }
+}
+
+// Helper function to safely apply rotation to a marker
+function safelyRotateMarker(marker, angle) {
+    try {
+        if (marker && typeof marker.setRotation === 'function') {
+            marker.setRotation(angle);
+        }
+    } catch (e) {
+        console.warn('Failed to rotate marker:', e);
+    }
+}
+
+// Helper function to update marker rotations
+function updateMarkersRotation() {
+    markers.forEach(marker => {
+        if (marker && marker.getLayers) {
+            const layers = marker.getLayers();
+            if (layers) {
+                layers.forEach(layer => {
+                    if (layer && layer.feature && layer.feature.properties.angle) {
+                        safelyRotateMarker(layer, layer.feature.properties.angle);
+                    }
+                });
+            }
+        }
+    });
 }
 
 function getMarkerIcon(feature) {
@@ -2401,6 +2415,7 @@ function setRefreshInterval() {
         const statusClass = device.status === "Online" ? "status-online" : "status-offline";
 
         row.innerHTML = `
+
             <td>${device.name}</td>
             <td>${device.dateNew}</td>
             <td><span class="status-cell ${statusClass}">${device.status}</span></td>
@@ -2410,7 +2425,7 @@ function setRefreshInterval() {
             <td><span class="status-cell"><span class="status-indicator-list ${device.power == "true" ? "status-on" : "status-off"}">${device.power === "true" ? "On" : "Off"}</span></span></td>
             <td><span class="status-cell"><span class="status-indicator-list ${device.ignition == "true" ? "status-on" : "status-off"}">${device.ignition === "true" ? "On" : "Off"}</span></span></td>
             <td>${device.speed} km/h</td>
-            <td>${device.holdtime}</td>
+            <td>${formatHoldTime(parseInt(device.holdtime))}</td>
             <td id="location-${device.deviceId}">
                 <button onclick="updateLocation('${device.deviceId}', '${device.latlang}')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
                     <i class="fas fa-map-marker-alt" style="margin-right: 0"></i>
