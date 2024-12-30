@@ -1363,6 +1363,8 @@ let deviceData = [];
 let speedThreshold = 30;
 let fetching = false;
 const MINIMUM_DISTANCE = 0.01;
+let startMarker = null;
+let endMarker = null;
 
 const ANGLE_OFFSET = 90;
 const popup = document.getElementById("customPopup");
@@ -1481,6 +1483,7 @@ function fetchPlaybackData(did) {
     alert("Please select both From and To dates");
     fetching = false;
     updateStartButtonState();
+    addStartEndMarkers();
     return;
     }
 
@@ -1526,10 +1529,12 @@ function fetchPlaybackData(did) {
             .filter(Boolean);
         fetching = false;
         updateStartButtonState();
+        addStartEndMarkers();
         console.log("Playback Data Loaded:", playbackData);
         } else {
         fetching = false;
         updateStartButtonState();
+        addStartEndMarkers();
         console.error("Unexpected data format: response is not an array");
         }
     })
@@ -2372,7 +2377,8 @@ function updateStartTimeDisplay(startDateTime) {
     const startDateTime = playbackData[0].date;
     
     // Create the starting marker
-    startingMarker = createStartMarker(startCoords, startDateTime);
+    // startingMarker = createStartMarker(startCoords, startDateTime);
+    addStartEndMarkers();
     
     // Update the time display
     updateStartTimeDisplay(startDateTime);
@@ -2745,6 +2751,108 @@ dateTimeInputs.forEach(input => {
         }
     });
 });
+
+function addStartEndMarkers() {
+    console.log("startmarker is adding....")
+    if (!playbackData || playbackData.length < 2) {
+        console.warn("Insufficient playback data for markers");
+        return;
+    }
+
+    // Remove existing markers
+    if (startMarker) {
+        startMarker.remove();
+    }
+    if (endMarker) {
+        endMarker.remove();
+    }
+
+    const startPoint = playbackData[0];
+    const endPoint = playbackData[playbackData.length - 1];
+
+    try {
+        // Create start marker
+        startMarker = new mappls.Marker({
+            map: map,
+            position: {
+                lat: startPoint.coordinates[1],
+                lng: startPoint.coordinates[0]
+            },
+            fitbounds: true,
+            icon: createStartEndIcon('S', '#2ecc71')
+        });
+
+        // Create end marker
+        endMarker = new mappls.Marker({
+            map: map,
+            position: {
+                lat: endPoint.coordinates[1],
+                lng: endPoint.coordinates[0]
+            },
+            fitbounds: true,
+            icon: createStartEndIcon('E', '#e74c3c')
+        });
+
+        // Add permanent timestamp labels without prefixes
+        addPermanentLabel(startMarker, startPoint.date);
+        addPermanentLabel(endMarker, endPoint.date);
+
+    } catch (error) {
+        console.error("Error creating markers:", error);
+    }
+}
+
+function createStartEndIcon(label, color) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 40;
+    canvas.height = 40;
+    const ctx = canvas.getContext('2d');
+
+    // Draw circle
+    ctx.beginPath();
+    ctx.arc(20, 20, 15, 0, 2 * Math.PI);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Add label
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, 20, 20);
+
+    return canvas.toDataURL();
+}
+
+function addPermanentLabel(marker, timestamp) {
+    const markerElement = marker.getElement();
+    if (!markerElement) return;
+
+    // Create label container
+    const labelContainer = document.createElement('div');
+    labelContainer.style.position = 'absolute';
+    labelContainer.style.top = '-35px';  // Position above marker
+    labelContainer.style.left = '50%';
+    labelContainer.style.transform = 'translateX(-50%)';
+    labelContainer.style.backgroundColor = 'white';
+    labelContainer.style.padding = '4px 8px';
+    labelContainer.style.borderRadius = '4px';
+    labelContainer.style.fontSize = '12px';
+    labelContainer.style.fontWeight = '600';  // Made font bolder
+    labelContainer.style.whiteSpace = 'nowrap';
+    labelContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+    labelContainer.style.zIndex = '1000';
+    labelContainer.style.pointerEvents = 'none';
+
+    // Set the timestamp without prefix
+    labelContainer.textContent = timestamp.split('.')[0];
+
+    // Append label to marker
+    markerElement.appendChild(labelContainer);
+}
 
     // Make sure to call setupDateValidation when the page loads
     document.addEventListener("DOMContentLoaded", function() {
