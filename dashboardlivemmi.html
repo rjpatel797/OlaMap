@@ -1645,6 +1645,18 @@ function createDeviceList() {
         
         filterMarkers();
     });
+
+    // Add group checkbox handler
+    const groupCheckboxes = document.querySelectorAll('.group-checkbox');
+    groupCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', handleGroupCheckboxChange);
+    });
+
+    // Add device checkbox handler
+    const deviceCheckboxes = document.querySelectorAll('.deviceCheckbox');
+    deviceCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', handleCheckboxChange);
+    });
 }
 
 function getCarEmoji(device) {
@@ -1912,7 +1924,6 @@ function updatePopupPosition() {
     console.log('Total devices:', devices.length);
     console.log('Selected devices:', selectedDevices.size);
 
-    try {
     // Prepare data for clustering by marker type
     const markersByType = {
         offline: { size: [5, 5], features: [] },
@@ -1954,15 +1965,15 @@ function updatePopupPosition() {
                 iconUrl = '/deviceTracking/images/yellow.png';
             }
 
-            
-
             const feature = {
                 "type": "Feature",
                 "properties": {
                     "deviceId": device.deviceId,
-                    // "name": device.name,
-                    "icon": iconUrl,
-                    // "htmlPopup": generatePopupContent(device)
+                    "name": device.name,
+                    // "icon": iconUrl,
+                    "angle": device.angle || 0,
+                    "html": `<div style="transform: rotate(${device.angle || 0}deg);"><img src='${iconUrl}' style="width: 40px; height: 40px; margin-top:25px;" /></div>`,
+                    "htmlPopup": generatePopupContent(device)
                 },
                 "geometry": {
                     "type": "Point",
@@ -1973,167 +1984,65 @@ function updatePopupPosition() {
             markersByType[markerType].features.push(feature);
         });
 
-    // Clear existing markers
-    markers.forEach(marker => {
-        if (marker && marker.remove) {
-            marker.remove();
-        }
-    });
-    markers = [];
-    // console.log("-------------dddd"+ JSON.stringify(devices))
-
-
-    // Create markers for each type with different sizes
-// First, let's process the markers by type with proper angle handling
-// First, let's process the markers by type with proper angle handling
-Object.entries(markersByType).forEach(([type, data]) => {
-    if (data.features.length > 0) {
-        const geoJson = {
-            "type": "FeatureCollection",
-            "features": data.features
-        };
-
-        // First, let's process and validate our devices
-        const validDevices = devices.filter(device => {
-            const isValid = device.coordinates && 
-                          device.coordinates[0] !== 0 && 
-                          device.coordinates[1] !== 0 &&
-                          selectedDevices.has(device.deviceId);
-            
-            if (!isValid && selectedDevices.has(device.deviceId)) {
-                console.log('Invalid device:', device);
-            }
-            
-            return isValid;
-        }).map(device => {
-            const matchingFeature = geoJson.features.find(
-                feature => feature.properties.deviceId === device.deviceId
-            );
-            
-            return {
-                ...device,
-                icon: matchingFeature ? matchingFeature.properties.icon : null
+    // Create markers for each type using GeoJSON
+    Object.entries(markersByType).forEach(([type, data]) => {
+        if (data.features.length > 0) {
+            const geoJson = {
+                "type": "FeatureCollection",
+                "features": data.features
             };
-        });
 
-        console.log('Valid devices for markers:', validDevices.length);
+            geoJson.features.forEach(feature => {
+                try {
+                    const coordinates = feature.geometry.coordinates;
+                    const properties = feature.properties;
 
-        try {
-            // Create marker with a comprehensive configuration
-            let marker = new mappls.Marker({
-                map: map,
-                position: {
-                    type: "FeatureCollection",
-                    features: validDevices.map(device => ({
-                        type: "Feature",
-                        geometry: {
-                            type: "Point",
-                            coordinates: device.coordinates
-                        },
-                        properties: {
-                            deviceId: device.deviceId,
-                            name: device.name,
-                            icon: device.icon,
-                            "icon-size": data.size[0]/100,
-                            angle: device.angle || 0,
-                            htmlPopup: generatePopupContent(device),
-                            ...device
-                        }
-                    }))
-                },
-                clusters: true,
-                clusterStyle: {
-                    color: '#108cff',
-                    textColor: '#ffffff',
-                    textSize: '14px',
-                    border: '2px solid #fff',
-                    borderRadius: '50%',
-                    boxShadow: '0 0 10px rgba(0,0,0,0.2)'
-                },
-                clusterOptions: {
-                    clusterRadius: 80,
-                    maxZoom: 14,
-                    minClusterSize: 2,
-                    zoomOnClick: true,
-                    clusterBreakpoint: [
-                        {
-                            count: 50,
-                            color: '#ff6961',
-                            textColor: '#ffffff'
-                        },
-                        {
-                            count: 20,
-                            color: '#FFA726',
-                            textColor: '#ffffff'
-                        },
-                        {
-                            count: 5,
-                            color: '#77dd77',
-                            textColor: '#ffffff'
-                        }
-                    ]
-                },
-                fitbounds: true,
-                animate: true,
-                // This callback runs when the marker is added
-                callback: function(marker) {
-                  console.log("adadsadasd")
-                    try {
-                        // Wait a short moment for the marker to be fully initialized
-                        setTimeout(() => {
-                          console.log("fddfdf")
-                            // Apply rotation to the marker if it has an angle
-                            if (marker && typeof marker.setRotation === 'function') {
-                              console.log("hhi")
-                                const markerFeatures = marker.getPosition().features;
-                                if (markerFeatures && markerFeatures.length > 0) {
-                                    const angle = markerFeatures[0].properties.angle || 0;
-                                    console.log(angle)
-                                    marker.setRotation(angle);
-                                }
-                            }
-                        }, 100);
-                    } catch (e) {
-                        console.warn('Error in marker callback:', e);
+                    if (!coordinates || coordinates.length !== 2) {
+                        throw new Error('Invalid coordinates for marker');
                     }
+
+                    if (!properties || !properties.html ) {
+                        throw new Error('Invalid properties for marker');
+                    }
+
+                    let marker = new mappls.Marker({
+                        map: map,
+                        position: {
+                            lat: coordinates[0],
+                            lng: coordinates[1]
+                        },
+                        html: properties.html,
+                        fitbounds: false,
+                        animate: true
+                    });
+
+                    // Set rotation for marker
+                    const imgElement = marker.getElement().querySelector('img');
+                    if (imgElement && properties.angle) {
+                        imgElement.style.transform = `rotate(${properties.angle}deg)`;
+                    }
+
+                    // Add click listener for popup
+                    marker.getElement().addEventListener('click', () => {
+                        new mappls.Popup()
+                            .setLngLat({ lat: coordinates[1], lng: coordinates[0] })
+                            .setHTML(properties.htmlPopup)
+                            .addTo(map);
+                    });
+
+                    // Store the marker for later use
+                    markers.push(marker);
+                } catch (error) {
+                    console.error('Error creating marker:', error.message, feature);
                 }
             });
-
-            // Store the marker reference for later use
-            markers.push(marker);
-
-            // If you need to handle map-level events, use addListener
-            if (map.addListener) {
-                map.addListener('idle', function() {
-                    // This event fires when the map has finished moving/loading
-                    try {
-                        const markerLayers = marker.getLayers && marker.getLayers();
-                        if (markerLayers) {
-                            markerLayers.forEach(layer => {
-                                if (layer && layer.feature && layer.feature.properties.angle) {
-                                    const angle = layer.feature.properties.angle;
-                                    if (typeof layer.setRotation === 'function') {
-                                        layer.setRotation(angle);
-                                    }
-                                }
-                            });
-                        }
-                    } catch (e) {
-                        console.warn('Failed to update marker rotations:', e);
-                    }
-                });
-            }
-
-        } catch (error) {
-            console.error('Error creating marker:', error);
         }
-    }
-});
+    });
 
-} catch (error) {
-        console.error('Error creating markers:', error);
-    }
+    console.log('Markers initialized:', markers.length);
 }
+
+
 
 // Helper function to safely apply rotation to a marker
 function safelyRotateMarker(marker, angle) {
@@ -2242,31 +2151,157 @@ function createMarker(device) {
 }
 
 function filterMarkers() {
-  initializeMarkers();
-
-    // Filter features based on selected devices
-    const filteredData = devices
-        .filter(device => selectedDevices.has(device.deviceId))
-        .map(device => ({
-            type: "Feature",
-            properties: {
-                deviceId: device.deviceId,
-                name: device.name,
-                // ... other properties
-            },
-            geometry: {
-                type: "Point",
-                coordinates: [device.coordinates[0], device.coordinates[1]]
-            }
-        }));
-
-    // Update cluster markers with filtered data
-    if (markers[0]) {
-        markers[0].setData({
-            type: "FeatureCollection",
-            features: filteredData
-        });
+    // Remove all existing markers
+    try {
+        if (markers && markers.length > 0) {
+            markers.forEach(marker => {
+                try {
+                    // Attempt to remove marker using MapmyIndia's remove method
+                    mappls.remove({
+                        map: map,
+                        layer: marker
+                    });
+                } catch (removeError) {
+                    console.error('Error removing individual marker:', removeError);
+                }
+            });
+            
+            // Clear the markers array
+            markers = [];
+        }
+    } catch (error) {
+        console.error('Error in marker filtering:', error);
     }
+
+    // Only proceed if there are selected devices
+    if (selectedDevices.size === 0) {
+        return; // Exit if no devices are selected
+    }
+
+    // Filter devices based on selection
+    const selectedDevicesList = devices.filter(device => 
+        selectedDevices.has(device.deviceId) &&
+        device.coordinates && 
+        device.coordinates[0] !== 0 && 
+        device.coordinates[1] !== 0
+    );
+
+    // Group devices by status for better visualization
+    const markerTypes = {
+        offline: [],
+        stopped: [],
+        moving: [],
+        idle: []
+    };
+
+    // Categorize devices
+    selectedDevicesList.forEach(device => {
+        const currentDate = new Date();
+        const deviceDate = new Date(device.date);
+        const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+        const ignitionStatus = typeof device.ignition === 'string' 
+            ? device.ignition.toLowerCase() === 'true' 
+            : Boolean(device.ignition);
+
+        let markerType;
+        let iconUrl;
+
+        if (hoursDifference > 2) {
+            markerType = 'offline';
+            iconUrl = '/deviceTracking/images/blackcar1.png';
+        } else if (!ignitionStatus) {
+            markerType = 'stopped';
+            iconUrl = '/images/icon/red/car0.png';
+        } else if (ignitionStatus && device.speed > 0) {
+            markerType = 'moving';
+            iconUrl = '/deviceTracking/images/green.png';
+        } else {
+            markerType = 'idle';
+            iconUrl = '/deviceTracking/images/yellow.png';
+        }
+
+        markerTypes[markerType].push({
+            ...device,
+            iconUrl: iconUrl
+        });
+    });
+
+    // Create markers for each type
+    Object.entries(markerTypes).forEach(([type, deviceList]) => {
+        if (deviceList.length > 0) {
+            try {
+                // Prepare marker configuration
+                const markerConfig = {
+                    map: map,
+                    position: {
+                        type: "FeatureCollection",
+                        features: deviceList.map(device => ({
+                            type: "Feature",
+                            geometry: {
+                                type: "Point",
+                                coordinates: [device.coordinates[0], device.coordinates[1]]
+                            },
+                            properties: {
+                                deviceId: device.deviceId,
+                                name: device.name,
+                                angle: device.angle || 0,
+                                iconUrl: device.iconUrl
+                            }
+                        }))
+                    },
+                    clusters: true,
+                    clusterStyle: {
+                        color: '#108cff',
+                        textColor: '#ffffff',
+                        textSize: '14px',
+                        border: '2px solid #fff',
+                        borderRadius: '50%',
+                        boxShadow: '0 0 10px rgba(0,0,0,0.2)'
+                    },
+                    clusterOptions: {
+                        clusterRadius: 80,
+                        maxZoom: 14,
+                        minClusterSize: 2,
+                        zoomOnClick: true
+                    },
+                    icon: {
+                        url: deviceList[0].iconUrl,
+                        width: 40,
+                        height: 40
+                    },
+                    callback: function(marker) {
+                        // Add click event to show popup
+                        marker.addListener('click', function(feature) {
+                            const deviceIndex = devices.findIndex(
+                                d => d.deviceId === feature.properties.deviceId
+                            );
+                            if (deviceIndex !== -1) {
+                                showPopup(deviceIndex, marker);
+                            }
+                        });
+
+                        // Try to set rotation if possible
+                        try {
+                            const rotation = marker.getPosition().features[0].properties.angle || 0;
+                            marker.setRotation(rotation);
+                        } catch (rotationError) {
+                            console.warn('Could not set marker rotation:', rotationError);
+                        }
+                    }
+                };
+
+                // Create marker and store reference
+                const marker = new mappls.Marker(markerConfig);
+                markers.push(marker);
+
+            } catch (markerError) {
+                console.error(`Error creating ${type} markers:`, markerError);
+            }
+        }
+    });
+
+    // Update status counts
+    updateStatusCounts();
 }
 
 function setRefreshInterval() {
@@ -3013,20 +3048,51 @@ function handleCheckboxChange(e) {
     const deviceIndex = parseInt(checkbox.dataset.index);
     const device = devices[deviceIndex];
     
-    // Update selectedDevices Set
     if (checkbox.checked) {
         selectedDevices.add(device.deviceId);
     } else {
         selectedDevices.delete(device.deviceId);
     }
     
-    // Update "Select All" checkbox state
-    const allDeviceCheckboxes = document.querySelectorAll('.deviceCheckbox');
-    const allChecked = Array.from(allDeviceCheckboxes).every(cb => cb.checked);
+    // Update group checkboxes
+    updateGroupCheckboxes();
+    
+    // Update "Select All" checkbox
+    const allChecked = Array.from(document.querySelectorAll('.deviceCheckbox'))
+        .every(cb => cb.checked);
     document.getElementById('selectAllCheckbox').checked = allChecked;
     
+    // Update markers
     filterMarkers();
 }
+
+function handleGroupCheckboxChange(e) {
+    const groupCheckbox = e.target;
+    const groupName = groupCheckbox.dataset.group;
+    const isChecked = groupCheckbox.checked;
+    
+    const groupDevices = document.querySelectorAll(`[data-group="${groupName}"] .deviceCheckbox`);
+    groupDevices.forEach(checkbox => {
+        checkbox.checked = isChecked;
+        const deviceIndex = parseInt(checkbox.dataset.index);
+        const device = devices[deviceIndex];
+        
+        if (isChecked) {
+            selectedDevices.add(device.deviceId);
+        } else {
+            selectedDevices.delete(device.deviceId);
+        }
+    });
+    
+    // Update "Select All" checkbox
+    const allChecked = Array.from(document.querySelectorAll('.deviceCheckbox'))
+        .every(cb => cb.checked);
+    document.getElementById('selectAllCheckbox').checked = allChecked;
+    
+    // Update markers
+    filterMarkers();
+}
+
 
 function addPOIForDevice(deviceName, lat, lng) {
     const params = new URLSearchParams({
@@ -3098,21 +3164,22 @@ document.querySelectorAll('.status-item').forEach(item => {
     });
 });
 
-document.getElementById('selectAllCheckbox').addEventListener('change', function() {
-    const isChecked = this.checked;
-    const deviceCheckboxes = document.querySelectorAll('.deviceCheckbox');
+document.getElementById('selectAllCheckbox').addEventListener('change', function(e) {
+    const isChecked = e.target.checked;
     
-    deviceCheckboxes.forEach((checkbox, index) => {
+    // Update all checkboxes
+    document.querySelectorAll('.deviceCheckbox, .group-checkbox').forEach(checkbox => {
         checkbox.checked = isChecked;
-        const device = devices[index];
-        
-        if (isChecked) {
-            selectedDevices.add(device.deviceId);
-        } else {
-            selectedDevices.delete(device.deviceId);
-        }
     });
     
+    // Update selectedDevices Set
+    if (isChecked) {
+        devices.forEach(device => selectedDevices.add(device.deviceId));
+    } else {
+        selectedDevices.clear();
+    }
+    
+    // Update markers
     filterMarkers();
 });
 
@@ -3232,6 +3299,7 @@ function updateVehicleMarker(vehicleData) {
 
         const initialAngle = parseFloat(data.angle) || 0;
 
+
         if (!currentMarker) {
             // Create new marker
             currentMarker = new mappls.Marker({
@@ -3240,7 +3308,7 @@ function updateVehicleMarker(vehicleData) {
                     lat: position.lat,
                     lng: position.lng
                 },
-                icon: '/deviceTracking/images/car_image_transparent.png',
+                html: `<img src="/deviceTracking/images/car_image_transparent.png" style="width: 40px; height: 20px; margin-top:25px; transform: rotate(${initialAngle}deg);" />`,
                 width: 40,
                 height: 40,
                 rotateWithMap: true
@@ -3388,6 +3456,91 @@ document.addEventListener('click', function(event) {
 // Close button functionality
 document.querySelector('#customPopup .close-btn').addEventListener('click', hidePopup);
 
+document.querySelectorAll('.status-item').forEach(item => {
+    item.addEventListener('click', function() {
+        const statusType = this.querySelector('.status-icon')?.alt?.toLowerCase() || 
+                          (this.classList.contains('all-status') ? 'all' : null);
+        if (statusType) {
+            handleStatusBoxClick(statusType);
+        }
+    });
+});
+
+function handleStatusBoxClick(statusType) {
+    // Clear existing selections
+    selectedDevices.clear();
+    
+    // Uncheck all checkboxes
+    document.querySelectorAll('.deviceCheckbox, .group-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    document.getElementById('selectAllCheckbox').checked = false;
+
+    // Filter devices based on status type
+    devices.forEach((device, index) => {
+        const checkbox = document.querySelector(`.deviceCheckbox[data-index="${index}"]`);
+        if (!checkbox) return;
+
+        const currentDate = new Date();
+        const deviceDate = new Date(device.date);
+        const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+        const ignitionStatus = typeof device.ignition === 'string' 
+            ? device.ignition.toLowerCase() === 'true' 
+            : Boolean(device.ignition);
+
+        let shouldSelect = false;
+
+        switch(statusType) {
+            case 'all':
+                shouldSelect = true;
+                break;
+            case 'moving':
+                shouldSelect = ignitionStatus && device.speed > 0 && hoursDifference < 2;
+                break;
+            case 'stopped':
+                shouldSelect = !ignitionStatus && hoursDifference < 2;
+                break;
+            case 'idle':
+                shouldSelect = ignitionStatus && device.speed === 0 && hoursDifference < 2;
+                break;
+            case 'offline':
+                shouldSelect = hoursDifference > 2;
+                break;
+        }
+
+        if (shouldSelect) {
+            checkbox.checked = true;
+            selectedDevices.add(device.deviceId);
+        }
+    });
+
+    // Update markers based on new selection
+    filterMarkers();
+    
+    // Update group checkboxes
+    updateGroupCheckboxes();
+}
+
+function updateGroupCheckboxes() {
+    const deviceGroups = {};
+    devices.forEach(device => {
+        const groupName = device.devicegroup || 'Ungrouped';
+        if (!deviceGroups[groupName]) {
+            deviceGroups[groupName] = { total: 0, selected: 0 };
+        }
+        deviceGroups[groupName].total++;
+        if (selectedDevices.has(device.deviceId)) {
+            deviceGroups[groupName].selected++;
+        }
+    });
+
+    Object.entries(deviceGroups).forEach(([groupName, counts]) => {
+        const groupCheckbox = document.querySelector(`[data-group="${groupName}"]`);
+        if (groupCheckbox) {
+            groupCheckbox.checked = counts.selected === counts.total;
+        }
+    });
+}
 
     </script>
   </body>
