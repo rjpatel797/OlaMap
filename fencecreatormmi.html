@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fence Creator with MapMyIndia</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #navbar-container {
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 0;
+        }
+
+        .search-bar {
+            padding: 15px;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1;
+        }
+
+        .search-box {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+
+        .search-label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .drawing-tools {
+            position: absolute;
+            top: 9px;
+            right: 80px;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            padding: 4px;
+            display: flex;
+            gap: 5px;
+            z-index: 1;
+        }
+
+        .tool-button {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tool-button.active {
+            background: #e3f2fd;
+            border-color: #2196F3;
+        }
+
+        .name-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 2;
+        }
+
+        .name-popup.active {
+            display: block;
+        }
+
+        .popup-content {
+            min-width: 300px;
+        }
+
+        .name-input {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .popup-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .popup-button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .cancel-btn {
+            background: #f5f5f5;
+        }
+
+        .add-btn {
+            background: #2196F3;
+            color: white;
+        }
+
+        .suggestions-container {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none;
+        }
+
+        .suggestion-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        .suggestion-item:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div id="navbar-container"></div>
+        <div class="search-bar">
+            <div class="search-box">
+                <label class="search-label">Place:</label>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search places...">
+                <div id="suggestions" class="suggestions-container"></div>
+            </div>
+        </div>
+        <div class="map-container">
+            <div id="map"></div>
+            <div class="drawing-tools">
+                <button class="tool-button" onclick="setDrawingMode('hand', event)" title="Pan Map">
+                    <svg width="800px" height="800px" viewBox="0 0 16 16" version="1.1"
+                        xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <path fill="#444"
+                            d="M13.5 2.4c-0.4-0.4-1-0.5-1.5-0.3 0-0.3-0.1-0.6-0.4-0.9-0.2-0.2-0.6-0.4-1.1-0.4-0.3 0-0.5 0.1-0.7 0.1 0-0.2-0.1-0.3-0.2-0.5-0.5-0.6-1.5-0.6-2 0-0.2 0.2-0.4 0.4-0.4 0.6-0.2 0-0.4-0.1-0.6-0.1-0.5 0-0.8 0.2-1.1 0.5-0.5 0.5-0.5 1.3-0.5 1.3v3.8c-0.3-0.3-0.8-0.8-1.5-0.8-0.2 0-0.5 0.1-0.7 0.2-0.4 0.2-0.6 0.5-0.7 0.9-0.3 1 0.6 2.4 0.6 2.5 0.1 0.1 1.2 2.7 2.2 3.8 1 1.2 2.1 1.9 4.9 1.9 2.9 0 4.2-1.6 4.2-5.1v-5.5c0-0.1 0.1-1.3-0.5-2zM8 2c0-0.3-0.1-1 0.5-1 0.5 0 0.5 0.5 0.5 1v4c0 0.3 0.2 0.5 0.5 0.5s0.5-0.2 0.5-0.5v-3.8c0 0 0-0.4 0.5-0.4 0.6 0 0.5 0.9 0.5 0.9v3.3c0 0.3 0.2 0.5 0.5 0.5s0.5-0.2 0.5-0.5v-2.4c0-0.1 0-0.6 0.5-0.6s0.5 1 0.5 1v5.9c0 3.4-1.3 4.1-3.2 4.1-2.4 0-3.3-0.5-4.1-1.6-0.9-1-2.1-3.6-2.1-3.7-0.3-0.3-0.7-1.2-0.6-1.6 0-0.1 0.1-0.2 0.2-0.3 0.1 0 0.2-0.1 0.2-0.1 0.4 0 0.8 0.5 0.9 0.7l0.6 0.9c0.1 0.2 0.4 0.3 0.6 0.2 0.4 0 0.5-0.2 0.5-0.4v-5.2c0-0.4 0-1 0.5-1 0.4 0 0.5 0.3 0.5 0.8v3.3c0 0.3 0.2 0.5 0.5 0.5s0.5-0.2 0.5-0.5z">
+                        </path>
+                    </svg>
+                </button>
+                <button class="tool-button" onclick="setDrawingMode('circle', event)" title="Draw Circle">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                    </svg>
+                </button>
+                <button class="tool-button" onclick="setDrawingMode('polygon', event)" title="Draw Polygon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                    </svg>
+                </button>
+                <button class="tool-button" onclick="clearAllShapes()" title="Clear All Shapes">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="name-popup" id="namePopup">
+            <div class="popup-content">
+                <label for="fenceName">Name:</label>
+                <input type="text" id="fenceName" class="name-input">
+                <div class="popup-buttons">
+                    <button class="popup-button cancel-btn" onclick="cancelFence()">Cancel</button>
+                    <button class="popup-button add-btn" onclick="saveFence()">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let map;
+        let currentDrawingMode = null;
+        let currentShape = null;
+        let drawingLayers = [];
+        let polygonPath = [];
+        let tempPolyline = null;
+        let circleMarker = null;
+        let polygonMarkers = [];
+
+        $(document).ready(function () {
+            $("#navbar-container").load("navbarola.html", function () {
+                console.log("Navbar loaded successfully!");
+            });
+
+            if (!localStorage.getItem("mid")) {
+                window.location.href = "/index.html";
+            }
+
+            loadMapScript();
+        });
+
+        function loadMapScript() {
+            const key = localStorage.getItem("key");
+            if (!key) {
+                console.error("No API key found in localStorage");
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = `https://apis.mapmyindia.com/advancedmaps/api/${key}/map_sdk?layer=vector&v=2.0&callback=initMap`;
+            script.defer = true;
+            script.async = true;
+            document.head.appendChild(script);
+        }
+
+        function initMap() {
+            try {
+                map = new MapmyIndia.Map('map', {
+                    center: [28.61, 77.23],
+                    zoomControl: true,
+                    hybrid: true,
+                    location: true,
+                    zoom: 15,
+                    click: true,
+                    doubleClick: true,
+                    mousedown: true,
+                    mousemove: true,
+                    mouseup: true
+                });
+
+                // Enable map interactions by default
+                map.dragging = {
+                    enable: function () {
+                        if (map) map.dragPan.enable();
+                    },
+                    disable: function () {
+                        if (map) map.dragPan.disable();
+                    }
+                };
+
+                map.scrollWheelZoom = {
+                    enable: function () {
+                        if (map) map.scrollZoom.enable();
+                    },
+                    disable: function () {
+                        if (map) map.scrollZoom.disable();
+                    }
+                };
+
+                // Set default mode to hand (panning)
+                setDrawingMode('hand');
+
+                console.log("Map initialized successfully");
+            } catch (error) {
+                console.error("Error initializing map:", error);
+            }
+        }
+
+        function setDrawingMode(mode, event) {
+    try {
+        // Clean up existing drawings and data when switching modes
+        cleanupAllDrawings();
+        
+        // Reset current mode
+        currentDrawingMode = mode;
+
+        // Remove active class from all buttons
+        document.querySelectorAll('.tool-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        // Add active class to clicked button if event exists
+        if (event && event.currentTarget) {
+            event.currentTarget.classList.add('active');
+        } else {
+            // If called programmatically, find and activate the corresponding button
+            document.querySelector(`.tool-button[onclick*="${mode}"]`)?.classList.add('active');
+        }
+
+        // Reinitialize map sources after cleanup
+        initializeMapSources();
+
+        // Initialize the selected drawing mode
+        switch (mode) {
+            case 'hand':
+                initializeMapPanning();
+                break;
+            case 'circle':
+                initializeCircleDrawing();
+                break;
+            case 'polygon':
+                initializePolygonDrawing();
+                break;
+        }
+    } catch (error) {
+        console.error('Error in setDrawingMode:', error);
+    }
+}
+
+function initializeMapSources() {
+    try {
+        // Initialize circle source
+        if (!map.getSource('circle-source')) {
+            map.addSource('circle-source', {
+                'type': 'geojson',
+                'data': {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': [0, 0]
+                    },
+                    'properties': {
+                        'radius': 0
+                    }
+                }
+            });
+        }
+
+        // Initialize polygon source
+        if (!map.getSource('polygon-source')) {
+            map.addSource('polygon-source', {
+                'type': 'geojson',
+                'data': {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Polygon',
+                        'coordinates': [[]]
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error in initializeMapSources:', error);
+    }
+}
+
+function initializeMapPanning() {
+            map.dragging.enable();
+            map.scrollWheelZoom.enable();
+        }
+
+        $(document).ready(function () {
+            $("#navbar-container").load("navbarola.html", function () {
+                console.log("Navbar loaded successfully!");
+            });
+
+            if (!localStorage.getItem("mid")) {
+                window.location.href = "/index.html";
+            }
+
+            loadMapScript();
+        });
+
+        function loadMapScript() {
+            const key = localStorage.getItem("key");
+            if (!key) {
+                console.error("No API key found in localStorage");
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = `https://apis.mapmyindia.com/advancedmaps/api/${key}/map_sdk?layer=vector&v=2.0&callback=initMap`;
+            script.defer = true;
+            script.async = true;
+            document.head.appendChild(script);
+        }
+
+        function initMap() {
+            try {
+                map = new MapmyIndia.Map('map', {
+                    center: [28.61, 77.23],
+                    zoomControl: true,
+                    hybrid: true,
+                    location: true,
+                    zoom: 15
+                });
+
+                // Wait for map to load before enabling interactions
+                map.once('load', function () {
+                    console.log("Map loaded successfully");
+
+                    // Enable map interactions by default
+                    map.dragPan.enable();
+                    map.scrollZoom.enable();
+
+                    // Set default mode to hand (panning)
+                    setDrawingMode('hand');
+                });
+
+            } catch (error) {
+                console.error("Error initializing map:", error);
+            }
+        }
+
+        // function cleanupDrawing() {
+        //     try {
+        //         // Clean up circle
+        //         if (circleMarker) {
+        //             if (typeof circleMarker.remove === 'function') {
+        //                 circleMarker.remove();
+        //             } else if (map) {
+        //                 map.removeLayer(circleMarker);
+        //             }
+        //             circleMarker = null;
+        //         }
+
+        //         // Clean up polygon and polyline
+        //         if (tempPolyline) {
+        //             if (typeof tempPolyline.remove === 'function') {
+        //                 tempPolyline.remove();
+        //             } else if (map) {
+        //                 map.removeLayer(tempPolyline);
+        //             }
+        //             tempPolyline = null;
+        //         }
+
+        //         // Clean up polygon markers
+        //         polygonMarkers.forEach(marker => {
+        //             if (typeof marker.remove === 'function') {
+        //                 marker.remove();
+        //             } else if (map) {
+        //                 map.removeLayer(marker);
+        //             }
+        //         });
+        //         polygonMarkers = [];
+
+        //         // Reset polygon path
+        //         polygonPath = [];
+
+        //         // Re-enable map interactions
+        //         if (map) {
+        //             if (map.dragPan) {
+        //                 map.dragPan.enable();
+        //             }
+        //             if (map.scrollZoom) {
+        //                 map.scrollZoom.enable();
+        //             }
+        //         }
+        //     } catch (error) {
+        //         console.error('Error in cleanupDrawing:', error);
+        //     }
+        // }
+
+        function initializeMapPanning() {
+            try {
+                if (map) {
+                    if (map.dragPan) {
+                        map.dragPan.enable();
+                    }
+                    if (map.scrollZoom) {
+                        map.scrollZoom.enable();
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error in initializeMapPanning:', error);
+            }
+        }
+
+        function initializeCircleDrawing() {
+            try {
+                if (!map) {
+                    console.error("Map not initialized");
+                    return;
+                }
+
+                if (map.dragPan) {
+                    map.dragPan.disable();
+                }
+
+                let isDrawing = false;
+                let center = null;
+
+                // Create a source for the circle if it doesn't exist
+                if (!map.getSource('circle-source')) {
+                    map.addSource('circle-source', {
+                        'type': 'geojson',
+                        'data': {
+                            'type': 'Feature',
+                            'geometry': {
+                                'type': 'Point',
+                                'coordinates': [0, 0]
+                            },
+                            'properties': {
+                                'radius': 0
+                            }
+                        }
+                    });
+                }
+
+                // Add circle layer if it doesn't exist
+                if (!map.getLayer('circle-fill')) {
+                    map.addLayer({
+                        'id': 'circle-fill',
+                        'type': 'fill',
+                        'source': 'circle-source',
+                        'paint': {
+                            'fill-color': '#FF0000',
+                            'fill-opacity': 0.35
+                        }
+                    });
+                }
+
+                if (!map.getLayer('circle-stroke')) {
+                    map.addLayer({
+                        'id': 'circle-stroke',
+                        'type': 'line',
+                        'source': 'circle-source',
+                        'paint': {
+                            'line-color': '#FF0000',
+                            'line-width': 2,
+                            'line-opacity': 0.8
+                        }
+                    });
+                }
+
+                // Function to create circle geometry
+                function createCircleGeometry(center, radius) {
+                    const points = 64;
+                    const coords = [];
+
+                    for (let i = 0; i <= points; i++) {
+                        const angle = (i * 360) / points;
+                        const radians = (angle * Math.PI) / 180;
+
+                        // Convert radius from meters to degrees (approximate)
+                        const radiusInDegrees = radius / (111300 * Math.cos(center[1] * Math.PI / 180));
+
+                        coords.push([
+                            center[0] + radiusInDegrees * Math.cos(radians),
+                            center[1] + radiusInDegrees * Math.sin(radians)
+                        ]);
+                    }
+
+                    return {
+                        'type': 'Feature',
+                        'geometry': {
+                            'type': 'Polygon',
+                            'coordinates': [coords]
+                        },
+                        'properties': {
+                            'radius': radius
+                        }
+                    };
+                }
+
+                // Handle mouse down - start drawing
+                map.on('mousedown', function (e) {
+                    if (currentDrawingMode !== 'circle') return;
+
+                    isDrawing = true;
+                    center = [e.lngLat.lng, e.lngLat.lat];
+
+                    // Create initial circle
+                    const initialCircle = createCircleGeometry(center, 1);
+                    map.getSource('circle-source').setData(initialCircle);
+                });
+
+                // Handle mouse move - update circle
+                map.on('mousemove', function (e) {
+                    if (!isDrawing || !center) return;
+
+                    const currentPoint = [e.lngLat.lng, e.lngLat.lat];
+
+                    const radius = calculateDistance(
+                        center[1],
+                        center[0],
+                        currentPoint[1],
+                        currentPoint[0]
+                    );
+
+                    // Update circle
+                    const updatedCircle = createCircleGeometry(center, radius);
+                    map.getSource('circle-source').setData(updatedCircle);
+                });
+
+                // Handle mouse up - finish drawing
+                map.on('mouseup', function (e) {
+                    if (!isDrawing) return;
+
+                    isDrawing = false;
+
+                    if (center) {
+                        const endPoint = [e.lngLat.lng, e.lngLat.lat];
+                        const finalRadius = calculateDistance(
+                            center[1],
+                            center[0],
+                            endPoint[1],
+                            endPoint[0]
+                        );
+
+                        currentShape = {
+                            type: 'circle',
+                            center: {
+                                lat: center[1],
+                                lng: center[0]
+                            },
+                            radius: finalRadius
+                        };
+
+                        showNamePopup();
+                    }
+                });
+
+                // Add escape key handler
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape') {
+                        isDrawing = false;
+                        // Clear the circle
+                        if (map.getSource('circle-source')) {
+                            map.getSource('circle-source').setData({
+                                'type': 'Feature',
+                                'geometry': {
+                                    'type': 'Polygon',
+                                    'coordinates': [[]]
+                                }
+                            });
+                        }
+                        if (map.dragPan) {
+                            map.dragPan.enable();
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error in initializeCircleDrawing:', error);
+                if (map.dragPan) {
+                    map.dragPan.enable();
+                }
+            }
+        }
+
+        // Update cleanupDrawing function
+        function setDrawingMode(mode, event) {
+    try {
+        // Clean up existing drawings when switching modes
+        cleanupAllDrawings();
+        currentDrawingMode = mode;
+
+        // Remove active class from all buttons
+        document.querySelectorAll('.tool-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        // Add active class to clicked button if event exists
+        if (event && event.currentTarget) {
+            event.currentTarget.classList.add('active');
+        } else {
+            // If called programmatically, find and activate the corresponding button
+            document.querySelector(`.tool-button[onclick*="${mode}"]`)?.classList.add('active');
+        }
+
+        // Initialize the selected drawing mode
+        switch (mode) {
+            case 'hand':
+                initializeMapPanning();
+                break;
+            case 'circle':
+                initializeCircleDrawing();
+                break;
+            case 'polygon':
+                initializePolygonDrawing();
+                break;
+        }
+    } catch (error) {
+        console.error('Error in setDrawingMode:', error);
+    }
+}
+
+
+        // Add error handling for the map
+        // map.on('error', function (error) {
+        //     console.error('Map error:', error);
+        //     cleanupDrawing();
+        // });
+
+
+        // // Add error handling for the map
+        // map.on('error', function (error) {
+        //     console.error('Map error:', error);
+        //     cleanupDrawing();
+        // });
+
+        function initializePolygonDrawing() {
+    try {
+        if (!map) {
+            console.error("Map not initialized");
+            return;
+        }
+
+        if (map.dragPan) {
+            map.dragPan.disable();
+        }
+
+        let isDrawing = false;
+        polygonPath = [];
+
+        // Create a source for the polygon if it doesn't exist
+        if (!map.getSource('polygon-source')) {
+            map.addSource('polygon-source', {
+                'type': 'geojson',
+                'data': {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Polygon',
+                        'coordinates': [[]]
+                    }
+                }
+            });
+        }
+
+        // Add polygon fill layer if it doesn't exist
+        if (!map.getLayer('polygon-fill')) {
+            map.addLayer({
+                'id': 'polygon-fill',
+                'type': 'fill',
+                'source': 'polygon-source',
+                'paint': {
+                    'fill-color': '#FF0000',
+                    'fill-opacity': 0.35
+                }
+            });
+        }
+
+        // Add polygon outline layer if it doesn't exist
+        if (!map.getLayer('polygon-outline')) {
+            map.addLayer({
+                'id': 'polygon-outline',
+                'type': 'line',
+                'source': 'polygon-source',
+                'paint': {
+                    'line-color': '#FF0000',
+                    'line-width': 2,
+                    'line-opacity': 0.8
+                }
+            });
+        }
+
+        // Function to update the polygon visualization
+        function updatePolygonVisualization(path) {
+            // Create polygon coordinates
+            let polygonCoords = path.map(point => [point.lng, point.lat]);
+
+            // Remove consecutive duplicate points
+            const uniqueCoords = polygonCoords.filter((point, index, self) => 
+                index === 0 || 
+                point[0] !== self[index-1][0] || 
+                point[1] !== self[index-1][1]
+            );
+
+            // Close the polygon if we have enough points
+            if (uniqueCoords.length >= 3) {
+                if (uniqueCoords[0][0] !== uniqueCoords[uniqueCoords.length-1][0] || 
+                    uniqueCoords[0][1] !== uniqueCoords[uniqueCoords.length-1][1]) {
+                    uniqueCoords.push(uniqueCoords[0]); // Close the polygon
+                }
+            }
+
+            // Update the source data
+            map.getSource('polygon-source').setData({
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Polygon',
+                    'coordinates': uniqueCoords.length >= 3 ? [uniqueCoords] : []
+                }
+            });
+        }
+
+        // Handle click to add points
+        map.on('click', function (e) {
+            if (currentDrawingMode !== 'polygon') return;
+
+            const clickPoint = e.lngLat;
+
+            // Check if clicking near the first point to close the polygon
+            if (polygonPath.length >= 3 && isNearFirstPoint(clickPoint)) {
+                // Complete the polygon
+                currentShape = {
+                    type: 'polygon',
+                    coordinates: polygonPath.map(p => [p.lat, p.lng])
+                };
+                showNamePopup();
+                return;
+            }
+
+            // Add the new point
+            polygonPath.push(clickPoint);
+            updatePolygonVisualization(polygonPath);
+        });
+
+        // Function to check if point is near the first point
+        function isNearFirstPoint(point) {
+            if (polygonPath.length < 3) return false;
+            const firstPoint = polygonPath[0];
+            const distance = calculateDistance(
+                firstPoint.lat,
+                firstPoint.lng,
+                point.lat,
+                point.lng
+            );
+            return distance < 10; // Threshold in meters
+        }
+
+        // Handle mouse move to show preview
+        map.on('mousemove', function (e) {
+            if (currentDrawingMode !== 'polygon' || polygonPath.length === 0 || document.getElementById('namePopup').classList.contains('active')) {
+                return;
+            }
+
+            const movePoint = e.lngLat;
+            if (polygonPath.length >= 3 && isNearFirstPoint(movePoint)) {
+                map.getCanvas().style.cursor = 'pointer'; // Change to pointer when can close
+            } else {
+                map.getCanvas().style.cursor = 'crosshair'; // Keep plus cursor otherwise
+            }
+
+            let previewPath = [...polygonPath];
+
+            if (polygonPath.length >= 3 && isNearFirstPoint(movePoint)) {
+                previewPath.push(polygonPath[0]); // Snap to first point
+            } else {
+                previewPath.push(movePoint);
+            }
+
+            updatePolygonVisualization(previewPath);
+        });
+
+        // Handle double click to complete polygon
+        map.on('dblclick', function (e) {
+            if (currentDrawingMode !== 'polygon' || polygonPath.length < 3) return;
+
+            e.preventDefault();
+
+            currentShape = {
+                type: 'polygon',
+                coordinates: polygonPath.map(p => [p.lat, p.lng])
+            };
+            showNamePopup();
+        });
+
+        // Add escape key handler
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                // Clear the polygon
+                polygonPath = [];
+                if (map.getSource('polygon-source')) {
+                    map.getSource('polygon-source').setData({
+                        'type': 'Feature',
+                        'geometry': {
+                            'type': 'Polygon',
+                            'coordinates': [[]]
+                        }
+                    });
+                }
+                if (map.dragPan) {
+                    map.dragPan.enable();
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error in initializePolygonDrawing:', error);
+        if (map.dragPan) {
+            map.dragPan.enable();
+        }
+    }
+}
+
+function isNearFirstPoint(point) {
+            if (polygonPath.length < 3) return false;
+            const firstPoint = polygonPath[0];
+            const distance = calculateDistance(
+                firstPoint.lat,
+                firstPoint.lng,
+                point.lat,
+                point.lng
+            );
+            return distance < 0.0001; // Adjust threshold as needed
+        }
+
+        function completePolygon() {
+            if (tempPolyline) {
+                tempPolyline.setMap(null);
+            }
+
+            currentShape = {
+                type: 'polygon',
+                coordinates: polygonPath.map(p => [p.lat, p.lng])
+            };
+
+            // Create final polygon
+            const polygon = new MapmyIndia.Polygon({
+                map: map,
+                paths: polygonPath,
+                strokeColor: '#FF0000',
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                fillColor: '#FF0000',
+                fillOpacity: 0.35
+            });
+
+            showNamePopup();
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // Earth's radius in meters
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c;
+        }
+
+        function showNamePopup() {
+    const popup = document.getElementById('namePopup');
+    const nameInput = document.getElementById('fenceName');
+    nameInput.value = '';
+    popup.classList.add('active');
+    nameInput.focus();
+    // Disable drawing while the popup is open
+    disableDrawing();
+}
+
+function cancelFence() {
+    document.getElementById('namePopup').classList.remove('active');
+    cleanupAllDrawings();
+    currentDrawingMode = null;
+
+    // Reset active state of tool buttons
+    document.querySelectorAll('.tool-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // Re-enable map interactions
+    if (map) {
+        if (map.dragPan) {
+            map.dragPan.enable();
+        }
+        if (map.scrollZoom) {
+            map.scrollZoom.enable();
+        }
+    }
+}
+
+// Updated clearAllShapes function
+function clearAllShapes() {
+    // Complete cleanup
+    cleanupAllDrawings();
+    currentDrawingMode = null;
+
+    // Reset active state of tool buttons
+    document.querySelectorAll('.tool-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // Default back to hand mode
+    setDrawingMode('hand');
+}
+
+function disableDrawing() {
+    // Disable map interactions for drawing
+    if (map.dragPan) {
+        map.dragPan.disable();
+    }
+    if (map.scrollZoom) {
+        map.scrollZoom.disable();
+    }
+}
+
+function enableDrawing() {
+    // Re-enable map interactions for drawing
+    if (map.dragPan) {
+        map.dragPan.enable();
+    }
+    if (map.scrollZoom) {
+        map.scrollZoom.enable();
+    }
+}
+function cancelFence() {
+    document.getElementById('namePopup').classList.remove('active');
+    
+    // Complete cleanup
+    cleanupAllDrawings();
+    currentDrawingMode = null;
+
+    // Reset active state of tool buttons
+    document.querySelectorAll('.tool-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // Re-enable map interactions after the popup is closed
+    if (map) {
+        if (map.dragPan) {
+            map.dragPan.enable();
+        }
+        if (map.scrollZoom) {
+            map.scrollZoom.enable();
+        }
+    }
+}
+
+function saveFence() {
+    const name = document.getElementById('fenceName').value;
+    if (!name || !currentShape) {
+        console.log('No valid data to save');
+        return;
+    }
+
+    const mid = localStorage.getItem('mid');
+    if (!mid) {
+        console.error('mid not found in local storage.');
+        alert('User ID (mid) not found. Please set mid in localStorage.');
+        return;
+    }
+
+    let url = '';
+
+    try {
+        if (currentShape.type === 'circle') {
+            if (!currentShape.center || !currentShape.radius) {
+                console.error('Invalid circle data');
+                return;
+            }
+            const lat = currentShape.center.lat;
+            const lng = currentShape.center.lng;
+            const radius = currentShape.radius;
+
+            url = `${API}opr=savefence&fvalue=${lat},${lng},${radius}&fname=${encodeURIComponent(name)}&ftype=circle&mid=${encodeURIComponent(mid)}`;
+        } else if (currentShape.type === 'polygon') {
+            if (!currentShape.coordinates || currentShape.coordinates.length < 3) {
+                console.error('Invalid polygon data');
+                return;
+            }
+
+            // Deduplicate and clean coordinates
+            const uniqueCoords = [];
+            const seenCoords = new Set();
+
+            currentShape.coordinates.forEach(coord => {
+                const coordKey = `${coord[0]},${coord[1]}`;
+                if (!seenCoords.has(coordKey)) {
+                    seenCoords.add(coordKey);
+                    uniqueCoords.push(coord);
+                }
+            });
+
+            // Ensure polygon has at least 3 unique points
+            if (uniqueCoords.length < 3) {
+                console.error('Not enough unique points for polygon');
+                return;
+            }
+
+            // Ensure the polygon is closed by repeating the first coordinate
+            const closedCoords = [
+                ...uniqueCoords, 
+                uniqueCoords[0]  // Repeat the first coordinate to close the polygon
+            ];
+
+            // Create coordinate pairs
+            const coordPairs = closedCoords.map(c => `${c[0]},${c[1]}`).join(',');
+            
+            url = `${API}opr=savefence&fvalue=${coordPairs}&fname=${encodeURIComponent(name)}&ftype=polygon&mid=${encodeURIComponent(mid)}`;
+        }
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data[0].msg === "0") {
+                    // Complete cleanup after successful save
+                    cleanupAllDrawings();
+                    document.getElementById('namePopup').classList.remove('active');
+                    currentDrawingMode = null;
+
+                    // Reset active state of tool buttons
+                    document.querySelectorAll('.tool-button').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+
+                    alert("Successfully added the fence.");
+                } else {
+                    throw new Error('Failed to save fence.');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving fence:', error);
+                alert('Error saving fence. Please try again.');
+            });
+    } catch (error) {
+        console.error('Error preparing fence data:', error);
+        alert('Error preparing fence data. Please try again.');
+    }
+}
+
+function cleanupDrawing() {
+            try {
+                // Clean up circle
+                if (circleMarker) {
+                    if (circleMarker.remove) {
+                        circleMarker.remove();
+                    } else if (map && map.removeLayer) {
+                        map.removeLayer(circleMarker);
+                    }
+                    circleMarker = null;
+                }
+
+                // Clean up polygon
+                if (tempPolyline) {
+                    if (tempPolyline.remove) {
+                        tempPolyline.remove();
+                    } else if (map && map.removeLayer) {
+                        map.removeLayer(tempPolyline);
+                    }
+                    tempPolyline = null;
+                }
+
+                // Clean up polygon markers
+                polygonMarkers.forEach(marker => {
+                    if (marker.remove) {
+                        marker.remove();
+                    } else if (map && map.removeLayer) {
+                        map.removeLayer(marker);
+                    }
+                });
+                polygonMarkers = [];
+
+                // Reset polygon path
+                polygonPath = [];
+
+                // Enable map interactions
+                if (map) {
+                    if (map.dragPan) map.dragPan.enable();
+                    if (map.scrollZoom) map.scrollZoom.enable();
+                }
+            } catch (error) {
+                console.error('Error in cleanupDrawing:', error);
+            }
+        }
+
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+const suggestionsContainer = document.getElementById('suggestions');
+let searchTimeout;
+
+searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+
+    // Clear previous timeout
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+
+    // Hide suggestions if query is empty
+    if (!query) {
+        suggestionsContainer.innerHTML = '';
+        suggestionsContainer.style.display = 'none';
+        return;
+    }
+
+    // Debounce search
+    searchTimeout = setTimeout(() => {
+        searchPlaces(query);
+    }, 300);
+});
+
+async function getAccessToken() {
+  
+    const response = await fetch('https://outpost.mapmyindia.com/api/security/oauth/token?grant_type=client_credentials&client_id=96dHZVzsAusCpR-_JQkI9mKrLq7dwaVjySpE_HOwNnH5eb2BGLuRL7qhUNxikRtPCyjTxNYxapFWLu60JlXKpe48uFsJHRcK&client_secret=lrFxI-iSEg9upCTBAPswuyca4nw5ZmE2mCqgQ2g7IViy0cttGh6aE9DmoPrPSG2qqmHu0_9ukWOo-NgfT1JYsLz1q9OUR9dT0GYS1vNLE_M=', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded'
+  }
+});
+
+    const data = await response.json();
+    return data.access_token;
+  } 
+  let access_token;
+  getAccessToken().then((response => access_token = response.data));
+  console.log(access_token);
+
+async function searchPlaces(query) {
+    
+        
+
+        // const response = await fetch(`https://atlas.mapmyindia.com/api/places/geocode?address=${encodeURIComponent(query)}&itemCount=5`, {
+        //     headers: {
+        //         'Authorization': `Bearer ${access_token}`
+        //     }
+        // });
+
+        // // if (!response.ok) {
+        // //     throw new Error(`HTTP error! status: ${response.status}`);
+        // // }
+
+        // const data = await response.json();
+        // console.log(data);
+
+        // if (data.results && Array.isArray(data.results)) {
+        //     displaySuggestions(data.results);
+        // } else {
+        //     console.log('No results found.');
+        // }
+    } 
+
+        function displaySuggestions(results) {
+            suggestionsContainer.innerHTML = '';
+
+            if (results.length > 0) {
+                results.forEach(result => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.textContent = result.formatted_address;
+
+                    div.addEventListener('click', () => {
+                        handlePlaceSelection(result);
+                    });
+
+                    suggestionsContainer.appendChild(div);
+                });
+
+                suggestionsContainer.style.display = 'block';
+            } else {
+                suggestionsContainer.style.display = 'none';
+            }
+        }
+
+        function handlePlaceSelection(place) {
+            searchInput.value = place.formatted_address;
+            suggestionsContainer.style.display = 'none';
+
+            // Center map on selected location
+            if (place.lat && place.lng) {
+                map.setCenter([place.lat, place.lng]);
+                map.setZoom(15);
+            }
+        }
+
+        // Close suggestions when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                suggestionsContainer.style.display = 'none';
+            }
+        });
+
+        // Handle escape key
+        document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        if (document.getElementById('namePopup').classList.contains('active')) {
+            cancelFence();
+        } else if (currentDrawingMode) {
+            clearAllShapes();
+        }
+    }
+});
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+const suggestionsContainer = document.getElementById('suggestions');
+let searchTimeout;
+
+searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+
+    // Clear previous timeout
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+
+    // Hide suggestions if query is empty
+    if (!query) {
+        suggestionsContainer.innerHTML = '';
+        suggestionsContainer.style.display = 'none';
+        return;
+    }
+
+    // Debounce search
+    searchTimeout = setTimeout(() => {
+        searchPlaces(query);
+    }, 300);
+});
+
+async function searchPlaces(query) {
+    // Ensure we have the MapMyIndia API key
+    const key = localStorage.getItem("key");
+    if (!key) {
+        console.error("No API key found in localStorage");
+        return;
+    }
+
+    try {
+        // Construct the API URL for place search
+        const apiUrl = `https://atlas.mapmyindia.com/api/places/geocode?address=${encodeURIComponent(query)}`;
+        
+        const response = await fetch(apiUrl);
+        
+        // Check if the response is OK
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Check if results exist and are an array
+        if (data.results && Array.isArray(data.results) && data.results.length > 0) {
+            displaySuggestions(data.results);
+        } else {
+            // No results found
+            suggestionsContainer.innerHTML = '<div class="suggestion-item">No places found</div>';
+            suggestionsContainer.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error searching places:', error);
+        suggestionsContainer.innerHTML = '<div class="suggestion-item">Error searching places</div>';
+        suggestionsContainer.style.display = 'block';
+    }
+}
+
+function displaySuggestions(results) {
+    // Clear previous suggestions
+    suggestionsContainer.innerHTML = '';
+
+    // Create suggestion items
+    results.forEach(result => {
+        const div = document.createElement('div');
+        div.className = 'suggestion-item';
+        div.textContent = result.formatted_address || 'Unknown Location';
+        
+        div.addEventListener('click', () => {
+            handlePlaceSelection(result);
+        });
+
+        suggestionsContainer.appendChild(div);
+    });
+
+    // Show suggestions container
+    suggestionsContainer.style.display = 'block';
+}
+
+function handlePlaceSelection(place) {
+    // Set input value to selected place
+    searchInput.value = place.formatted_address || '';
+    
+    // Hide suggestions
+    suggestionsContainer.style.display = 'none';
+
+    // Center map on selected location
+    if (place.lat && place.lng && map) {
+        // Ensure map is initialized before trying to set center
+        map.setCenter([place.lng, place.lat]); // Note: MapMyIndia uses [lng, lat] order
+        map.setZoom(15);
+    }
+}
+
+    // Close suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+        suggestionsContainer.style.display = 'none';
+    }
+});
+
+// Prevent form submission
+searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+    }
+});
+});
+
+function cleanupAllDrawings() {
+    try {
+        // Clear circle layers
+        if (map.getLayer('circle-fill')) {
+            map.removeLayer('circle-fill');
+        }
+        if (map.getLayer('circle-stroke')) {
+            map.removeLayer('circle-stroke');
+        }
+        if (map.getSource('circle-source')) {
+            map.removeSource('circle-source');
+        }
+
+        // Clear polygon layers
+        if (map.getLayer('polygon-fill')) {
+            map.removeLayer('polygon-fill');
+        }
+        if (map.getLayer('polygon-outline')) {
+            map.removeLayer('polygon-outline');
+        }
+        if (map.getLayer('polygon-vertices')) {
+            map.removeLayer('polygon-vertices');
+        }
+        if (map.getSource('polygon-source')) {
+            map.removeSource('polygon-source');
+        }
+
+        // Reset all variables and clear data
+        currentShape = null;  // Explicitly set to null
+        polygonPath = [];     // Clear polygon path
+        circleMarker = null;  // Clear circle marker
+        tempPolyline = null;  // Clear temporary polyline
+
+        // Clear polygon markers
+        polygonMarkers.forEach(marker => {
+            if (marker && marker.remove) {
+                marker.remove();
+            }
+        });
+        polygonMarkers = [];
+
+        // Explicitly reset window-level drawing shapes if exists
+        if (window.drawnShapes) {
+            window.drawnShapes = [];
+        }
+
+        // Re-enable map interactions
+        if (map) {
+            if (map.dragPan) {
+                map.dragPan.enable();
+            }
+            if (map.scrollZoom) {
+                map.scrollZoom.enable();
+            }
+        }
+
+        // Reset cursor
+        if (map.getCanvas()) {
+            map.getCanvas().style.cursor = '';
+        }
+
+        // Additional cleanup for saving fence method
+        // Explicitly reset currentShape and its properties
+        if (currentShape) {
+            if (currentShape.type === 'circle') {
+                currentShape.center = null;
+                currentShape.radius = null;
+            } else if (currentShape.type === 'polygon') {
+                currentShape.coordinates = [];
+            }
+        }
+    } catch (error) {
+        console.error('Error in cleanupAllDrawings:', error);
+    }
+} 
+
+
+    </script>
+
+    <script src="js/api.js"></script>
+</body>
+
+</html>
