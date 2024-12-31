@@ -1882,15 +1882,15 @@ function updatePopupPosition() {
                                 <button onclick="updateDistance('${device.deviceId}')" class="distance-btn">
                                     Get Distance
                                 </button>
-                                <button onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[1]}, ${device.coordinates[0]})" 
+                                <button onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[0]}, ${device.coordinates[1]})" 
                                     class="nearby-btn">
                                     View Nearby
                                 </button>
-                                <button onclick="shareLocation(${device.coordinates[1]}, ${device.coordinates[0]})" 
+                                <button onclick="shareLocation(${device.coordinates[0]}, ${device.coordinates[1]})" 
                                     class="nearby-btn">
                                     Share Location
                                 </button>
-                                <button onclick="addPOIForDevice('${device.name}', ${device.coordinates[1]}, ${device.coordinates[0]})" 
+                                <button onclick="addPOIForDevice('${device.name}', ${device.coordinates[0]}, ${device.coordinates[1]})" 
                                     class="nearby-btn">
                                     Add POI
                                 </button>
