@@ -1939,6 +1939,45 @@
     //   }
 
 
+    function getTimeDifferenceInMinutes(prevTimeStr, currentTimeStr) {
+    // Parse the datetime strings
+    // Assuming the format is "DD-MM-YYYY HH:mm:ss"
+    const [prevDate, prevTime] = prevTimeStr.split(' ');
+    const [currDate, currTime] = currentTimeStr.split(' ');
+
+    // Split date and time components
+    const [prevDay, prevMonth, prevYear] = prevDate.split('-');
+    const [currDay, currMonth, currYear] = currDate.split('-');
+
+    // Split time components
+    const [prevHours, prevMinutes, prevSeconds] = prevTime.split(':');
+    const [currHours, currMinutes, currSeconds] = currTime.split(':');
+
+    // Create Date objects
+    const prevDateTime = new Date(
+        parseInt(prevYear), 
+        parseInt(prevMonth) - 1, // Month is 0-indexed
+        parseInt(prevDay), 
+        parseInt(prevHours), 
+        parseInt(prevMinutes), 
+        parseInt(prevSeconds)
+    );
+
+    const currentDateTime = new Date(
+        parseInt(currYear), 
+        parseInt(currMonth) - 1, // Month is 0-indexed
+        parseInt(currDay), 
+        parseInt(currHours), 
+        parseInt(currMinutes), 
+        parseInt(currSeconds)
+    );
+
+    // Calculate difference in milliseconds and convert to minutes
+    const diffInMilliseconds = currentDateTime - prevDateTime;
+    const diffInMinutes = diffInMilliseconds / (1000 * 60);
+
+    return diffInMinutes;
+}
     // **Detect Stop During Playback** (this is the main change)
     function detectStopDuringPlayback(currentIndex) {
       if (currentIndex === 0) return; // Skip the first point, no previous point to compare
@@ -1947,10 +1986,14 @@
       const currentPoint = playbackData[currentIndex];
       const prevPoint = playbackData[currentIndex - 1];
 
-      const prevTime = new Date(prevPoint.date);
-      const currentTime = new Date(currentPoint.date);
+      const prevTime = prevPoint.date;
+      const currentTime = currentPoint.date;
 
-      const timeDiff = (currentTime - prevTime) / (1000 * 60); // Time difference in minutes
+      console.log(prevTime)
+
+      const timeDiff = getTimeDifferenceInMinutes(prevTime, currentTime) // Time difference in minutes
+      console.log(currentTime)
+
       const distance = calculateDistance(
         prevPoint.coordinates[1],
         prevPoint.coordinates[0],
@@ -1959,7 +2002,7 @@
       );
 
       // Check if the vehicle has been stationary for the hold time and the distance is less than the threshold
-      if (timeDiff >= holdTime && distance < MINIMUM_DISTANCE) {
+      if (timeDiff >= holdTime) {
         // Add stop marker dynamically
         const stopMarker = olaMaps
           .addMarker({
