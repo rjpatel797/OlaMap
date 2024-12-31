@@ -1900,7 +1900,7 @@ function updatePopupPosition() {
                 `;
       }
 
-function initializeMarkers() {
+      function initializeMarkers() {
     // Remove existing markers
     markers.forEach(marker => {
         if (marker && marker.remove) {
@@ -1909,140 +1909,233 @@ function initializeMarkers() {
     });
     markers = [];
 
+    console.log('Total devices:', devices.length);
+    console.log('Selected devices:', selectedDevices.size);
+
     try {
-        // Prepare data for clustering by marker type
-        const markersByType = {
-            offline: { size: [5, 5], features: [] },
-            stopped: { size: [80, 800], features: [] },
-            moving: { size: [100, 100], features: [] },
-            idle: { size: [100, 100], features: [] }
-        };
+    // Prepare data for clustering by marker type
+    const markersByType = {
+        offline: { size: [5, 5], features: [] },
+        stopped: { size: [80, 800], features: [] },
+        moving: { size: [100, 100], features: [] },
+        idle: { size: [100, 100], features: [] }
+    };
 
-        // Group features by type
-        devices
-            .filter(device => {
-                return device.coordinates && 
-                       device.coordinates[0] !== 0 && 
-                       device.coordinates[1] !== 0 &&
-                       selectedDevices.has(device.deviceId);
-            })
-            .forEach(device => {
-                const currentDate = new Date();
-                const deviceDate = new Date(device.date);
-                const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-                const ignitionStatus = typeof device.ignition === 'string' 
-                    ? device.ignition.toLowerCase() === 'true' 
-                    : Boolean(device.ignition);
-                
-                let markerType;
-                let iconUrl;
+    // Group features by type
+    devices
+        .filter(device => {
+            return device.coordinates && 
+                   device.coordinates[0] !== 0 && 
+                   device.coordinates[1] !== 0 &&
+                   selectedDevices.has(device.deviceId);
+        })
+        .forEach(device => {
+            const currentDate = new Date();
+            const deviceDate = new Date(device.date);
+            const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+            const ignitionStatus = typeof device.ignition === 'string' 
+                ? device.ignition.toLowerCase() === 'true' 
+                : Boolean(device.ignition);
+            
+            let markerType;
+            let iconUrl;
 
-                if (hoursDifference > 2) {
-                    markerType = 'offline';
-                    iconUrl = '/deviceTracking/images/blackcar1.png';
-                } else if (!ignitionStatus) {
-                    markerType = 'stopped';
-                    iconUrl = '/images/icon/red/car0.png';
-                } else if (ignitionStatus && device.speed > 0) {
-                    markerType = 'moving';
-                    iconUrl = '/deviceTracking/images/green.png';
-                } else {
-                    markerType = 'idle';
-                    iconUrl = '/deviceTracking/images/yellow.png';
-                }
-
-                const angle = device.angle || 0;
-
-                const feature = {
-                    "type": "Feature",
-                    "properties": {
-                        "deviceId": device.deviceId,
-                        "name": device.name,
-                        "icon": iconUrl,
-                        "angle": angle,
-                        "icon-size": markersByType[markerType].size[0]/100,
-                        "htmlPopup": generatePopupContent(device)
-                    },
-                    "geometry": {
-                        "type": "Point",
-                        "coordinates": [device.coordinates[0], device.coordinates[1]]
-                    }
-                };
-
-                markersByType[markerType].features.push(feature);
-            });
-
-        // Create markers for each type
-        Object.entries(markersByType).forEach(([type, data]) => {
-            if (data.features.length > 0) {
-                const geoJson = {
-                    "type": "FeatureCollection",
-                    "features": data.features
-                };
-
-                let marker = new mappls.Marker({
-                    map: map,
-                    position: geoJson,
-                    clusters: true,
-                    html: `<div style="width: 40px; height: 20px;">
-                            <img src="${data.features[0].properties.icon}" 
-                                 style="width: 100%; height: 100%; transform: rotate(${data.features[0].properties.angle}deg); 
-                                 transform-origin: center;" />
-                          </div>`,
-                    width: 40,
-                    height: 20,
-                    clusterStyle: {
-                        color: '#108cff',
-                        textColor: '#ffffff',
-                        textSize: '14px',
-                        border: '2px solid #fff',
-                        borderRadius: '50%',
-                        boxShadow: '0 0 10px rgba(0,0,0,0.2)'
-                    },
-                    clusterOptions: {
-                        clusterRadius: 80,
-                        maxZoom: 14,
-                        minClusterSize: 2,
-                        zoomOnClick: true,
-                        clusterBreakpoint: [
-                            {
-                                count: 50,
-                                color: '#ff6961',
-                                textColor: '#ffffff'
-                            },
-                            {
-                                count: 20,
-                                color: '#FFA726',
-                                textColor: '#ffffff'
-                            },
-                            {
-                                count: 5,
-                                color: '#77dd77',
-                                textColor: '#ffffff'
-                            }
-                        ]
-                    },
-                    fitbounds: true,
-                    animate: true,
-                    click: function(e) {
-                        const feature = e.target.feature;
-                        if (feature && feature.properties) {
-                            new mappls.Popup()
-                                .setLngLat(feature.geometry.coordinates)
-                                .setHTML(feature.properties.htmlPopup)
-                                .addTo(map);
-                        }
-                    }
-                });
-
-                markers.push(marker);
+            if (hoursDifference > 2) {
+                markerType = 'offline';
+                iconUrl = '/deviceTracking/images/blackcar1.png';
+            } else if (!ignitionStatus) {
+                markerType = 'stopped';
+                iconUrl = '/images/icon/red/car0.png';
+            } else if (ignitionStatus && device.speed > 0) {
+                markerType = 'moving';
+                iconUrl = '/deviceTracking/images/green.png';
+            } else {
+                markerType = 'idle';
+                iconUrl = '/deviceTracking/images/yellow.png';
             }
+
+            
+
+            const feature = {
+                "type": "Feature",
+                "properties": {
+                    "deviceId": device.deviceId,
+                    // "name": device.name,
+                    "icon": iconUrl,
+                    // "htmlPopup": generatePopupContent(device)
+                },
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [device.coordinates[0], device.coordinates[1]]
+                }
+            };
+
+            markersByType[markerType].features.push(feature);
         });
 
-    } catch (error) {
+    // Clear existing markers
+    markers.forEach(marker => {
+        if (marker && marker.remove) {
+            marker.remove();
+        }
+    });
+    markers = [];
+    // console.log("-------------dddd"+ JSON.stringify(devices))
+
+
+    // Create markers for each type with different sizes
+// First, let's process the markers by type with proper angle handling
+// First, let's process the markers by type with proper angle handling
+Object.entries(markersByType).forEach(([type, data]) => {
+    if (data.features.length > 0) {
+        const geoJson = {
+            "type": "FeatureCollection",
+            "features": data.features
+        };
+
+        // First, let's process and validate our devices
+        const validDevices = devices.filter(device => {
+            const isValid = device.coordinates && 
+                          device.coordinates[0] !== 0 && 
+                          device.coordinates[1] !== 0 &&
+                          selectedDevices.has(device.deviceId);
+            
+            if (!isValid && selectedDevices.has(device.deviceId)) {
+                console.log('Invalid device:', device);
+            }
+            
+            return isValid;
+        }).map(device => {
+            const matchingFeature = geoJson.features.find(
+                feature => feature.properties.deviceId === device.deviceId
+            );
+            
+            return {
+                ...device,
+                icon: matchingFeature ? matchingFeature.properties.icon : null
+            };
+        });
+
+        console.log('Valid devices for markers:', validDevices.length);
+
+        try {
+            // Create marker with a comprehensive configuration
+            let marker = new mappls.Marker({
+                map: map,
+                position: {
+                    type: "FeatureCollection",
+                    features: validDevices.map(device => ({
+                        type: "Feature",
+                        geometry: {
+                            type: "Point",
+                            coordinates: device.coordinates
+                        },
+                        properties: {
+                            deviceId: device.deviceId,
+                            name: device.name,
+                            // icon: device.icon,
+                            "icon-size": data.size[0]/100,
+                            angle: device.angle || 0,
+                            htmlPopup: generatePopupContent(device),
+                            ...device
+                        }
+                    }))
+                },
+                clusters: true,
+                clusterStyle: {
+                    color: '#108cff',
+                    textColor: '#ffffff',
+                    textSize: '14px',
+                    border: '2px solid #fff',
+                    borderRadius: '50%',
+                    boxShadow: '0 0 10px rgba(0,0,0,0.2)'
+                },
+                clusterOptions: {
+                    clusterRadius: 80,
+                    maxZoom: 14,
+                    minClusterSize: 2,
+                    zoomOnClick: true,
+                    clusterBreakpoint: [
+                        {
+                            count: 50,
+                            color: '#ff6961',
+                            textColor: '#ffffff'
+                        },
+                        {
+                            count: 20,
+                            color: '#FFA726',
+                            textColor: '#ffffff'
+                        },
+                        {
+                            count: 5,
+                            color: '#77dd77',
+                            textColor: '#ffffff'
+                        }
+                    ]
+                },
+                fitbounds: true,
+                animate: true,
+                // This callback runs when the marker is added
+                callback: function(marker) {
+                  console.log("adadsadasd")
+                    try {
+                        // Wait a short moment for the marker to be fully initialized
+                        setTimeout(() => {
+                          console.log("fddfdf")
+                            // Apply rotation to the marker if it has an angle
+                            if (marker && typeof marker.setRotation === 'function') {
+                              console.log("hhi")
+                                const markerFeatures = marker.getPosition().features;
+                                if (markerFeatures && markerFeatures.length > 0) {
+                                    const angle = markerFeatures[0].properties.angle || 0;
+                                    console.log(angle)
+                                    marker.setRotation(angle);
+                                }
+                            }
+                        }, 100);
+                    } catch (e) {
+                        console.warn('Error in marker callback:', e);
+                    }
+                }
+            });
+
+            // Store the marker reference for later use
+            markers.push(marker);
+
+            // If you need to handle map-level events, use addListener
+            if (map.addListener) {
+                map.addListener('idle', function() {
+                    // This event fires when the map has finished moving/loading
+                    try {
+                        const markerLayers = marker.getLayers && marker.getLayers();
+                        if (markerLayers) {
+                            markerLayers.forEach(layer => {
+                                if (layer && layer.feature && layer.feature.properties.angle) {
+                                    const angle = layer.feature.properties.angle;
+                                    if (typeof layer.setRotation === 'function') {
+                                        layer.setRotation(angle);
+                                    }
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.warn('Failed to update marker rotations:', e);
+                    }
+                });
+            }
+
+        } catch (error) {
+            console.error('Error creating marker:', error);
+        }
+    }
+});
+
+} catch (error) {
         console.error('Error creating markers:', error);
     }
-}// Helper function to safely apply rotation to a marker
+}
+
+// Helper function to safely apply rotation to a marker
 function safelyRotateMarker(marker, angle) {
     try {
         if (marker && typeof marker.setRotation === 'function') {
