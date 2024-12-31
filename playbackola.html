@@ -1989,10 +1989,8 @@
       const prevTime = prevPoint.date;
       const currentTime = currentPoint.date;
 
-      console.log(prevTime)
 
       const timeDiff = getTimeDifferenceInMinutes(prevTime, currentTime) // Time difference in minutes
-      console.log(currentTime)
 
       const distance = calculateDistance(
         prevPoint.coordinates[1],
@@ -2079,8 +2077,8 @@
 
     // Function to show the popup when a stop marker is clicked
     function showStopPopup(startPoint, endPoint, duration) {
-      const startTime = new Date(startPoint.date).toLocaleString();
-      const endTime = new Date(endPoint.date).toLocaleString();
+      const startTime = startPoint.date.toLocaleString();
+      const endTime = endPoint.date.toLocaleString();
       const stopDuration = formatDuration(duration);
       const stopIndex = playbackData.findIndex(point =>
         point.coordinates[0] === startPoint.coordinates[0] &&
