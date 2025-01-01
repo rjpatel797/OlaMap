@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trans Track Systems - Device Search</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+        }
+
+        /* Navbar Styles */
+        .navbar {
+            background-color: #2d3e50;
+            padding: 10px 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-item:hover {
+            background-color: #34495e;
+        }
+
+        .logout-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .logout-btn:hover {
+            background-color: #c0392b;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            padding: 0 5px;
+            height: calc(100% - 60px);
+        }
+
+        .device-search-header {
+            background-color: #133b64;
+            color: white;
+            padding: 10px 15px;
+            font-size: 20px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            
+        }
+
+        /* Table Styles */
+        .device-table-container {
+            padding: 0;
+            background-color: white;
+            border: 1px solid #ddd;
+        }
+
+        .device-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+        }
+
+        .device-table th {
+            background-color: #34495e;
+            color: white;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: normal;
+            border: 1px solid #2c3e50;
+            font-size: 13px;
+        }
+
+        .device-table td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-size: 13px;
+        }
+
+        .device-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .device-table tr:hover {
+            background-color: #f5f6f7;
+        }
+
+        /* Checkbox Styles */
+        .checkbox-cell {
+            width: 40px;
+            text-align: center;
+        }
+
+        input[type="checkbox"] {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Edit Button Styles */
+        .edit-btn {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
+            opacity: 0.8;
+        }
+
+        .edit-btn:hover {
+            opacity: 1;
+        }
+
+        /* Loading and Error States */
+        .loading, .error {
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+        }
+
+        .loading {
+            color: #666;
+        }
+
+        .error {
+            color: #e74c3c;
+        }
+
+        /* Responsive Design */
+        @media screen and (max-width: 768px) {
+            .device-table {
+                font-size: 12px;
+            }
+
+            .device-table th,
+            .device-table td {
+                padding: 6px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="device-search-header">
+            Device List
+        </div>
+        <div class="device-table-container">
+            <table class="device-table">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>Device Name</th>
+                        <th>Device Type</th>
+                        <th>Mobile No</th>
+                        <th>IMEI No</th>
+                        <th>Driver Name</th>
+                        <th>Driver Mob. No</th>
+                        <th>Edit</th>
+                    </tr>
+                </thead>
+                <tbody id="deviceTableBody">
+                    <!-- Table content will be populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Load navbar
+            $("#navbar-container").load("navbarola.html", function() {
+                console.log("Navbar loaded successfully!");
+            });
+
+            // Check for authentication
+            if (!localStorage.getItem("mid")) {
+                window.location.href = "/index.html";
+            }
+
+            // Initial data fetch
+            fetchDevices();
+        });
+
+        async function fetchDevices() {
+            const mid = localStorage.getItem("mid");
+            const tableBody = document.getElementById('deviceTableBody');
+            
+            try {
+                // Show loading state
+                tableBody.innerHTML = '<tr><td colspan="8" class="loading">Loading devices...</td></tr>';
+                
+                // Fetch data from API
+                const response = await fetch(`https://ttsgps.in/getandrojsonforNewIphone.jsp?opr=getdeviceinfo&mid=${mid}`);
+                const devices = await response.json();
+                
+                // Handle empty data
+                if (!devices || devices.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="8" class="error">No devices found</td></tr>';
+                    return;
+                }
+
+                // Populate table with data
+                tableBody.innerHTML = devices.map((device, index) => `
+                    <tr>
+                        <td class="checkbox-cell">
+                            <input type="checkbox" id="device_${device.deviceid}" name="device_checkbox">
+                        </td>
+                        <td>${device.devicename || ''}</td>
+                        <td>${device.devicetype || 'Truck'}</td>
+                        <td>${device.devicemobile || ''}</td>
+                        <td>${device.imei || ''}</td>
+                        <td>${device.drivername || 'ABC'}</td>
+                        <td>${device.drivermob || '9999999999'}</td>
+                        <td>
+                            <i class="fas fa-edit" style="cursor: pointer; font-size: 16px; color: #2563eb; transition: color 0.2s;" 
+                            onclick="editDevice('${device.deviceid}')" 
+                            title="Edit Device"></i>
+                        </td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error fetching devices:', error);
+                tableBody.innerHTML = '<tr><td colspan="8" class="error">Failed to load devices. Please try again later.</td></tr>';
+            }
+        }
+
+        function editDevice(deviceId) {
+            // Navigate to POI management page with device ID
+            //window.location.href = `edit.html?deviceId=${deviceId}`;
+            window.location.href = ``;
+
+        }
+
+        // Additional utility functions
+        function selectAllDevices() {
+            const checkboxes = document.getElementsByName('device_checkbox');
+            checkboxes.forEach(checkbox => checkbox.checked = true);
+        }
+
+        function deselectAllDevices() {
+            const checkboxes = document.getElementsByName('device_checkbox');
+            checkboxes.forEach(checkbox => checkbox.checked = false);
+        }
+
+        function getSelectedDevices() {
+            const checkboxes = document.getElementsByName('device_checkbox');
+            return Array.from(checkboxes)
+                .filter(checkbox => checkbox.checked)
+                .map(checkbox => checkbox.id.replace('device_', ''));
+        }
+    </script>
+</body>
+</html>
