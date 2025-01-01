@@ -1087,6 +1087,11 @@
     background-repeat: no-repeat;
     pointer-events: none;
 }
+
+.stop-marker {
+  position: absolute;
+  transform: translate(-50%, -100%);
+}
   </style>
 </head>
 
@@ -2032,13 +2037,14 @@
       const stopElement = document.createElement("div");
       stopElement.classList.add('stop-marker');
       stopElement.style.position = "relative";
-      stopElement.style.width = "30px"; // Made smaller for better proportion
-      stopElement.style.height = "40px"; // Adjusted height for proper teardrop shape
+      stopElement.style.width = "30px";
+      stopElement.style.height = "40px"; 
       stopElement.style.display = "flex";
       stopElement.style.alignItems = "center";
       stopElement.style.justifyContent = "center";
       stopElement.style.zIndex = "10"; // Ensure it stays above the polyline
-      stopElement.style.marginLeft = "18px"
+      stopElement.style.marginLeft = "15px"; // Add left margin to center the marker
+      stopElement.style.marginTop = "-40px"; // Move the marker up by its height
 
       // Create main teardrop shape
       const marker = document.createElement("div");
