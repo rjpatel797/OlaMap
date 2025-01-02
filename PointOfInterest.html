@@ -188,6 +188,80 @@
         .search-item:hover {
             background-color: #f8f9fa;
         }
+
+        .table-container {
+            max-height: 300px;  /* Set maximum height for the table container */
+            overflow-y: auto;   /* Enable vertical scrolling */
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        /* Make the header stick to the top */
+        .poi-table thead th {
+            position: sticky;
+            top: 0;
+            background-color: #34495e;
+            z-index: 1;
+        }
+
+        /* Add some padding to the table body for better scrolling experience */
+        .poi-table tbody td {
+            padding: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px; /* Limit cell width */
+        }
+
+        /* Add a subtle shadow to the header when scrolling */
+        .poi-table thead::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 100%;
+            height: 4px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 100%);
+        }
+
+        /* Style scrollbar for better appearance */
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .table-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .table-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Ensure the container takes remaining space */
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        #map {
+            height: 50%;
+        }
+
+        .controls {
+            flex-shrink: 0;
+        }
+
+        .table-container {
+            flex: 1;
+            min-height: 0; /* Important for proper flexbox scrolling */
+        }
     </style>
 </head>
 
@@ -281,12 +355,17 @@ function initializeMap() {
 }
         // Fetch POIs from API
         async function fetchPOIs() {
-            const mid = localStorage.getItem("mid");
+            const mid = localStorage.getItem("mid"); 
             try {
-                const response = await fetch('${API}?opr=getpois&mid=${mid}');
+                const response = await fetch(`${API}opr=getpoilistByMid&mid=${mid}`);
                 const data = await response.json();
-                updatePOITable(data);
-                updateMapMarkers(data);
+                
+                if (Array.isArray(data)) {
+                    updatePOITable(data);
+                    updateMapMarkers(data);
+                } else {
+                    console.error('Invalid data format received from API');
+                }
             } catch (error) {
                 console.error('Error fetching POIs:', error);
             }
@@ -319,13 +398,13 @@ function initializeMap() {
 
             pois.forEach((poi, index) => {
                 const row = `
-                    <tr>
+                    <tr data-id="${poi.id}">
                         <td>${index + 1}</td>
-                        <td>${poi.location}</td>
-                        <td>${poi.latitude}</td>
-                        <td>${poi.longitude}</td>
-                        <td>${poi.address}</td>
-                        <td>${poi.status}</td>
+                        <td>${poi.location || ''}</td>
+                        <td>${poi.latitude || ''}</td>
+                        <td>${poi.langitude || ''}</td>
+                        <td>${poi.plocation || ''}</td>
+                        <td>${poi.status || 'Enable'}</td>
                         <td>
                             <span class="action-btn enable-btn" onclick="updateStatus(${poi.id}, 'Enable')">Enable</span>
                             <span class="action-btn disable-btn" onclick="updateStatus(${poi.id}, 'Disable')">Disable</span>
