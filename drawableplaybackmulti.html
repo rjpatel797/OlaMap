@@ -1,0 +1,2410 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>GPS Playback System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- jQuery for API requests -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- Ola Maps SDK and custom styles -->
+  <link href="olamap/style.css" rel="stylesheet" />
+  <script src="olamap/olamaps-js-sdk.umd.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body,
+    html {
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Container setup for full layout */
+    /* Add to your existing styles */
+.device-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.device-item:hover {
+  background-color: #f5f6f7;
+}
+
+.device-item.selected {
+  background-color: #e3f2fd;
+}
+
+.color-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.selected-count {
+  background: #2196f3;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 93vh;
+    }
+
+    /* Navbar styles */
+    #navbar-container {
+      width: 100%;
+      background-color: #333;
+      color: white;
+      padding: 0;
+    }
+
+    /* Flex layout for main content */
+    .content {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    #map {
+      width: 100%;
+      height: 725px;
+    }
+
+    .controls {
+      margin: 3px;
+      background: #2c3e50;
+      /* Matching navbar background */
+      padding: 5px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      gap: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .controls button {
+      padding: 5px 15px;
+      font-size: 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .controls {
+      margin: 3px;
+      background: #2c3e50;
+      padding: 10px;
+      border-radius: 8px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .datetime-selector {
+      display: flex;
+      gap: 10px;
+    }
+
+    .date-input {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .date-input label {
+      color: white;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .date-input input[type="date"] {
+      padding: 5px 8px;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #2c3e50;
+      background-color: white;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .date-input input[type="date"]:hover {
+      background-color: #f8f9fa;
+    }
+
+    .date-input input[type="date"]:focus {
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+    }
+
+
+    .datetime-wrapper {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .date-input input[type="time"] {
+      padding: 5px 8px;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #2c3e50;
+      background-color: white;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .date-input input[type="time"]:hover {
+      background-color: #f8f9fa;
+    }
+
+    .date-input input[type="time"]:focus {
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+    }
+
+    .device-selector select {
+      padding: 5px 25px 5px 10px;
+      font-size: 13px;
+      color: #2c3e50;
+      background-color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232c3e50' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 12px;
+      min-width: 150px;
+    }
+
+    .device-selector {
+      position: relative;
+      width: 250px;
+    }
+
+    .dropdown-container {
+      position: relative;
+    }
+
+    .dropdown-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border-radius: 4px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      display: none;
+      z-index: 1000;
+    }
+
+    .dropdown-header {
+      padding: 10px;
+      color: rgb(0, 0, 0);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-weight: 500;
+    }
+
+    .dropdown-search {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .dropdown-search input {
+      width: 100%;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 4px;
+      color: rgb(0, 0, 0);
+      font-size: 13px;
+    }
+
+    .dropdown-search input::placeholder {
+      color: rgba(0, 0, 0, 0.5);
+    }
+
+    .dropdown-items {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .dropdown-item {
+      padding: 8px 10px;
+      color: black;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .dropdown-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Selected Vehicle */
+    .selected-vehicle {
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      color: rgb(0, 0, 0);
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .selected-vehicle:after {
+      content: "▼";
+      font-size: 10px;
+      margin-left: 8px;
+    }
+
+    .device-selector select:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+    }
+
+    .buttonclass {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Keep your existing button styles */
+    .buttonclass button {
+      padding: 5px 15px;
+      font-size: 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    /* Start Button */
+    #startPlayback {
+      background-color: #2ecc71;
+      color: white;
+    }
+
+    #startPlayback:hover {
+      background-color: #27ae60;
+    }
+
+    /* Pause Button */
+    #pausePlayback {
+      background-color: #f1c40f;
+      color: #2c3e50;
+    }
+
+    #pausePlayback:hover {
+      background-color: #f39c12;
+    }
+
+    /* Stop Button */
+    #stopPlayback {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    #stopPlayback:hover {
+      background-color: #c0392b;
+    }
+
+    /* Add icons to buttons */
+    #startPlayback::before {
+      content: "▶";
+      font-size: 12px;
+    }
+
+    #pausePlayback::before {
+      content: "⏸";
+      font-size: 12px;
+    }
+
+    #stopPlayback::before {
+      content: "⏹";
+      font-size: 12px;
+    }
+
+    /* Active state for buttons */
+    .controls button:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+
+    /* Disabled state */
+    .controls button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 768px) {
+      .controls {
+        margin: 10px;
+        padding: 10px;
+      }
+
+      .controls button {
+        padding: 8px 16px;
+        font-size: 12px;
+      }
+    }
+
+    .customMarkerClass {
+  display: block !important;
+  height: 20px;
+  width: 40px;
+  position: relative;
+  transform-origin: center center;
+  transform: translate(-50%, -50%); /* Add this to center the marker */
+  top: -105px; /* Adjust this value to fine-tune vertical position */
+}
+    .carImage {
+      width: 40px;
+      height: 20px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform-origin: center center;
+      transform: translate(-50%,
+          -50%);
+      /* Center the image within the marker */
+      display: block;
+    }
+
+    #customPopup {
+      position: absolute;
+      background: #fff;
+      padding: 15px 20px;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
+      display: none;
+      z-index: 1000;
+      /* Ensure popup stays above marker */
+      min-width: 280px;
+      text-align: left;
+      transform: translate(-50%, -100%);
+      /* Center horizontally and move up */
+      margin-top: -20px;
+      /* Add extra space between popup and marker */
+    }
+
+    /* Update arrow position */
+    .popup::after {
+      content: "";
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid #fff;
+      filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
+    }
+
+    #popupContent {
+      line-height: 1.8;
+      color: #2c3e50;
+      font-size: 13px;
+    }
+
+    #popupContent b {
+      color: #34495e;
+      width: 100px;
+      display: inline-block;
+      font-weight: 600;
+    }
+
+    /* Status indicators */
+    .status-indicator {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 500;
+      margin-left: 5px;
+    }
+
+    .status-on {
+      background-color: #2ecc71;
+      color: white;
+    }
+
+    .status-off {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    /* Popup styling */
+    .popup {
+      position: absolute;
+      background: white;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
+      display: none;
+      z-index: 1000;
+      min-width: 280px;
+      text-align: left;
+      transform: translateX(-50%);
+      /* Center the popup horizontally */
+    }
+
+    .popup .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      cursor: pointer;
+      color: #95a5a6;
+      font-size: 16px;
+      transition: color 0.2s ease;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .popup .close-btn:hover {
+      color: #34495e;
+      background: #f5f6f7;
+    }
+
+    /* Arrow indicator */
+    /* .popup::after {
+    content: "";
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid #fff;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
+} */
+
+    .controls {
+      margin: 3px;
+      background: #2c3e50;
+      padding: 5px 15px;
+      /* Increased padding */
+      border-radius: 8px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .selected-device {
+      margin-left: 15px;
+      padding: 5px 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      min-width: 200px;
+    }
+
+    .device-icon {
+      font-size: 16px;
+    }
+
+    #deviceNameDisplay {
+      font-weight: 500;
+      color: #ecf0f1;
+    }
+
+    .deviceItem {
+      position: relative;
+      background-color: #f5f6f7;
+      border-radius: 6px;
+      margin: 5px 0;
+      transition: all 0.3s ease;
+    }
+
+    .device-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .device-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dropdown-arrow {
+      font-size: 10px;
+      color: #666;
+      transition: transform 0.3s ease;
+    }
+
+    .device-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background-color: white;
+      border-radius: 0 0 6px 6px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.3s ease;
+      z-index: 100;
+    }
+
+    .device-selector {
+      position: relative;
+      margin-left: 10px;
+    }
+
+    #deviceSelect {
+      padding: 5px 35px 5px 15px;
+      font-size: 13px;
+      color: #fff;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      min-width: 200px;
+      height: 32px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    #deviceSelect:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    #deviceSelect:focus {
+      background-color: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .device-selector::after {
+      content: "▼";
+      font-size: 10px;
+      color: #000;
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    #deviceSelect option {
+      background-color: #2c3e50;
+      color: #fff;
+      padding: 8px;
+    }
+
+    #deviceSelect option:hover {
+      background-color: #34495e;
+    }
+
+    /* Adjust the existing controls styles */
+    .controls {
+      margin: 3px;
+      background: #2c3e50;
+      padding: 5px 15px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .controls button {
+      padding: 8px 16px;
+      font-size: 13px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    #startPlayback {
+      background-color: #2ecc71;
+      color: white;
+    }
+
+    #startPlayback:hover {
+      background-color: #27ae60;
+    }
+
+    #pausePlayback {
+      background-color: #f1c40f;
+      color: #2c3e50;
+    }
+
+    #pausePlayback:hover {
+      background-color: #f39c12;
+    }
+
+    #stopPlayback {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    #stopPlayback:hover {
+      background-color: #c0392b;
+    }
+
+    .polyline-popup {
+      display: none;
+      position: absolute;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 1000;
+      color: #333;
+      max-width: 200px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .polyline-popup::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 5px solid white;
+    }
+
+    /* pop-up display righ-side*/
+    .vehicle-info-popup {
+      position: fixed;
+      top: 160px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 8px;  /* Reduced from 15px */
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      width: 180px;  /* Reduced from 280px */
+      z-index: 9999;
+      transition: all 0.3s ease;
+    }
+
+    .info-container {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;  /* Reduced from 12px */
+    }
+
+    .info-card {
+      display: flex;
+      align-items: center;
+      padding: 3px;  /* Reduced from 10px */
+      background: white;
+      border-radius: 10px;
+      transition: transform 0.2s ease;
+      border: 1px solid #f0f0f0;
+    }
+
+    .info-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .info-icon {
+      font-size: 16px;  /* Reduced from 20px */
+      width: 30px;  /* Reduced from 40px */
+      height: 30px;  /* Reduced from 40px */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-right: 8px;  /* Reduced from 12px */
+    }
+
+    .info-details {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;  /* Reduced from 4px */
+    }
+
+    .info-label {
+      color: #64748b;
+      font-size: 11px;  /* Reduced from 12px */
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .info-value {
+      color: #1e293b;
+      font-size: 13px;  /* Reduced from 16px */
+      font-weight: 600;
+    }
+
+    #speedDisplay {
+      color: #2563eb;
+    }
+
+    #dateTimeDisplay {
+      font-size: 12px;  
+      white-space: nowrap;
+    }
+
+    #distanceDisplay {
+      color: #059669;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .vehicle-info-popup {
+        width: calc(100% - 40px);
+        top: auto;
+        bottom: 20px;
+        right: 20px;
+      }
+      
+      .info-container {
+        flex-direction: row;
+        justify-content: space-between;
+      }
+      
+      .info-card {
+        flex: 1;
+      }
+    }
+
+    .direction-arrow {
+  pointer-events: none;
+  z-index: 1;
+}
+
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Navbar -->
+    <div id="navbar-container"></div>
+    <div class="content">
+      <div class="controls">
+        <div class="datetime-selector">
+          <div class="device-selector">
+            <div class="dropdown-container">
+              <!-- Dropdown Button (Selected Vehicles) -->
+              <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
+                Select Vehicles
+              </div>
+          
+              <!-- Dropdown List (Hidden by default) -->
+              <div class="dropdown-list" id="deviceDropdown">
+                <!-- Search input for filtering vehicles -->
+                <div class="dropdown-search">
+                  <input type="text" placeholder="Search vehicles..." id="vehicleSearch"
+                    onclick="event.stopPropagation()" onkeyup="filterVehicles(this.value)" />
+                </div>
+          
+                <!-- List of filtered vehicles -->
+                <div class="dropdown-items" id="vehicleList">
+                  <!-- Vehicles will be populated here dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="date-input">
+            <label>From:</label>
+            <div class="datetime-wrapper">
+              <input type="date" id="fromDate" placeholder="dd/mm/yyyy" />
+              <input type="time" id="fromTime" value="00:00" />
+            </div>
+          </div>
+          <div class="date-input">
+            <label>To:</label>
+            <div class="datetime-wrapper">
+              <input type="date" id="toDate" placeholder="dd/mm/yyyy" />
+              <input type="time" id="toTime" value="23:59" />
+            </div>
+          </div>
+        </div>
+  
+        <div class="buttonclass">
+          <button id="startPlayback">Start</button>
+          <button id="pausePlayback">Pause</button>
+          <button id="stopPlayback">Stop</button>
+        </div>
+      </div>
+      <div id="map"></div>
+      <div id="polylinePopup" class="polyline-popup">
+        <div id="polylinePopupContent"></div>
+      </div>
+  
+      <!-- Custom Popup Element -->
+      <div id="customPopup" class="popup">
+        <span class="close-btn" onclick="hidePopup(true)">✖</span>
+        <div id="popupContent"></div>
+      </div>
+    </div>
+  
+    <div id="vehicleInfoPopup" class="vehicle-info-popup">
+      <div class="info-container">
+        <div class="info-card">
+          <div class="info-icon">🚗</div>
+          <div class="info-details">
+            <span class="info-label">Speed</span>
+            <span class="info-value" id="speedDisplay">0 km/h</span>
+          </div>
+        </div>
+        
+        <div class="info-card">
+          <div class="info-icon">🕒</div>
+          <div class="info-details">
+            <span class="info-label">Time</span>
+            <span class="info-value" id="dateTimeDisplay">--</span>
+          </div>
+        </div>
+        
+        <div class="info-card">
+          <div class="info-icon">📍</div>
+          <div class="info-details">
+            <span class="info-label">Distance</span>
+            <span class="info-value" id="distanceDisplay">0 km</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Initialize the Ola Maps SDK
+    const olaMaps = new OlaMapsSDK.OlaMaps({
+      apiKey: "0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9",
+    });
+
+    // Initialize map
+    const myMap = olaMaps.init({
+      style:
+        "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
+      container: "map",
+      center: [72.5714, 23.0225],
+      zoom: 15,
+    });
+
+    const deviceColors = [
+  '#FF0000', // Red
+  '#00FF00', // Green
+  '#0000FF', // Blue
+  '#FFA500', // Orange
+  '#800080', // Purple
+  '#008080', // Teal
+  '#FFD700', // Gold
+  '#4B0082', // Indigo
+  '#FF1493', // Deep Pink
+  '#00CED1'  // Dark Turquoise
+];
+
+let selectedDevices = [];
+let deviceDataMap = new Map(); // Store playback data for each device
+let deviceMarkers = new Map(); // Store markers for each device
+let devicePolylines = new Map(); // Store polylines for each device
+
+    let vehicleMarker = null;
+    let playbackData = [];
+    let index = 0;
+    let playbackInterval = null;
+    let isPaused = false;
+    const polylineId = "dynamicPolyline";
+    let isPopupClosedManually = false;
+    let pathCoordinates = [];
+    let startMarker = null;
+    let endMarker = null;
+    let startingMarker = null;
+    let endingMarker = null;
+    let totalDistance = 0;
+
+    const ANGLE_OFFSET = 90;
+    const popup = document.getElementById("customPopup");
+    const popupContent = document.getElementById("popupContent");
+
+    myMap.on("load", () => {
+      console.log("Map loaded successfully");
+      fetchDeviceData().catch((error) => {
+        console.error("Error fetching device data:", error);
+      });
+    });
+
+    function createCustomMarker(color, label) {
+      const markerElement = document.createElement("div");
+      markerElement.style.position = "block";
+
+      // Create the marker circle
+      const circle = document.createElement("div");
+      circle.style.width = "24px";
+      circle.style.height = "24px";
+      circle.style.backgroundColor = color;
+      circle.style.borderRadius = "50%";
+      circle.style.border = "3px solid white";
+      circle.style.boxShadow = "0 2px 4px rgba(0,0,0,0.3)";
+
+      // Create label
+      const labelDiv = document.createElement("div");
+      labelDiv.style.position = "absolute";
+      labelDiv.style.top = "50%";
+      labelDiv.style.left = "50%";
+      labelDiv.style.transform = "translate(-50%, -50%)";
+      labelDiv.style.color = "white";
+      labelDiv.style.fontSize = "12px";
+      labelDiv.style.fontWeight = "bold";
+      labelDiv.textContent = label;
+
+      markerElement.appendChild(circle);
+      markerElement.appendChild(labelDiv);
+
+      return markerElement;
+    }
+
+    // Add these helper functions for the markers
+    function createMarkerWithTimestamp(type, timestamp, color) {
+    const container = document.createElement('div');
+    container.style.cssText = `
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transform: translate(-50%, -50%);
+    `;
+
+    const timeDisplay = document.createElement('div');
+    timeDisplay.style.cssText = `
+        background-color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-bottom: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        white-space: nowrap;
+        z-index: 1;
+        position: relative;
+    `;
+    timeDisplay.textContent = timestamp;
+
+    const marker = document.createElement('div');
+    marker.style.cssText = `
+        width: 24px;
+        height: 24px;
+        background-color: ${color};
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        position: relative;
+    `;
+    marker.textContent = type;
+
+    container.appendChild(timeDisplay);
+    container.appendChild(marker);
+
+    return container;
+}
+
+function addStartEndMarkers(coordinates) {
+      // Remove existing markers if they exist
+      if (startingMarker) startingMarker.remove();
+      if (endingMarker) endingMarker.remove();
+
+      if (!playbackData || playbackData.length < 2) return;
+
+      const startPoint = playbackData[0];
+      const endPoint = playbackData[playbackData.length - 1];
+
+      // Create start marker with timestamp
+      const startMarkerElement = createMarkerWithTimestamp(
+          'S',
+          startPoint.date.split('.')[0], // Remove milliseconds if present
+          '#2ecc71' // Green color
+      );
+      
+      startingMarker = olaMaps
+          .addMarker({
+              element: startMarkerElement,
+              anchor: 'bottom',
+          })
+          .setLngLat(coordinates[0])
+          .addTo(myMap);
+
+      // Create end marker with timestamp
+      const endMarkerElement = createMarkerWithTimestamp(
+          'E',
+          endPoint.date.split('.')[0], // Remove milliseconds if present
+          '#e74c3c' // Red color
+      );
+      
+      endingMarker = olaMaps
+          .addMarker({
+              element: endMarkerElement,
+              anchor: 'bottom',
+          })
+          .setLngLat(coordinates[coordinates.length - 1])
+          .addTo(myMap);
+    }
+
+    let devices = [];
+    let selectedDeviceId = null;
+
+    // Toggle the dropdown visibility
+    function toggleDropdown() {
+      const dropdown = document.getElementById("deviceDropdown");
+      dropdown.style.display =
+        dropdown.style.display === "block" ? "none" : "block";
+    }
+
+    // Filter vehicles based on the search input
+    function filterVehicles(searchText) {
+      const vehicleList = document.getElementById("vehicleList");
+      const filteredDevices = devices.filter((device) =>
+        device.name.toLowerCase().includes(searchText.toLowerCase())
+      );
+
+      populateVehicleList(filteredDevices);
+    }
+
+    // Select a vehicle and update the selected vehicle text
+    function selectVehicle(deviceId, deviceName) {
+      if (!deviceId) {
+        console.error("No Vehicle ID provided");
+        return;
+      }
+
+      selectedDeviceId = deviceId;
+      document.getElementById("selectedVehicle").textContent = deviceName;
+      document.getElementById("deviceDropdown").style.display = "none";
+
+      // Get date values
+      const fromDate = document.getElementById("fromDate").value;
+      const toDate = document.getElementById("toDate").value;
+
+      if (fromDate && toDate) {
+        fetchPlaybackData(deviceId)
+          .then(() => {
+            if (playbackData.length) {
+              addPolyline();
+              addStartEndMarkers(pathCoordinates);
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching playback data:", error);
+            alert("Error loading playback data. Please try again.");
+          });
+      } else {
+        alert("Please select both From and To dates");
+      }
+    }
+
+    // Populate the dropdown list with devices
+    function populateVehicleList(devicesList) {
+    const vehicleList = document.getElementById("vehicleList");
+    vehicleList.innerHTML = "";
+
+    if (!Array.isArray(devicesList) || devicesList.length === 0) {
+        const noDevicesMsg = document.createElement("div");
+        noDevicesMsg.className = "dropdown-item";
+        noDevicesMsg.textContent = "No vehicles available";
+        vehicleList.appendChild(noDevicesMsg);
+        return;
+    }
+
+    devicesList.forEach((device) => {
+        if (!device.did || !device.name) return;
+
+        const item = document.createElement("div");
+        item.className = "device-item";
+        
+        // Create color indicator
+        const colorIndicator = document.createElement("div");
+        colorIndicator.className = "color-indicator";
+        
+        // Find if device is selected
+        const selectedDevice = selectedDevices.find(d => d.did === device.did);
+        if (selectedDevice) {
+            item.classList.add("selected");
+            colorIndicator.style.backgroundColor = selectedDevice.color;
+        }
+
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = device.name;
+        
+        item.appendChild(colorIndicator);
+        item.appendChild(nameSpan);
+        
+        item.onclick = (e) => {
+            e.stopPropagation();
+            toggleDeviceSelection(device);
+        };
+        
+        vehicleList.appendChild(item);
+    });
+}
+
+function toggleDeviceSelection(device) {
+    // Check if device is already selected
+    const index = selectedDevices.findIndex(d => d.did === device.did);
+    
+    if (index === -1) {
+        // Add device if not at maximum limit
+        if (selectedDevices.length < deviceColors.length) {
+            // Create device object with all necessary properties
+            const newDevice = {
+                did: device.did,
+                name: device.name,
+                color: deviceColors[selectedDevices.length]  // Use length for next available color
+            };
+            
+            selectedDevices.push(newDevice);
+            
+            // Fetch data for the device
+            fetchPlaybackData(newDevice.did)
+                .then(data => {
+                    if (data && data.length > 0) {
+                        addPolyline(newDevice.did, newDevice.color);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    const removeIdx = selectedDevices.findIndex(d => d.did === newDevice.did);
+                    if (removeIdx !== -1) {
+                        selectedDevices.splice(removeIdx, 1);
+                    }
+                    alert('Failed to load data for selected device');
+                });
+        } else {
+            alert(`Maximum ${deviceColors.length} devices can be selected`);
+            return;
+        }
+    } else {
+        // Remove device
+        const deviceId = selectedDevices[index].did;
+        
+        // Clean up device data and markers
+        deviceDataMap.delete(deviceId);
+
+        // Remove vehicle marker
+        if (deviceMarkers.has(deviceId)) {
+            deviceMarkers.get(deviceId).remove();
+            deviceMarkers.delete(deviceId);
+        }
+
+        // Remove start marker
+        const startMarkerId = `start-${deviceId}`;
+        if (deviceMarkers.has(startMarkerId)) {
+            deviceMarkers.get(startMarkerId).remove();
+            deviceMarkers.delete(startMarkerId);
+        }
+
+        // Remove end marker
+        const endMarkerId = `end-${deviceId}`;
+        if (deviceMarkers.has(endMarkerId)) {
+            deviceMarkers.get(endMarkerId).remove();
+            deviceMarkers.delete(endMarkerId);
+        }
+
+        // Remove polyline
+        const polylineId = `polyline-${deviceId}`;
+        if (myMap.getLayer(polylineId)) {
+            myMap.removeLayer(polylineId);
+        }
+        if (myMap.getSource(polylineId)) {
+            myMap.removeSource(polylineId);
+        }
+        devicePolylines.delete(deviceId);
+
+        // Remove direction arrows
+        const arrows = document.querySelectorAll(`.device-${deviceId}`);
+        arrows.forEach(arrow => arrow.remove());
+        const arrowsContainer = document.querySelector(`.direction-arrows-${deviceId}`);
+        if (arrowsContainer) {
+            arrowsContainer.remove();
+        }
+
+        // Remove device from selected devices array
+        selectedDevices.splice(index, 1);
+
+        // Reassign colors to remaining devices
+        selectedDevices.forEach((device, idx) => {
+            device.color = deviceColors[idx];
+            // Redraw polyline and markers with new color if needed
+            const deviceData = deviceDataMap.get(device.did);
+            if (deviceData && deviceData.length > 0) {
+                addPolyline(device.did, device.color);
+            }
+        });
+    }
+
+    // Update display
+    updateSelectedVehiclesDisplay();
+    populateVehicleList(devices);
+}
+
+
+function updateSelectedVehiclesDisplay() {
+  const selectedVehicleElement = document.getElementById("selectedVehicle");
+  if (selectedDevices.length === 0) {
+    selectedVehicleElement.textContent = "Select Vehicles";
+  } else {
+    selectedVehicleElement.textContent = `${selectedDevices.length} Vehicle${selectedDevices.length > 1 ? 's' : ''} Selected`;
+    const countSpan = document.createElement("span");
+    countSpan.className = "selected-count";
+    countSpan.textContent = selectedDevices.length;
+    selectedVehicleElement.appendChild(countSpan);
+  }
+}
+
+function fetchDeviceData() {
+      const mid = localStorage.getItem("mid");
+      if (!mid) {
+        console.error("No mid found in localStorage");
+        return;
+      }
+
+      const apiUrl = `${API}opr=getdevicelistByMid&mid=${mid}`;
+
+      return fetch(apiUrl)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (!Array.isArray(data)) {
+            throw new Error("Invalid data format received");
+          }
+
+          // Update the global devices array
+          devices = data.map((item) => ({
+            name: item.dname,
+            did: item.did,
+          }));
+
+          // Populate the vehicle list with the fetched devices
+          populateVehicleList(devices);
+        })
+        .catch((error) => {
+          console.error("Error fetching Vehicle:", error);
+          alert("Error loading vehicle list. Please try again.");
+        });
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener("click", function (event) {
+      const dropdown = document.getElementById("deviceDropdown");
+      const selectedVehicle = document.getElementById("selectedVehicle");
+
+      if (
+        !event.target.closest(".device-selector") &&
+        event.target !== selectedVehicle
+      ) {
+        dropdown.style.display = "none";
+      }
+    });
+
+    function createDeviceList() {
+      const deviceSelect = $("#deviceSelect");
+      deviceSelect.empty().append('<option value="">Select Vehicle</option>');
+
+      devices.forEach((device) => {
+        const option = document.createElement("option");
+        option.value = device.did;
+        option.textContent = device.name;
+        option.style.padding = "10px";
+        deviceSelect.append(option);
+      });
+
+      deviceSelect.on("change", function () {
+        const selectedDid = $(this).val();
+        const selectedDevice = devices.find((d) => d.did == selectedDid);
+
+        if (selectedDevice) {
+          $("#deviceNameDisplay").text(selectedDevice.name);
+          fetchPlaybackData(selectedDid);
+        }
+      });
+    }
+
+    // Validate coordinates before using them
+    function isValidCoordinate(lng, lat) {
+      return (
+        !isNaN(lng) &&
+        !isNaN(lat) &&
+        lng >= -180 &&
+        lng <= 180 &&
+        lat >= -90 &&
+        lat <= 90
+      );
+    }
+
+    // Rest of your JavaScript functions (fetchPlaybackData, createPopupContent, etc.)
+    // [Previous JavaScript code for playback controls and functionality remains the same]
+    function formatTime(timeString) {
+      return timeString.replace(':', '') + '00';
+    }
+    // Function to fetch playback data from the API
+    async function fetchPlaybackData(deviceId) {
+    
+    if (!deviceId) {
+        console.error("No Vehicle ID provided");
+        return Promise.reject("Vehicle ID required");
+    }
+
+    const fromDate = document.getElementById("fromDate").value;
+    const toDate = document.getElementById("toDate").value;
+    const fromTime = document.getElementById("fromTime").value;
+    const toTime = document.getElementById("toTime").value;
+
+    if (!fromDate || !toDate) {
+        alert("Please select both From and To dates");
+        return Promise.reject("Date selection required");
+    }
+
+    const formattedFromDateTime = `${formatDate(fromDate)}${formatTime(fromTime)}`;
+    const formattedToDateTime = `${formatDate(toDate)}${formatTime(toTime)}`;
+
+    try {
+        const response = await fetch(
+            `${API}opr=getplaybacktest&sdate=${formattedFromDateTime}&edate=${formattedToDateTime}&did=${deviceId}`
+        );
+        const data = await response.json();
+        
+        if (!Array.isArray(data)) {
+            throw new Error("Invalid data format received");
+        }
+
+        const processedData = data
+            .map(item => {
+                const lng = Number(item.langitude);
+                const lat = Number(item.latitude);
+                let angle = Number(item.angle) || 0;
+                angle = ((angle % 360) + 360) % 360;
+
+                if (!isValidCoordinate(lng, lat)) {
+                    return null;
+                }
+
+                return {
+                    coordinates: [lng, lat],
+                    angle: angle,
+                    deviceId: String(item.deviceId),
+                    speed: Number(item.speed) || 0,
+                    gps: item.digital_2,
+                    engine: item.digital_2,
+                    date: item.DeviceDate
+                };
+            })
+            .filter(Boolean);
+
+        deviceDataMap.set(deviceId, processedData);
+        return processedData;
+    } catch (error) {
+        console.error("Error in fetchPlaybackData:", error);
+        throw error;
+    }
+}
+
+function rightSideVehicleInfo(data, totalDistance) {
+      // Update speed
+      document.getElementById("speedDisplay").textContent = `${Math.round(
+        data.speed
+      )} km/h`;
+
+      // Update date-time - format to show in single line
+      const dateTime = data.date.split(".")[0];
+      const [date, time] = dateTime.split(" ");
+      document.getElementById(
+        "dateTimeDisplay"
+      ).textContent = `${date} ${time}`;
+
+      // Update distance
+      document.getElementById(
+        "distanceDisplay"
+      ).textContent = `${totalDistance.toFixed(2)} km`;
+    }
+
+    function updateMapView() {
+      if (pathCoordinates.length === 0) return;
+
+      // Calculate bounds
+      const lngs = pathCoordinates.map((coord) => coord[0]);
+      const lats = pathCoordinates.map((coord) => coord[1]);
+
+      const bounds = [
+        [Math.min(...lngs) - 0.01, Math.min(...lats) - 0.01],
+        [Math.max(...lngs) + 0.01, Math.max(...lats) + 0.01],
+      ];
+
+      // Safely update map bounds
+      try {
+        myMap.fitBounds(bounds, {
+          padding: 50,
+          duration: 1000,
+        });
+      } catch (error) {
+        console.error("Error updating map bounds:", error);
+      }
+    }
+
+    // Helper function to calculate bounds
+    function calculateBounds(coordinates) {
+      const lngs = coordinates.map((coord) => coord[0]);
+      const lats = coordinates.map((coord) => coord[1]);
+
+      return [
+        [Math.min(...lngs) - 0.01, Math.min(...lats) - 0.01],
+        [Math.max(...lngs) + 0.01, Math.max(...lats) + 0.01],
+      ];
+    }
+
+    // Helper function to format date as YYYY-MM-DD
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    // Function to add polyline
+    function addPolyline(deviceId, color) {
+    
+    if (!deviceId) {
+        console.error('Device ID is required for adding polyline');
+        return;
+    }
+    
+    const data = deviceDataMap.get(deviceId);
+
+    if (!data || data.length === 0) {
+        console.error(`No data or empty data for device ${deviceId}`);
+        return;
+    }
+
+    const polylineId = `polyline-${deviceId}`;
+
+    // Remove existing polyline and markers if they exist
+    if (myMap.getLayer(polylineId)) {
+        myMap.removeLayer(polylineId);
+    }
+    if (myMap.getSource(polylineId)) {
+        myMap.removeSource(polylineId);
+    }
+
+    // Find device name from selectedDevices array
+    const deviceInfo = selectedDevices.find(d => d.did === deviceId);
+    const deviceName = deviceInfo ? deviceInfo.name : deviceId;
+
+    const coordinates = data.map(item => item.coordinates);
+
+    try {
+        // Add source with additional properties
+        myMap.addSource(polylineId, {
+            type: 'geojson',
+            data: {
+                type: 'Feature',
+                properties: {
+                    deviceId: deviceId,
+                    deviceName: deviceName,
+                    color: color
+                },
+                geometry: {
+                    type: 'LineString',
+                    coordinates: coordinates
+                }
+            }
+        });
+
+        myMap.addLayer({
+            id: polylineId,
+            type: 'line',
+            source: polylineId,
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            paint: {
+                'line-color': color,
+                'line-width': 4
+            }
+        });
+
+        // Add hover interactions
+        // Create or get hover popup
+        if (!window.hoverPopup) {
+            window.hoverPopup = document.createElement('div');
+            window.hoverPopup.className = 'polyline-hover-popup';
+            window.hoverPopup.style.cssText = `
+                display: none;
+                position: absolute;
+                background: white;
+                padding: 8px 12px;
+                border-radius: 4px;
+                font-size: 13px;
+                pointer-events: none;
+                z-index: 1000;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                border: 1px solid ${color};
+            `;
+            document.body.appendChild(window.hoverPopup);
+        }
+
+        // Mouse enter event
+        myMap.on('mouseenter', polylineId, (e) => {
+            myMap.getCanvas().style.cursor = 'pointer';
+            window.hoverPopup.style.display = 'block';
+            window.hoverPopup.style.borderColor = color;
+            window.hoverPopup.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${color};"></div>
+                    <div>${deviceName}</div>
+                </div>
+            `;
+        });
+
+        // Mouse move event
+        myMap.on('mousemove', polylineId, (e) => {
+            window.hoverPopup.style.left = `${e.point.x - 50}px`;
+            window.hoverPopup.style.top = `${e.point.y + 60}px`;
+        });
+
+        // Mouse leave event
+        myMap.on('mouseleave', polylineId, () => {
+            myMap.getCanvas().style.cursor = '';
+            window.hoverPopup.style.display = 'none';
+        });
+
+        devicePolylines.set(deviceId, polylineId);
+
+        // Add your existing direction arrows and markers
+        addDirectionArrowsForDevice(coordinates, color, deviceId);
+        addStartEndMarkersForDevice(deviceId, coordinates, color, data);
+
+        updateMapBounds();
+    } catch (error) {
+        console.error('Error adding polyline for device:', deviceId, error);
+    }
+}
+
+function addStartEndMarkersForDevice(deviceId, coordinates, color, data) {
+    const startMarkerId = `start-${deviceId}`;
+    const endMarkerId = `end-${deviceId}`;
+
+    // Clean up existing markers
+    if (deviceMarkers.has(startMarkerId)) {
+        deviceMarkers.get(startMarkerId).remove();
+        deviceMarkers.delete(startMarkerId);
+    }
+    if (deviceMarkers.has(endMarkerId)) {
+        deviceMarkers.get(endMarkerId).remove();
+        deviceMarkers.delete(endMarkerId);
+    }
+
+    if (!data || data.length < 2) return;
+
+    try {
+        // Add start marker with fixed coordinates
+        const startPoint = data[0];
+        const startMarkerElement = createMarkerWithTimestamp(
+            'S',
+            startPoint.date.split('.')[0],
+            color
+        );
+
+        const startCoords = coordinates[0];
+        const startMarker = olaMaps.addMarker({
+            element: startMarkerElement,
+            anchor: 'center',
+            draggable: false,
+            offset: [0, -20]  // Adjust offset to position marker properly
+        });
+        startMarker.setLngLat(startCoords).addTo(myMap);
+        deviceMarkers.set(startMarkerId, startMarker);
+
+        // Add end marker with fixed coordinates
+        const endPoint = data[data.length - 1];
+        const endMarkerElement = createMarkerWithTimestamp(
+            'E',
+            endPoint.date.split('.')[0],
+            color
+        );
+
+        const endCoords = coordinates[coordinates.length - 1];
+        const endMarker = olaMaps.addMarker({
+            element: endMarkerElement,
+            anchor: 'center',
+            draggable: false,
+            offset: [0, -20]  // Adjust offset to position marker properly
+        });
+        endMarker.setLngLat(endCoords).addTo(myMap);
+        deviceMarkers.set(endMarkerId, endMarker);
+        
+        console.log(`Markers added for device ${deviceId} at:`, {
+            start: startCoords,
+            end: endCoords
+        });
+    } catch (error) {
+        console.error(`Error adding markers for device ${deviceId}:`, error);
+    }}
+ 
+        function addDirectionArrowsForDevice(coordinates, color, deviceId) {
+    const ARROW_SPACING = 150; // pixels between arrows
+    const arrowsContainer = document.createElement('div');
+    arrowsContainer.className = `direction-arrows-${deviceId}`;
+    document.getElementById('map').appendChild(arrowsContainer);
+
+    // Calculate segments and positions
+    let segments = [];
+    for (let i = 0; i < coordinates.length - 1; i++) {
+        const start = myMap.project(coordinates[i]);
+        const end = myMap.project(coordinates[i + 1]);
+        const length = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
+        segments.push({ start, end, length });
+    }
+
+    // Calculate total path length
+    const totalLength = segments.reduce((sum, seg) => sum + seg.length, 0);
+    const numArrows = Math.max(Math.floor(totalLength / ARROW_SPACING), 1);
+    const spacing = totalLength / numArrows;
+
+    let distanceCovered = spacing / 2;
+    let segmentIndex = 0;
+    let segmentDistance = 0;
+
+    for (let i = 0; i < numArrows; i++) {
+        while (segmentDistance + segments[segmentIndex]?.length < distanceCovered) {
+            segmentDistance += segments[segmentIndex].length;
+            segmentIndex++;
+            if (segmentIndex >= segments.length) break;
+        }
+
+        if (segmentIndex >= segments.length) break;
+
+        const segment = segments[segmentIndex];
+        const segmentPosition = (distanceCovered - segmentDistance) / segment.length;
+        const x = segment.start.x + (segment.end.x - segment.start.x) * segmentPosition;
+        const y = segment.start.y + (segment.end.y - segment.start.y) * segmentPosition;
+        const angle = Math.atan2(segment.end.y - segment.start.y, segment.end.x - segment.start.x);
+
+        const arrow = document.createElement('div');
+        arrow.className = `direction-arrow device-${deviceId}`;
+        arrow.style.position = 'absolute';
+        arrow.style.left = `${x}px`;
+        arrow.style.top = `${y}px`;
+        arrow.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
+
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 16 16');
+        svg.style.width = '16px';
+        svg.style.height = '16px';
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M0,8 L12,8 M8,4 L12,8 L8,12');
+        path.setAttribute('stroke', color);
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('fill', 'none');
+
+        svg.appendChild(path);
+        arrow.appendChild(svg);
+        arrowsContainer.appendChild(arrow);
+
+        distanceCovered += spacing;
+    }
+}
+
+function updateMapBounds() {
+  let allCoordinates = [];
+  deviceDataMap.forEach(data => {
+    allCoordinates = allCoordinates.concat(data.map(item => item.coordinates));
+  });
+
+  if (allCoordinates.length > 0) {
+    const bounds = allCoordinates.reduce(
+      (bounds, coord) => {
+        return [
+          [Math.min(bounds[0][0], coord[0]), Math.min(bounds[0][1], coord[1])],
+          [Math.max(bounds[1][0], coord[0]), Math.max(bounds[1][1], coord[1])]
+        ];
+      },
+      [[allCoordinates[0][0], allCoordinates[0][1]], [allCoordinates[0][0], allCoordinates[0][1]]]
+    );
+
+    myMap.fitBounds(bounds, {
+      padding: 50,
+      duration: 1000
+    });
+  }
+}
+
+function cleanupPolylineEvents() {
+      if (myMap.getLayer(polylineId)) {
+        myMap.off('mousemove', polylineId);
+        myMap.off('mouseleave', polylineId);
+      }
+    }
+
+    let endpointMarker = null; // Global variable to store the endpoint marker
+
+    function addEndpointMarker(coordinate) {
+      if (endpointMarker) endpointMarker.remove();
+
+      const markerElement = document.createElement("div");
+      markerElement.style.width = "24px";
+      markerElement.style.height = "24px";
+      markerElement.style.backgroundColor = "red";
+      markerElement.style.borderRadius = "50%";
+
+      endpointMarker = olaMaps
+        .addMarker({
+          element: markerElement,
+          anchor: "center",
+        })
+        .setLngLat(coordinate)
+        .addTo(myMap);
+
+    }
+
+    function updateMarkerRotation(angle) {
+      if (vehicleMarker) {
+        const markerElement = vehicleMarker.getElement();
+        const imageElement = markerElement.querySelector(".carImage");
+
+        if (imageElement) {
+          const rotationAngle = (angle + ANGLE_OFFSET) % 360;
+          // Apply rotation while maintaining centering
+          imageElement.style.transform = `translate(-50%, -50%) rotate(${rotationAngle}deg)`;
+        }
+      }
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Earth's radius in km
+      const dLat = (lat2 - lat1) * (Math.PI / 180);
+      const dLon = (lon2 - lon1) * (Math.PI / 180);
+      
+      const a = 
+          Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * 
+          Math.sin(dLon/2) * Math.sin(dLon/2);
+      
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    function calculateCumulativeDistance(currentIndex) {
+    let distance = 0;
+    for (let i = 0; i < currentIndex; i++) {
+        const currentPoint = playbackData[i];
+        const nextPoint = playbackData[i + 1];
+        
+        if (nextPoint) {  // Make sure there is a next point to calculate distance to
+            distance += calculateDistance(
+                currentPoint.coordinates[1],
+                currentPoint.coordinates[0],
+                nextPoint.coordinates[1],
+                nextPoint.coordinates[0]
+            );
+        }
+    }
+    return distance;
+}
+
+function startPlayback() {
+  if (selectedDevices.length === 0) {
+    alert('Please select at least one vehicle');
+    return;
+  }
+
+  if (playbackInterval) {
+    clearInterval(playbackInterval);
+  }
+
+  // Reset indexes for all devices if not paused
+  if (!isPaused) {
+    selectedDevices.forEach(device => {
+      device.index = 0;
+      device.totalDistance = 0;
+    });
+  }
+  
+  isPaused = false;
+
+  // Create markers for each device if they don't exist
+  selectedDevices.forEach(device => {
+    if (!deviceMarkers.has(device.did)) {
+      const carMarkerElement = createVehicleMarker(device.color);
+      const marker = olaMaps.addMarker({
+        element: carMarkerElement,
+        anchor: 'center'
+      });
+      deviceMarkers.set(device.did, marker);
+    }
+  });
+
+  playbackInterval = setInterval(() => {
+    let allComplete = true;
+    
+    selectedDevices.forEach(device => {
+      const data = deviceDataMap.get(device.did);
+      if (!data) return;
+      
+      if (device.index < data.length) {
+        allComplete = false;
+        const point = data[device.index];
+        
+        const marker = deviceMarkers.get(device.did);
+        if (marker) {
+          marker.setLngLat(point.coordinates);
+          updateMarkerRotation(marker, point.angle);
+        }
+
+        // Update device info
+        if (device.index > 0) {
+          const prevPoint = data[device.index - 1];
+          device.totalDistance += calculateDistance(
+            prevPoint.coordinates[1],
+            prevPoint.coordinates[0],
+            point.coordinates[1],
+            point.coordinates[0]
+          );
+        }
+
+        device.index++;
+      }
+    });
+
+    if (allComplete) {
+      clearInterval(playbackInterval);
+      playbackInterval = null;
+    }
+  }, 1000);
+}
+
+function createVehicleMarker(color) {
+  const markerElement = document.createElement("div");
+  markerElement.classList.add("customMarkerClass");
+  
+  const carImage = document.createElement("img");
+  carImage.src = "images/truck1.png";
+  carImage.alt = "Vehicle Marker";
+  carImage.classList.add("carImage");
+  carImage.style.filter = `hue-rotate(${getHueRotation(color)}deg)`;
+  
+  markerElement.appendChild(carImage);
+  return markerElement;
+}
+
+function getHueRotation(color) {
+  // Convert hex color to hue rotation degree
+  // This is a simplified version - you might want to implement a more accurate conversion
+  const colors = {
+    '#FF0000': 0,    // Red
+    '#00FF00': 120,  // Green
+    '#0000FF': 240,  // Blue
+    '#FFA500': 39,   // Orange
+    '#800080': 300,  // Purple
+    '#008080': 180,  // Teal
+    '#FFD700': 51,   // Gold
+    '#4B0082': 275,  // Indigo
+    '#FF1493': 328,  // Deep Pink
+    '#00CED1': 181   // Dark Turquoise
+  };
+  return colors[color] || 0;
+}
+
+function stopPlayback() {
+    clearInterval(playbackInterval);
+    playbackInterval = null;
+    isPaused = false;
+
+    // Clear all markers
+    deviceMarkers.forEach(marker => marker.remove());
+    deviceMarkers.clear();
+
+    // Clear all direction arrows
+    selectedDevices.forEach(device => {
+        const arrows = document.querySelectorAll(`.device-${device.did}`);
+        arrows.forEach(arrow => arrow.remove());
+        const container = document.querySelector(`.direction-arrows-${device.did}`);
+        if (container) container.remove();
+
+        // Remove hover events
+        const polylineId = `polyline-${device.did}`;
+        if (myMap.getLayer(polylineId)) {
+            myMap.off('mouseenter', polylineId);
+            myMap.off('mousemove', polylineId);
+            myMap.off('mouseleave', polylineId);
+        }
+    });
+
+    // Hide hover popup
+    if (window.hoverPopup) {
+        window.hoverPopup.style.display = 'none';
+    }
+
+    // Reset indexes and distances
+    selectedDevices.forEach(device => {
+        device.index = 0;
+        device.totalDistance = 0;
+    });
+}
+
+function pausePlayback() {
+  if (playbackInterval) {
+    clearInterval(playbackInterval);
+    playbackInterval = null;
+    isPaused = true;
+  }
+}
+
+
+
+    const originalStopPlayback = stopPlayback;
+stopPlayback = function() {
+  originalStopPlayback();
+  const arrows = document.querySelectorAll('.direction-arrow');
+  arrows.forEach(arrow => arrow.remove());
+};
+
+    // Add this function to your JavaScript code
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      // Convert degrees to radians
+      const toRad = deg => deg * (Math.PI / 180);
+
+      // Radius of the Earth in km
+      const R = 6371;
+
+      // Convert coordinates to radians
+      const lat1Rad = toRad(lat1);
+      const lon1Rad = toRad(lon1);
+      const lat2Rad = toRad(lat2);
+      const lon2Rad = toRad(lon2);
+
+      // Calculate differences
+      const dLat = lat2Rad - lat1Rad;
+      const dLon = lon2Rad - lon1Rad;
+
+      // Haversine formula
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      // Calculate distance
+      return R * c; // Returns distance in kilometers
+    }
+
+    function createPopupContent(data, totalDistance = 0) {
+      return `
+          <div style="border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 5px;">
+              <b>Vehicle:</b> ${data.deviceId} 
+          </div>
+          <div>
+              <b>Speed:</b> ${Math.round(data.speed)} km/h <br/>
+              <b>GPS:</b> <span class="status-indicator ${data.gps === "true" ? "status-on" : "status-off"}">
+                  ${data.gps === "true" ? "ON" : "OFF"}
+              </span><br/>
+              <b>Engine:</b> <span class="status-indicator ${data.engine === "true" ? "status-on" : "status-off"}">
+                  ${data.engine === "true" ? "ON" : "OFF"}
+              </span><br/>
+              <b>Date-Time:</b> ${data.date.split(".")[0]} <br/>
+              <b>Distance:</b> ${totalDistance.toFixed(2)} km
+          </div>`;
+    }
+
+    // Show custom popup at the marker position
+    function showPopup(content) {
+      if (isPopupClosedManually) return; // Do not show if manually closed
+      popupContent.innerHTML = content;
+      popup.style.display = "block";
+      updatePopupPosition(); // Ensure popup is positioned correctly initially
+    }
+
+    // Update popup position to keep it above the vehicle
+    function updatePopupPosition() {
+      if (vehicleMarker && popup.style.display === "block") {
+        const coordinates = vehicleMarker.getLngLat();
+        const mapPos = myMap.project(coordinates);
+
+        // Increase the vertical offset to move popup higher above the marker
+        popup.style.left = `${mapPos.x}px`;
+        popup.style.top = `${mapPos.y + 80}px`; // Changed from -60 to -120 to move it higher
+      }
+    }
+    // Listen for map movement to adjust the popup position
+    myMap.on('move', () => {
+  updatePopupPosition();
+  addDirectionArrows();
+});
+
+    // Hide custom popup, set flag if closed manually
+    function hidePopup(manuallyClosed = false) {
+      popup.style.display = "none";
+      if (manuallyClosed) {
+        isPopupClosedManually = true;
+        // Add a small delay before allowing the popup to be shown again
+        // setTimeout(() => {
+        //     isPopupClosedManually = false;
+        // }, 200); // 200ms delay to prevent immediate re-opening
+      }
+    }
+
+    function setupDateValidation() {
+      const fromDateInput = document.getElementById("fromDate");
+      const toDateInput = document.getElementById("toDate");
+      const fromTimeInput = document.getElementById("fromTime");
+      const toTimeInput = document.getElementById("toTime");
+
+      // Function to get current date in YYYY-MM-DD format
+      function getCurrentDate() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+
+      // Set initial values when page loads
+      const currentDate = getCurrentDate();
+      
+      // Set default values only if they haven't been set by URL parameters
+      if (!fromDateInput.value) {
+        fromDateInput.value = currentDate;
+      }
+      if (!toDateInput.value) {
+        toDateInput.value = currentDate;
+      }
+      if (!fromTimeInput.value) {
+        fromTimeInput.value = "00:00";
+      }
+      if (!toTimeInput.value) {
+        toTimeInput.value = "23:59";
+      }
+
+      // Set max attribute to current date
+      fromDateInput.max = currentDate;
+      toDateInput.max = currentDate;
+
+      function validateTimes() {
+        if (fromDateInput.value === toDateInput.value) {
+          const fromTime = fromTimeInput.value;
+          const toTime = toTimeInput.value;
+
+          if (fromTime > toTime) {
+            alert("Start time cannot be after end time on the same day");
+            toTimeInput.value = fromTime;
+          }
+        }
+      }
+
+      fromTimeInput.addEventListener("change", validateTimes);
+      toTimeInput.addEventListener("change", validateTimes);
+
+      // Validate From Date
+      fromDateInput.addEventListener("input", function () {
+        const fromDate = new Date(this.value);
+        const toDate = new Date(toDateInput.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (fromDate > today) {
+          alert("From date cannot be in the future");
+          this.value = currentDate;
+          return;
+        }
+
+        if (toDateInput.value && fromDate > toDate) {
+          alert("From date cannot be after To date");
+          this.value = toDateInput.value;
+          return;
+        }
+
+        toDateInput.min = this.value;
+      });
+
+      // Validate To Date
+      toDateInput.addEventListener("input", function () {
+        const fromDate = new Date(fromDateInput.value);
+        const toDate = new Date(this.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (toDate > today) {
+          alert("To date cannot be in the future");
+          this.value = currentDate;
+          return;
+        }
+
+        if (fromDateInput.value && toDate < fromDate) {
+          alert("To date cannot be before From date");
+          this.value = fromDateInput.value;
+          return;
+        }
+
+        fromDateInput.max = this.value;
+      });
+    }
+
+    // Make sure to call setupDateValidation when the page loads
+    document.addEventListener("DOMContentLoaded", function() {
+      setupDateValidation();
+    });
+
+
+    function addDirectionArrows() {
+  // Remove existing arrows if any
+  const existingArrows = document.querySelectorAll('.direction-arrow');
+  existingArrows.forEach(arrow => arrow.remove());
+
+  // Calculate total path length and number of arrows needed
+  const ARROW_SPACING = 150; // pixels between arrows
+  let totalLength = 0;
+  const segments = [];
+
+  // Calculate segments and their lengths
+  for (let i = 0; i < pathCoordinates.length - 1; i++) {
+    const start = myMap.project(pathCoordinates[i]);
+    const end = myMap.project(pathCoordinates[i + 1]);
+    const length = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
+    segments.push({ start, end, length });
+    totalLength += length;
+  }
+
+  // Calculate number of arrows
+  const numArrows = Math.floor(totalLength / ARROW_SPACING);
+  if (numArrows === 0) return;
+
+  const spacing = totalLength / numArrows;
+
+  // Create arrows
+  let distanceCovered = spacing / 2; // Start at half spacing for even distribution
+  let segmentIndex = 0;
+  let segmentDistance = 0;
+
+  for (let i = 0; i < numArrows; i++) {
+    // Find the right segment
+    while (segmentDistance + segments[segmentIndex].length < distanceCovered) {
+      segmentDistance += segments[segmentIndex].length;
+      segmentIndex++;
+      if (segmentIndex >= segments.length) return;
+    }
+
+    // Calculate position within segment
+    const segment = segments[segmentIndex];
+    const segmentPosition = (distanceCovered - segmentDistance) / segment.length;
+    const x = segment.start.x + (segment.end.x - segment.start.x) * segmentPosition;
+    const y = segment.start.y + (segment.end.y - segment.start.y) * segmentPosition;
+
+    // Calculate angle
+    const angle = Math.atan2(segment.end.y - segment.start.y, segment.end.x - segment.start.x);
+
+    // Create arrow element
+    const arrow = document.createElement('div');
+    arrow.className = 'direction-arrow';
+    arrow.style.position = 'absolute';
+    arrow.style.left = `${x}px`;
+    arrow.style.top = `${y}px`;
+    arrow.style.width = '16px';
+    arrow.style.height = '16px';
+    arrow.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
+
+    // Create SVG arrow
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 16 16');
+    svg.style.width = '100%';
+    svg.style.height = '100%';
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M0,8 L12,8 M8,4 L12,8 L8,12');
+    path.setAttribute('stroke', '#000000');
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('fill', 'none');
+
+    svg.appendChild(path);
+    arrow.appendChild(svg);
+    document.getElementById('map').appendChild(arrow);
+
+    distanceCovered += spacing;
+  }
+}
+
+// const originalAddPolyline = addPolyline;
+// addPolyline = function() {
+//   originalAddPolyline();
+//   addDirectionArrows();
+// };
+
+
+const dateTimeInputs = document.querySelectorAll('#fromDate, #toDate, #fromTime, #toTime');
+dateTimeInputs.forEach(input => {
+    input.addEventListener('change', () => {
+        // Reset device selection
+        document.getElementById('selectedVehicle').textContent = 'Select Vehicle';
+        
+        // Stop any ongoing playback
+        stopPlayback();
+        
+        // Clear any existing data
+        playbackData = [];
+        dynamicPlaybackData = [];
+        
+        // Reset the dropdown display
+        const dropdown = document.getElementById('deviceDropdown');
+        if (dropdown) {
+            dropdown.style.display = 'none';
+        }
+    });
+});
+
+
+    // Event listeners
+    $(document).ready(() => {
+      $("#navbar-container").load("navbarola.html", () => {
+        console.log("Navbar loaded.");
+      });
+
+      window.onload = function () {
+        fetchDeviceData(); // Fetch and populate devices when the page loads
+      };
+
+      $("#startPlayback").on("click", startPlayback);
+      $("#pausePlayback").on("click", pausePlayback);
+      $("#stopPlayback").on("click", stopPlayback);
+
+      $("#deviceSelect").on("change", function () {
+        const selectedDid = $(this).val();
+        if (!selectedDid) return;
+
+        // fetchPlaybackData(selectedDid).then(() => {
+        //   if (playbackData.length) {
+        //     addPolyline();
+        //     addStartEndMarkers(pathCoordinates); // Replace addEndpointMarker with this
+        //   }
+        // });
+      });
+
+      // Check if 'mid' is available in localStorage otherwise ri-direct login page
+      if (!localStorage.getItem('mid')) {
+        // Redirect to login page if 'mid' is not found
+        window.location.href = '/index.html';
+      }
+      setupDateValidation()
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+      // Get URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const deviceName = urlParams.get('device');
+      const fromDate = urlParams.get('from');
+      const toDate = urlParams.get('to');
+
+      if (deviceName && fromDate && toDate) {
+        const dateInputs = document.querySelectorAll('.date-input input[type="date"]');
+        const timeInputs = document.querySelectorAll('.date-input input[type="time"]');
+
+        if (dateInputs.length >= 2) {
+          dateInputs[0].value = fromDate;
+          dateInputs[1].value = toDate;
+          timeInputs[0].value = '00:00';
+          timeInputs[1].value = '23:59';
+        }
+        // Wait for the vehicle list to be populated
+        const checkVehicleList = setInterval(() => {
+          const vehicleList = document.getElementById('vehicleList');
+          if (vehicleList && vehicleList.children.length > 0) {
+            clearInterval(checkVehicleList);
+
+            // Find and click the matching device in the list
+            const deviceElements = vehicleList.querySelectorAll('.dropdown-item');
+            for (const element of deviceElements) {
+              if (element.textContent.trim() === deviceName) {
+                element.click();
+                break;
+              }
+            }
+          }
+        }, 100);
+
+        // Add a timeout to prevent infinite checking
+        setTimeout(() => clearInterval(checkVehicleList), 10000);
+      }
+    });
+
+
+
+  </script>
+</body>
+
+</html>
