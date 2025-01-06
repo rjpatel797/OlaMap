@@ -835,7 +835,38 @@
 
     .direction-arrow {
   pointer-events: none;
-  z-index: 1;
+  position: absolute;
+  width: 24px !important;
+  height: 24px !important;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+}
+
+.direction-arrow svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.direction-arrow path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.direction-arrows-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
 }
 
   </style>
@@ -1661,7 +1692,7 @@ function rightSideVehicleInfo(data, totalDistance) {
         devicePolylines.set(deviceId, polylineId);
 
         // Add your existing direction arrows and markers
-        addDirectionArrowsForDevice(coordinates, color, deviceId);
+        //addDirectionArrowsForDevice(coordinates, color, deviceId);
         addStartEndMarkersForDevice(deviceId, coordinates, color, data);
 
         updateMapBounds();
@@ -1728,69 +1759,114 @@ function addStartEndMarkersForDevice(deviceId, coordinates, color, data) {
     }
 }
  
-        function addDirectionArrowsForDevice(coordinates, color, deviceId) {
-    const ARROW_SPACING = 150; // pixels between arrows
-    const arrowsContainer = document.createElement('div');
-    arrowsContainer.className = `direction-arrows-${deviceId}`;
-    document.getElementById('map').appendChild(arrowsContainer);
+function addDirectionArrowsForDevice(coordinates, color, deviceId) {
+    // Debounce function to limit the frequency of arrow updates
+    const debounce = (func, delay) => {
+        let timeoutId;
+        return function() {
+            const context = this;
+            const args = arguments;
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => func.apply(context, args), delay);
+        };
+    };
 
-    // Calculate segments and positions
-    let segments = [];
-    for (let i = 0; i < coordinates.length - 1; i++) {
-        const start = myMap.project(coordinates[i]);
-        const end = myMap.project(coordinates[i + 1]);
-        const length = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
-        segments.push({ start, end, length });
-    }
+    // Function to remove existing arrows
+    const removeExistingArrows = () => {
+        const existingArrows = document.querySelectorAll(`.device-${deviceId}`);
+        existingArrows.forEach(arrow => arrow.remove());
+    };
 
-    // Calculate total path length
-    const totalLength = segments.reduce((sum, seg) => sum + seg.length, 0);
-    const numArrows = Math.max(Math.floor(totalLength / ARROW_SPACING), 1);
-    const spacing = totalLength / numArrows;
+    // Function to create arrows
+    const createArrows = () => {
+        // Clear any existing arrows first
+        removeExistingArrows();
 
-    let distanceCovered = spacing / 2;
-    let segmentIndex = 0;
-    let segmentDistance = 0;
-
-    for (let i = 0; i < numArrows; i++) {
-        while (segmentDistance + segments[segmentIndex]?.length < distanceCovered) {
-            segmentDistance += segments[segmentIndex].length;
-            segmentIndex++;
-            if (segmentIndex >= segments.length) break;
+        // Create container if it doesn't exist
+        let arrowsContainer = document.querySelector(`.direction-arrows-${deviceId}`);
+        if (!arrowsContainer) {
+            arrowsContainer = document.createElement('div');
+            arrowsContainer.className = `direction-arrows-${deviceId} direction-arrows-container`;
+            document.getElementById('map').appendChild(arrowsContainer);
         }
 
-        if (segmentIndex >= segments.length) break;
+        const ARROW_SPACING = 300; // Increased spacing to reduce number of arrows
+        
+        // Calculate segments and their lengths
+        const segments = [];
+        for (let i = 0; i < coordinates.length - 1; i++) {
+            const start = myMap.project(coordinates[i]);
+            const end = myMap.project(coordinates[i + 1]);
+            const length = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
+            segments.push({ start, end, length });
+        }
 
-        const segment = segments[segmentIndex];
-        const segmentPosition = (distanceCovered - segmentDistance) / segment.length;
-        const x = segment.start.x + (segment.end.x - segment.start.x) * segmentPosition;
-        const y = segment.start.y + (segment.end.y - segment.start.y) * segmentPosition;
-        const angle = Math.atan2(segment.end.y - segment.start.y, segment.end.x - segment.start.x);
+        // Calculate total path length
+        const totalLength = segments.reduce((sum, seg) => sum + seg.length, 0);
+        const numArrows = Math.max(Math.floor(totalLength / ARROW_SPACING), 1);
+        const spacing = totalLength / numArrows;
 
-        const arrow = document.createElement('div');
-        arrow.className = `direction-arrow device-${deviceId}`;
-        arrow.style.position = 'absolute';
-        arrow.style.left = `${x}px`;
-        arrow.style.top = `${y}px`;
-        arrow.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
+        let distanceCovered = spacing / 2;
+        let segmentIndex = 0;
+        let segmentDistance = 0;
 
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 16 16');
-        svg.style.width = '16px';
-        svg.style.height = '16px';
+        for (let i = 0; i < numArrows; i++) {
+            // Safety check to prevent infinite loop
+            if (segments.length === 0) break;
 
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', 'M0,8 L12,8 M8,4 L12,8 L8,12');
-        path.setAttribute('stroke', color);
-        path.setAttribute('stroke-width', '2');
-        path.setAttribute('fill', 'none');
+            while (segmentIndex < segments.length && 
+                   segmentDistance + segments[segmentIndex].length < distanceCovered) {
+                segmentDistance += segments[segmentIndex].length;
+                segmentIndex++;
+            }
 
-        svg.appendChild(path);
-        arrow.appendChild(svg);
-        arrowsContainer.appendChild(arrow);
+            if (segmentIndex >= segments.length) break;
 
-        distanceCovered += spacing;
-    }
+            const segment = segments[segmentIndex];
+            const segmentPosition = (distanceCovered - segmentDistance) / segment.length;
+            
+            const x = segment.start.x + (segment.end.x - segment.start.x) * segmentPosition;
+            const y = segment.start.y + (segment.end.y - segment.start.y) * segmentPosition;
+            const angle = Math.atan2(segment.end.y - segment.start.y, segment.end.x - segment.start.x);
+
+            // Create arrow element
+            const arrow = document.createElement('div');
+            arrow.className = `direction-arrow device-${deviceId}`;
+            arrow.style.left = `${x}px`;
+            arrow.style.top = `${y}px`;
+            arrow.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
+
+            // Create SVG with enhanced styling
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.style.width = '20px';
+            svg.style.height = '20px';
+
+            // Create path with enhanced arrow design
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', 'M2,12 L18,12 M13,6 L19,12 L13,18');
+            path.setAttribute('stroke', color);
+            path.setAttribute('stroke-width', '3');
+            path.setAttribute('fill', 'none');
+            svg.appendChild(path);
+            arrow.appendChild(svg);
+            arrowsContainer.appendChild(arrow);
+
+            distanceCovered += spacing;
+        }
+    };
+
+    // Create a debounced version of createArrows
+    const debouncedCreateArrows = debounce(createArrows, 100);
+
+    // Remove previous event listener to prevent multiple attachments
+    myMap.off('move', debouncedCreateArrows);
+
+    // Add event listener with debounce
+    myMap.on('move', debouncedCreateArrows);
+
+    // Initial creation of arrows
+    createArrows();
 }
 
 function updateMapBounds() {
@@ -2090,15 +2166,6 @@ function pausePlayback() {
     isPaused = true;
   }
 }
-
-
-
-    const originalStopPlayback = stopPlayback;
-stopPlayback = function() {
-  originalStopPlayback();
-  const arrows = document.querySelectorAll('.direction-arrow');
-  arrows.forEach(arrow => arrow.remove());
-};
 
     // Add this function to your JavaScript code
     function calculateDistance(lat1, lon1, lat2, lon2) {
