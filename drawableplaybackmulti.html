@@ -1027,11 +1027,11 @@ let devicePolylines = new Map(); // Store polylines for each device
     function createMarkerWithTimestamp(type, timestamp, color) {
     const container = document.createElement('div');
     container.style.cssText = `
-        position: relative;
+        position: absolute;
         display: flex;
         flex-direction: column;
         align-items: center;
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, -100%);
     `;
 
     const timeDisplay = document.createElement('div');
@@ -1040,11 +1040,10 @@ let devicePolylines = new Map(); // Store polylines for each device
         padding: 4px 8px;
         border-radius: 4px;
         font-size: 12px;
-        margin-bottom: 5px;
+        margin-bottom: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         white-space: nowrap;
-        z-index: 1;
-        position: relative;
+        text-align: center;
     `;
     timeDisplay.textContent = timestamp;
 
@@ -1059,11 +1058,26 @@ let devicePolylines = new Map(); // Store polylines for each device
         justify-content: center;
         color: white;
         font-weight: bold;
-        border: 2px solid white;
+        border: 3px solid white;
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         position: relative;
     `;
     marker.textContent = type;
+
+    // Add pointer triangle
+    const pointer = document.createElement('div');
+    pointer.style.cssText = `
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-top: 8px solid white;
+    `;
+    marker.appendChild(pointer);
 
     container.appendChild(timeDisplay);
     container.appendChild(marker);
@@ -1673,7 +1687,7 @@ function addStartEndMarkersForDevice(deviceId, coordinates, color, data) {
     if (!data || data.length < 2) return;
 
     try {
-        // Add start marker with fixed coordinates
+        // Add start marker
         const startPoint = data[0];
         const startMarkerElement = createMarkerWithTimestamp(
             'S',
@@ -1681,17 +1695,17 @@ function addStartEndMarkersForDevice(deviceId, coordinates, color, data) {
             color
         );
 
-        const startCoords = coordinates[0];
         const startMarker = olaMaps.addMarker({
             element: startMarkerElement,
             anchor: 'center',
-            draggable: false,
-            offset: [0, -20]  // Adjust offset to position marker properly
-        });
-        startMarker.setLngLat(startCoords).addTo(myMap);
+            draggable: false
+        })
+        .setLngLat(coordinates[0])
+        .addTo(myMap);
+        
         deviceMarkers.set(startMarkerId, startMarker);
 
-        // Add end marker with fixed coordinates
+        // Add end marker
         const endPoint = data[data.length - 1];
         const endMarkerElement = createMarkerWithTimestamp(
             'E',
@@ -1699,23 +1713,20 @@ function addStartEndMarkersForDevice(deviceId, coordinates, color, data) {
             color
         );
 
-        const endCoords = coordinates[coordinates.length - 1];
         const endMarker = olaMaps.addMarker({
             element: endMarkerElement,
             anchor: 'center',
-            draggable: false,
-            offset: [0, -20]  // Adjust offset to position marker properly
-        });
-        endMarker.setLngLat(endCoords).addTo(myMap);
-        deviceMarkers.set(endMarkerId, endMarker);
+            draggable: false
+        })
+        .setLngLat(coordinates[coordinates.length - 1])
+        .addTo(myMap);
         
-        console.log(`Markers added for device ${deviceId} at:`, {
-            start: startCoords,
-            end: endCoords
-        });
+        deviceMarkers.set(endMarkerId, endMarker);
+
     } catch (error) {
         console.error(`Error adding markers for device ${deviceId}:`, error);
-    }}
+    }
+}
  
         function addDirectionArrowsForDevice(coordinates, color, deviceId) {
     const ARROW_SPACING = 150; // pixels between arrows
@@ -1983,40 +1994,93 @@ function getHueRotation(color) {
 }
 
 function stopPlayback() {
+    // Clear the playback interval
     clearInterval(playbackInterval);
     playbackInterval = null;
     isPaused = false;
 
-    // Clear all markers
+    // Clear all vehicle markers
     deviceMarkers.forEach(marker => marker.remove());
     deviceMarkers.clear();
 
-    // Clear all direction arrows
+    // Remove all polylines and their events
     selectedDevices.forEach(device => {
-        const arrows = document.querySelectorAll(`.device-${device.did}`);
-        arrows.forEach(arrow => arrow.remove());
-        const container = document.querySelector(`.direction-arrows-${device.did}`);
-        if (container) container.remove();
-
-        // Remove hover events
         const polylineId = `polyline-${device.did}`;
+        
+        // Remove polyline layer and source
+        if (myMap.getLayer(polylineId)) {
+            myMap.removeLayer(polylineId);
+        }
+        if (myMap.getSource(polylineId)) {
+            myMap.removeSource(polylineId);
+        }
+        
+        // Remove polyline hover events
         if (myMap.getLayer(polylineId)) {
             myMap.off('mouseenter', polylineId);
             myMap.off('mousemove', polylineId);
             myMap.off('mouseleave', polylineId);
         }
+        
+        // Remove direction arrows for this device
+        const arrows = document.querySelectorAll(`.device-${device.did}`);
+        arrows.forEach(arrow => arrow.remove());
+        
+        // Remove direction arrows container
+        const arrowsContainer = document.querySelector(`.direction-arrows-${device.did}`);
+        if (arrowsContainer) {
+            arrowsContainer.remove();
+        }
+
+        // Remove start/end markers
+        const startMarkerId = `start-${device.did}`;
+        const endMarkerId = `end-${device.did}`;
+        if (deviceMarkers.has(startMarkerId)) {
+            deviceMarkers.get(startMarkerId).remove();
+            deviceMarkers.delete(startMarkerId);
+        }
+        if (deviceMarkers.has(endMarkerId)) {
+            deviceMarkers.get(endMarkerId).remove();
+            deviceMarkers.delete(endMarkerId);
+        }
     });
 
-    // Hide hover popup
+    // Clear device data
+    deviceDataMap.clear();
+    devicePolylines.clear();
+
+    // Reset selected devices array
+    selectedDevices = [];
+
+    // Reset the vehicle selection display
+    const selectedVehicleElement = document.getElementById("selectedVehicle");
+    if (selectedVehicleElement) {
+        selectedVehicleElement.textContent = "Select Vehicles";
+    }
+
+    // Clear the dropdown selection
+    const vehicleList = document.getElementById("vehicleList");
+    if (vehicleList) {
+        const items = vehicleList.querySelectorAll('.device-item');
+        items.forEach(item => item.classList.remove('selected'));
+    }
+
+    // Hide hover popup if it exists
     if (window.hoverPopup) {
         window.hoverPopup.style.display = 'none';
     }
 
-    // Reset indexes and distances
-    selectedDevices.forEach(device => {
-        device.index = 0;
-        device.totalDistance = 0;
-    });
+    // Hide vehicle info popup
+    const vehicleInfoPopup = document.getElementById('vehicleInfoPopup');
+    if (vehicleInfoPopup) {
+        // Reset the values
+        document.getElementById('speedDisplay').textContent = '0 km/h';
+        document.getElementById('dateTimeDisplay').textContent = '--';
+        document.getElementById('distanceDisplay').textContent = '0 km';
+    }
+
+    // Redraw the vehicle list to reflect changes
+    populateVehicleList(devices);
 }
 
 function pausePlayback() {
