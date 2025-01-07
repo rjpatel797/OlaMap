@@ -1692,7 +1692,8 @@ function rightSideVehicleInfo(data, totalDistance) {
         devicePolylines.set(deviceId, polylineId);
 
         // Add your existing direction arrows and markers
-        //addDirectionArrowsForDevice(coordinates, color, deviceId);
+        console.log(deviceId)
+        addDirectionArrowsForDevice(coordinates, color, deviceId);
         addStartEndMarkersForDevice(deviceId, coordinates, color, data);
 
         updateMapBounds();
@@ -1771,17 +1772,8 @@ function addDirectionArrowsForDevice(coordinates, color, deviceId) {
         };
     };
 
-    // Function to remove existing arrows
-    const removeExistingArrows = () => {
-        const existingArrows = document.querySelectorAll(`.device-${deviceId}`);
-        existingArrows.forEach(arrow => arrow.remove());
-    };
-
-    // Function to create arrows
+    // Create the debounced arrow creation function
     const createArrows = () => {
-        // Clear any existing arrows first
-        removeExistingArrows();
-
         // Create container if it doesn't exist
         let arrowsContainer = document.querySelector(`.direction-arrows-${deviceId}`);
         if (!arrowsContainer) {
@@ -1790,7 +1782,12 @@ function addDirectionArrowsForDevice(coordinates, color, deviceId) {
             document.getElementById('map').appendChild(arrowsContainer);
         }
 
-        const ARROW_SPACING = 300; // Increased spacing to reduce number of arrows
+        // Clear existing arrows for this device
+        const existingArrows = document.querySelectorAll(`.device-${deviceId}`);
+        existingArrows.forEach(arrow => arrow.remove());
+
+        // Arrow creation logic (rest of your existing arrow creation code)
+        const ARROW_SPACING = 300;
         
         // Calculate segments and their lengths
         const segments = [];
@@ -1859,10 +1856,10 @@ function addDirectionArrowsForDevice(coordinates, color, deviceId) {
     // Create a debounced version of createArrows
     const debouncedCreateArrows = debounce(createArrows, 100);
 
-    // Remove previous event listener to prevent multiple attachments
-    myMap.off('move', debouncedCreateArrows);
+    // Store the listener for later removal
+    deviceEventListeners.set(deviceId, debouncedCreateArrows);
 
-    // Add event listener with debounce
+    // Add the event listener
     myMap.on('move', debouncedCreateArrows);
 
     // Initial creation of arrows
@@ -2069,11 +2066,52 @@ function getHueRotation(color) {
   return colors[color] || 0;
 }
 
+// Store event listeners for each device
+const deviceEventListeners = new Map();
+
+function removeDirectionArrowsForDevice(deviceId) {
+    // Remove the event listener from the map if it exists
+    if (deviceEventListeners.has(deviceId)) {
+        const listener = deviceEventListeners.get(deviceId);
+        myMap.off('move', listener);
+        deviceEventListeners.delete(deviceId);
+    }
+
+    // Remove all arrows with this device's class
+    const existingArrows = document.querySelectorAll(`.device-${deviceId}`);
+    existingArrows.forEach(arrow => arrow.remove());
+
+    // Remove the container for this device
+    const arrowContainer = document.querySelector(`.direction-arrows-${deviceId}`);
+    if (arrowContainer) {
+        arrowContainer.remove();
+    }
+}
+
+function cleanupAllArrows() {
+    // Remove all event listeners
+    deviceEventListeners.forEach((listener, deviceId) => {
+        myMap.off('move', listener);
+    });
+    deviceEventListeners.clear();
+
+    // Remove all arrow elements
+    const allArrows = document.querySelectorAll('[class*="direction-arrow"]');
+    allArrows.forEach(arrow => arrow.remove());
+
+    // Remove all arrow containers
+    const allContainers = document.querySelectorAll('[class*="direction-arrows-"]');
+    allContainers.forEach(container => container.remove());
+}
+
 function stopPlayback() {
     // Clear the playback interval
     clearInterval(playbackInterval);
     playbackInterval = null;
     isPaused = false;
+
+    // Clean up all arrows - Add this line
+    cleanupAllArrows();
 
     // Clear all vehicle markers
     deviceMarkers.forEach(marker => marker.remove());
@@ -2096,16 +2134,6 @@ function stopPlayback() {
             myMap.off('mouseenter', polylineId);
             myMap.off('mousemove', polylineId);
             myMap.off('mouseleave', polylineId);
-        }
-        
-        // Remove direction arrows for this device
-        const arrows = document.querySelectorAll(`.device-${device.did}`);
-        arrows.forEach(arrow => arrow.remove());
-        
-        // Remove direction arrows container
-        const arrowsContainer = document.querySelector(`.direction-arrows-${device.did}`);
-        if (arrowsContainer) {
-            arrowsContainer.remove();
         }
 
         // Remove start/end markers
