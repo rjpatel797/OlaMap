@@ -1429,16 +1429,16 @@
         // Then update your JavaScript
         function updateStartButtonState() {
             const startButton = document.getElementById("startPlayback");
-            startButton.disabled = fetching;
+            // startButton.disabled = fetching;
 
-            // Optionally update button appearance when disabled
-            if (fetching) {
-            startButton.style.opacity = "0.6";
-            startButton.style.cursor = "not-allowed";
-            } else {
-            startButton.style.opacity = "1";
-            startButton.style.cursor = "pointer";
-            }
+            // // Optionally update button appearance when disabled
+            // if (fetching) {
+            // startButton.style.opacity = "0.6";
+            // startButton.style.cursor = "not-allowed";
+            // } else {
+            // startButton.style.opacity = "1";
+            // startButton.style.cursor = "pointer";
+            // }
         }
 
         function formatTime(timeString) {
@@ -2275,8 +2275,12 @@
                             strokeWeight: 3,
                             map: map
                         });
+                        
+                        // Add direction arrow for this segment
+                        const arrow = addDirectionArrow(path);
 
                         pathPolylines.push(segment);
+                        pathPolylines.push(arrow);
                     }
 
                     // Update info and other existing code...
@@ -2300,6 +2304,49 @@
 `;
             document.head.appendChild(style);// Use playbackSpeed instead of speedMultiplier
         }
+
+
+        // Add this function to create direction arrow symbols
+        function addDirectionArrow(path) {
+    const p1 = path[0];
+    const p2 = path[1];
+    
+    // Calculate heading
+    const heading = google.maps.geometry.spherical.computeHeading(
+        new google.maps.LatLng(p1.lat, p1.lng),
+        new google.maps.LatLng(p2.lat, p2.lng)
+    );
+
+    // Create polyline with arrow symbols
+    return new google.maps.Polyline({
+        path: path,
+        icons: [{
+            icon: {
+                path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                scale: 2,
+                strokeColor: "#000000",
+                strokeWeight: 2,
+                fillColor: "#000000",
+                fillOpacity: 1
+            },
+            offset: '50%',
+            repeat: '70px'  // Repeat arrows every 70 pixels
+        }],
+        geodesic: true,
+        strokeOpacity: 0,  // Make the actual line invisible
+        map: map
+    });
+}
+
+// Update clearAllPolylines function to handle arrows
+function clearAllPolylines() {
+    pathPolylines.forEach(item => {
+        if (item) {
+            item.setMap(null);
+        }
+    });
+    pathPolylines = [];
+}
 
         function updatePolylineColor(currentIndex) {
             if (currentIndex === 0) return;
