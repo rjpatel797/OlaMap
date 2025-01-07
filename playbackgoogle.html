@@ -1771,8 +1771,8 @@
                     path: path,
                     geodesic: true,
                     strokeColor: color,
-                    strokeOpacity: 1.0,
-                    strokeWeight: 2,
+                    strokeOpacity: 0.9,
+                    strokeWeight: 3,
                     map: map
                 });
 
@@ -1914,7 +1914,7 @@
                 return "0";
             }
         }
-
+        let potentialStops = [];
 
         // **Detect Stop During Playback** (this is the main change)
         function detectStopDuringPlayback() {
@@ -1927,6 +1927,7 @@
 
             // Reset the array
             stopMarkers = [];
+            potentialStops = [];
 
             const holdTime = parseInt(document.getElementById("holdTime").value);
 
@@ -1944,8 +1945,8 @@
 
                 // Check if stop duration meets threshold
                 if (timeDiff >= holdTime) {
-                    // Store stop marker details for later use during playback
-                    stopMarkers.push({
+                    potentialStops.push({
+                        index: i - 1,
                         position: {
                             lat: parseFloat(prevPoint.coordinates[1]),
                             lng: parseFloat(prevPoint.coordinates[0])
@@ -1953,12 +1954,13 @@
                         startTime: prevPoint.date,
                         endTime: currentPoint.date,
                         duration: timeDiff,
-                        marker: null // Placeholder for the marker
+                        marker: null,
+                        isPlaced: false
                     });
                 }
             }
         }
-
+        
         function parseDateString(dateString) {
             // Handle different potential date formats
             const parts = dateString.split(/[-\s:]/);
@@ -2014,15 +2016,9 @@
         }
 
         function addStopMarkersDuringPlayback(currentIndex) {
-            stopMarkers.forEach(stopData => {
-                // Check if a marker already exists at this location
-                const markerExists = stopMarkers.some(existingMarker =>
-                    existingMarker.marker &&
-                    existingMarker.position.lat === stopData.position.lat &&
-                    existingMarker.position.lng === stopData.position.lng
-                );
-
-                if (!markerExists) {
+            potentialStops.forEach(stopData => {
+                // Only place the marker if we've reached its index and it hasn't been placed yet
+                if (currentIndex >= stopData.index && !stopData.isPlaced) {
                     // Create new stop marker
                     const stopMarker = new google.maps.Marker({
                         position: new google.maps.LatLng(
@@ -2036,34 +2032,35 @@
                         }
                     });
 
-                    // Store the marker with its data
-                    stopData.marker = stopMarker;
-
-                    // Add click listener for stop details
+                    // Add click event for stop details
                     stopMarker.addListener('click', () => {
                         const content = `
-                    <div style="padding: 10px;">
-                        <h3>Stop Details</h3>
-                        <p><strong>Duration:</strong> ${stopData.duration.toFixed(0)} minutes</p>
-                        <p><strong>Start Time:</strong> ${stopData.startTime}</p>
-                        <p><strong>End Time:</strong> ${stopData.endTime}</p>
-                        <p><strong>Location:</strong> 
-                            <div id="stopLocationDetails" style=" color: #666;"><a href="#" onclick="fetchStopLocation('${stopData.position.lat},${stopData.position.lng}'); return false;">
-                                View Location
-                            </a></div>
-                        </p>
-                        
-                    </div>
-                `;
+                            <div style="padding: 10px;">
+                                <h3>Stop Details</h3>
+                                <p><strong>Duration:</strong> ${stopData.duration.toFixed(0)} minutes</p>
+                                <p><strong>Start Time:</strong> ${stopData.startTime}</p>
+                                <p><strong>End Time:</strong> ${stopData.endTime}</p>
+                                <p><strong>Location:</strong> 
+                                    <div id="stopLocationDetails" style="color: #666;">
+                                        <a href="#" onclick="fetchStopLocation('${stopData.position.lat},${stopData.position.lng}'); return false;">
+                                            View Location
+                                        </a>
+                                    </div>
+                                </p>
+                            </div>
+                        `;
 
-                        // Use existing infoWindow to show details
                         infoWindow.setContent(content);
                         infoWindow.open(map, stopMarker);
                     });
+
+                    // Store the marker and mark it as placed
+                    stopData.marker = stopMarker;
+                    stopData.isPlaced = true;
+                    stopMarkers.push(stopData);
                 }
             });
         }
-
 
         function findMarkerAtLocation(position) {
             // This function assumes you're keeping track of markers manually
@@ -2274,8 +2271,8 @@
                             path: path,
                             geodesic: true,
                             strokeColor: color,
-                            strokeOpacity: 1.0,
-                            strokeWeight: 2,
+                            strokeOpacity: 0.9,
+                            strokeWeight: 3,
                             map: map
                         });
 
