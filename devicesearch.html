@@ -326,7 +326,7 @@
             <table class="device-table">
                 <thead>
                     <tr>
-                        <th>Select</th>
+                        <th>Sl No</th>
                         <th>Device Name</th>
                         <th>Device Type</th>
                         <th>Mobile No</th>
@@ -378,12 +378,11 @@
                     tableBody.innerHTML = '<tr><td colspan="8" class="error">No devices found</td></tr>';
                     return;
                 }
-
                 // Populate table with data
                 tableBody.innerHTML = devices.map((device, index) => `
                     <tr>
-                        <td class="checkbox-cell">
-                            <input type="checkbox" id="device_${device.deviceid}" name="device_checkbox">
+                        <td class="checkbox-cell" id="device_${device.deviceid}">
+                            ${index+1}
                         </td>
                         <td>${device.devicename || ''}</td>
                         <td>${device.devicetype || 'Truck'}</td>
