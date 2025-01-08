@@ -2010,23 +2010,38 @@ function updatePolylineColors(threshold) {
         function createStopMarkerIcon(duration) {
             const canvas = document.createElement('canvas');
             canvas.width = 40;
-            canvas.height = 40;
+            canvas.height = 48;
             const ctx = canvas.getContext('2d');
 
-            // Draw base circle
+            // Set the center coordinates
+            const centerX = 20;
+            const centerY = 20;
+
+            // Draw outer teardrop shape
             ctx.beginPath();
-            ctx.arc(20, 20, 15, 0, 2 * Math.PI);
-            ctx.fillStyle = '#FF0000';  // Red for stop
+            ctx.moveTo(centerX, 48); // Bottom point
+            ctx.quadraticCurveTo(0, 28, 0, 20); // Left curve
+            ctx.arc(centerX, centerY, 20, Math.PI, 0, false); // Top semi-circle
+            ctx.quadraticCurveTo(40, 28, centerX, 48); // Right curve
+            ctx.fillStyle = '#FF0000';
             ctx.fill();
 
-            // Add text
+            // Draw darker inner circle
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 10, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(180, 0, 0, 0.5)'; // Darker red with some transparency
+            ctx.fill();
+
+            // Add STOP text
             ctx.fillStyle = 'white';
-            ctx.font = 'bold 10px Arial';
+            ctx.font = 'bold 9px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
+            ctx.fillText('STOP', centerX, centerY - 4);
 
             // Show duration in minutes
-            ctx.fillText(`${Math.floor(duration)}m`, 20, 20);
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText(`${Math.floor(duration)}m`, centerX, centerY + 4);
 
             return canvas.toDataURL();
         }
@@ -2232,6 +2247,7 @@ function updatePolylineColors(threshold) {
                     
                     map.setCenter(vehicleMarker.getPosition());
                     addStartEndMarkers();
+                    detectStopDuringPlayback();
                 }
 
                 // Start playback with speed control
@@ -2377,7 +2393,7 @@ function updatePolylineColors(threshold) {
             }
         }
 
-        
+
         // Modify the creation of the starting marker to include both symbol and time display
         // Add this helper function to calculate cumulative distance
         function calculateCumulativeDistance(currentIndex) {
