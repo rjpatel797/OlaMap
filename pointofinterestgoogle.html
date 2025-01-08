@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POI Management System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            background-color: #2d3e50;
+            padding: 10px 20px;
+            color: white;
+        }
+
+        .container {
+            height: calc(100% - 60px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #map {
+            height: 60%;
+            width: 100%;
+        }
+
+        .controls {
+            padding: 10px;
+            background-color: #f5f6f7;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        input, select {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 8px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #submit {
+            background-color: #2ecc71;
+        }
+
+        #submit:hover {
+            background-color: #27ae60;
+        }
+
+        #disableAll {
+            background-color: #e74c3c;
+        }
+
+        #disableAll:hover {
+            background-color: #c0392b;
+        }
+
+        .poi-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .poi-table th, .poi-table td {
+            padding: 3px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .poi-table th {
+            background-color: #34495e;
+            color: white;
+        }
+
+        .search-bar {
+            padding: 5px;
+            background: #f5f6f7;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .search-container {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        #placeSearch {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="navbar-container"></div>
+
+        <div class="search-bar">
+            <div class="search-container">
+                <input type="text" id="placeSearch" placeholder="Search place...">
+            </div>
+        </div>
+
+        <div id="map"></div>
+
+        <div class="controls">
+            <div class="input-group">
+                <input type="text" id="location" placeholder="Location">
+                <input type="text" id="latitude" placeholder="Latitude">
+                <input type="text" id="longitude" placeholder="Longitude">
+                <input type="text" id="address" placeholder="Address">
+                <select id="status">
+                    <option value="Enable">Enable</option>
+                    <option value="Disable">Disable</option>
+                </select>
+                <button onclick="addPOI()" id="submit">Submit</button>
+                <button onclick="enableAll()" id="enableAll">Enable All</button>
+                <button onclick="disableAll()" id="disableAll">Disable All</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="poi-table">
+                <thead>
+                    <tr>
+                        <th>Sr No.</th>
+                        <th>Location</th>
+                        <th>Latitude</th>
+                        <th>Longitude</th>
+                        <th>Address</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="poiTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap"
+    async defer></script>
+    <script>
+       // Global variables
+const mid = localStorage.getItem("mid");
+let map;
+let markers = [];
+let searchBox;
+let geocoder;
+
+// Initialize Google Map
+function initMap() {
+    map = new google.maps.Map(document.getElementById('map'), {
+        center: { lat: 28.6139, lng: 77.2090 }, // Delhi coordinates
+        zoom: 12
+    });
+
+    geocoder = new google.maps.Geocoder();
+    
+    // Initialize places searchBox
+    const input = document.getElementById('placeSearch');
+    searchBox = new google.maps.places.SearchBox(input);
+    
+    // Bind the search box to the map's bounds
+    searchBox.bindTo('bounds', map);
+    
+    // Handle place selection
+    searchBox.addListener('place_changed', () => {
+        const place = searchBox.getPlace();
+        if (!place.geometry || !place.geometry.location) return;
+
+        handlePlaceSelection(place);
+    });
+
+    // Check for URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('lat') && urlParams.get('lng')) {
+        initializeFromParams();
+    }
+
+    // Initial POI load
+    fetchPOIs();
+}
+
+// Fetch POIs from API
+async function fetchPOIs() {
+    try {
+        const response = await fetch(`${API}?opr=getpois&mid=${mid}`);
+        const data = await response.json();
+        updatePOITable(data);
+        updateMapMarkers(data);
+    } catch (error) {
+        console.error('Error fetching POIs:', error);
+    }
+}
+
+// Handle place selection from search
+function handlePlaceSelection(place) {
+    // Update form fields
+    document.getElementById('location').value = place.name;
+    document.getElementById('latitude').value = place.geometry.location.lat();
+    document.getElementById('longitude').value = place.geometry.location.lng();
+    document.getElementById('address').value = place.formatted_address;
+
+    // Center map and zoom
+    map.setCenter(place.geometry.location);
+    map.setZoom(16);
+
+    // Update marker
+    clearSearchMarker();
+    const marker = new google.maps.Marker({
+        map: map,
+        position: place.geometry.location,
+        icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 10,
+            fillColor: "#FF0000",
+            fillOpacity: 1,
+            strokeWeight: 2,
+            strokeColor: "#FFFFFF"
+        }
+    });
+    markers.push(marker);
+}
+
+// Update map markers
+function updateMapMarkers(pois) {
+    // Clear existing markers
+    clearMarkers();
+
+    // Add new markers
+    pois.forEach(poi => {
+        const position = { 
+            lat: parseFloat(poi.latitude), 
+            lng: parseFloat(poi.longitude) 
+        };
+
+        const marker = new google.maps.Marker({
+            position: position,
+            map: map,
+            title: poi.location,
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 8,
+                fillColor: poi.status === 'Enable' ? '#27ae60' : '#e74c3c',
+                fillOpacity: 1,
+                strokeWeight: 0
+            }
+        });
+
+        // Add info window
+        const infowindow = new google.maps.InfoWindow({
+            content: poi.location
+        });
+
+        marker.addListener('click', () => {
+            infowindow.open(map, marker);
+        });
+
+        markers.push(marker);
+    });
+}
+
+// Clear all markers
+function clearMarkers() {
+    markers.forEach(marker => marker.setMap(null));
+    markers = [];
+}
+
+// Clear search marker
+function clearSearchMarker() {
+    if (markers.length > 0) {
+        markers[markers.length - 1].setMap(null);
+        markers.pop();
+    }
+}
+
+// Add new POI
+async function addPOI() {
+    const location = document.getElementById('location').value;
+    const latitude = document.getElementById('latitude').value;
+    const longitude = document.getElementById('longitude').value;
+    const address = document.getElementById('address').value;
+    const status = document.getElementById('status').value;
+
+    const url = `${API}?opr=addpoi&latitude=${latitude}&longitude=${longitude}&status=${status}&location=${location}&address=${address}&mid=${mid}`;
+
+    try {
+        const response = await fetch(url);
+        if (response.ok) {
+            fetchPOIs();
+            clearInputs();
+        }
+    } catch (error) {
+        console.error('Error adding POI:', error);
+    }
+}
+
+// Update POI status
+async function updateStatus(id, status) {
+    try {
+        const response = await fetch(`${API}?opr=updatepoi&id=${id}&status=${status}&mid=${mid}`);
+        if (response.ok) {
+            fetchPOIs();
+        }
+    } catch (error) {
+        console.error('Error updating POI status:', error);
+    }
+}
+
+// Delete POI
+async function deletePOI(id) {
+    if (confirm('Are you sure you want to delete this POI?')) {
+        try {
+            const response = await fetch(`${API}?opr=deletepoi&id=${id}&mid=${mid}`);
+            if (response.ok) {
+                fetchPOIs();
+            }
+        } catch (error) {
+            console.error('Error deleting POI:', error);
+        }
+    }
+}
+
+// Update POI table
+function updatePOITable(pois) {
+    const tbody = document.getElementById('poiTableBody');
+    tbody.innerHTML = '';
+
+    pois.forEach((poi, index) => {
+        const row = `
+            <tr data-id="${poi.id}">
+                <td>${index + 1}</td>
+                <td>${poi.location}</td>
+                <td>${poi.latitude}</td>
+                <td>${poi.longitude}</td>
+                <td>${poi.address}</td>
+                <td>${poi.status}</td>
+                <td>
+                    <button onclick="updateStatus(${poi.id}, 'Enable')" class="action-btn enable-btn">Enable</button>
+                    <button onclick="updateStatus(${poi.id}, 'Disable')" class="action-btn disable-btn">Disable</button>
+                    <button onclick="deletePOI(${poi.id})" class="action-btn delete-btn">Delete</button>
+                </td>
+            </tr>
+        `;
+        tbody.insertAdjacentHTML('beforeend', row);
+    });
+}
+
+// Initialize from URL parameters
+function initializeFromParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const lat = parseFloat(urlParams.get('lat'));
+    const lng = parseFloat(urlParams.get('lng'));
+    const deviceName = urlParams.get('deviceName');
+
+    if (lat && lng) {
+        document.getElementById('latitude').value = lat;
+        document.getElementById('longitude').value = lng;
+        
+        if (deviceName) {
+            document.getElementById('location').value = deviceName;
+        }
+
+        // Reverse geocode for address
+        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+            if (status === 'OK' && results[0]) {
+                document.getElementById('address').value = results[0].formatted_address;
+            }
+        });
+
+        // Center map and add marker
+        const position = { lat, lng };
+        map.setCenter(position);
+        map.setZoom(16);
+
+        clearMarkers();
+        const marker = new google.maps.Marker({
+            position: position,
+            map: map,
+            title: deviceName || 'Selected Location',
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 10,
+                fillColor: "#FF0000",
+                fillOpacity: 1,
+                strokeWeight: 2,
+                strokeColor: "#FFFFFF"
+            }
+        });
+        markers.push(marker);
+    }
+}
+
+// Utility functions
+function enableAll() {
+    document.querySelectorAll('.poi-table tbody tr').forEach(row => {
+        const id = row.getAttribute('data-id');
+        if (id) updateStatus(id, 'Enable');
+    });
+}
+
+function disableAll() {
+    document.querySelectorAll('.poi-table tbody tr').forEach(row => {
+        const id = row.getAttribute('data-id');
+        if (id) updateStatus(id, 'Disable');
+    });
+}
+
+function clearInputs() {
+    document.getElementById('location').value = '';
+    document.getElementById('latitude').value = '';
+    document.getElementById('longitude').value = '';
+    document.getElementById('address').value = '';
+    document.getElementById('status').value = 'Enable';
+}
+
+// Initialize on page load
+$(document).ready(function() {
+    $("#navbar-container").load("/navbarola.html", function(response, status, xhr) {
+        if (status === "error") {
+            console.error("Error loading navbar:", xhr.status, xhr.statusText);
+        } else {
+            console.log("Navbar loaded successfully!");
+        }
+    });
+
+    if (!localStorage.getItem("mid")) {
+        window.location.href = "/index.html";
+    }
+});
+
+    </script>
+    
+</body>
+</html>
