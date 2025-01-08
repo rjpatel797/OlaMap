@@ -1417,7 +1417,7 @@
                 status: status,
                 date: item.ddate,
                 dateNew: item.ddatenew,
-                // location: item.location,
+                location: item.location,
                 holdtime: formatHoldTime(parseInt(item.holdtime)),
                 battery: item.Battery,
                 ignition: item.ignition,
@@ -1426,6 +1426,7 @@
                 power: item.power,
                 latlang: item.latlang,
                 devicegroup: item.devicegroup,
+                locationflag: item.locationflag,
               };
             });
             if (isInitialLoad) {
@@ -1686,17 +1687,7 @@ function getCarEmoji(device) {
         <div style="display: flex; align-items: center; gap: 5px;">
           <b>Location:</b> <span id="location-popup-${
           device.deviceId
-        }"><button onclick="updateLocationPopup('${device.deviceId}', '${
-          device.latlang
-        }')" style="background: none; 
-               border: none; 
-               padding: 0;
-               color: #3498db; 
-               text-decoration: underline;
-               cursor: pointer;
-               font-size: 11px;">
-              Get Location
-            </button></span>
+        }">${device.locationflag === "true" ? device.location : `<button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" style="background: none; border: none; padding: 0; color: #3498db; text-decoration: underline; cursor: pointer; font-size: 11px;">Get Location</button>`}</span>
         </div>
         <div style="display: flex; align-items: center; gap: 5px;">
           <b>Distance:</b> <span id="distance-value">0 km</span>
@@ -2034,9 +2025,9 @@ function createMarkerElement(device) {
             <td>${device.speed} km/h</td>
             <td>${device.holdtime}</td>
             <td id="location-${device.deviceId}">
-                <button onclick="updateLocation('${device.deviceId}', '${device.latlang}')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+                ${device.locationflag === "true" ? device.location : `<button onclick="updateLocation('${device.deviceId}', '${device.latlang}')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
                     <i class="fas fa-map-marker-alt" style="margin-right: 0"></i>
-                </button>
+                </button>`}
             </td>
             <td>
                 <button onclick="viewTodayTrip('${device.name}')" class="view-trip-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
