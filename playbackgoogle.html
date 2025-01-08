@@ -1429,16 +1429,16 @@
         // Then update your JavaScript
         function updateStartButtonState() {
             const startButton = document.getElementById("startPlayback");
-            // startButton.disabled = fetching;
+            startButton.disabled = fetching;
 
-            // // Optionally update button appearance when disabled
-            // if (fetching) {
-            // startButton.style.opacity = "0.6";
-            // startButton.style.cursor = "not-allowed";
-            // } else {
-            // startButton.style.opacity = "1";
-            // startButton.style.cursor = "pointer";
-            // }
+            // Optionally update button appearance when disabled
+            if (fetching) {
+            startButton.style.opacity = "0.6";
+            startButton.style.cursor = "not-allowed";
+            } else {
+            startButton.style.opacity = "1";
+            startButton.style.cursor = "pointer";
+            }
         }
 
         function formatTime(timeString) {
