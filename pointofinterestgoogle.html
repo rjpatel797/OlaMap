@@ -303,9 +303,11 @@ function handleMarkerDrag(event, marker) {
         if (status === 'OK' && results[0]) {
             updateFormFields(
                 position,
-                results[0].address_components[0].long_name,
-                results[0].formatted_address
-            );
+                results?.[0]?.address_components
+                ?.slice(0, 3)
+                ?.map(component => component.long_name)
+                ?.join(', ') || '', 
+                results[0].formatted_address );
         }
     });
 }
@@ -325,7 +327,7 @@ async function fetchPOIs() {
         const data = await response.json();
         if (Array.isArray(data)) {
                     updatePOITable(data);
-                    updateMapMarkers(data);
+                    // updateMapMarkers(data);
                 } else {
                     console.error('Invalid data format received from API');
                 }
@@ -471,11 +473,11 @@ function updatePOITable(pois) {
         const row = `
             <tr data-id="${poi.id}">
                 <td>${index + 1}</td>
-                <td>${poi.location}</td>
+                <td>${poi.plocation}</td>
                 <td>${poi.latitude}</td>
                 <td>${poi.langitude}</td>
-                <td>${poi.address}</td>
-                <td>${poi.status}</td>
+                <td>${poi.plocation}</td>
+                <td>${poi.status || 'Enable'}</td>
                 <td>
                     <button onclick="updateStatus(${poi.id}, 'Enable')" class="action-btn enable-btn">Enable</button>
                     <button onclick="updateStatus(${poi.id}, 'Disable')" class="action-btn disable-btn">Disable</button>
