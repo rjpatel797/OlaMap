@@ -95,7 +95,7 @@
       padding: 5px;
       border-radius: 8px;
       display: flex;
-      justify-content: space-between;
+      /* justify-content: space-between; */
       gap: 5px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
@@ -1653,13 +1653,15 @@ function rightSideVehicleInfo(data, totalDistance) {
                 display: none;
                 position: absolute;
                 background: white;
-                padding: 8px 12px;
-                border-radius: 4px;
+                padding: 12px 16px;
+                border-radius: 8px;
+                transform: translate(-70px, -90px);
                 font-size: 13px;
                 pointer-events: none;
                 z-index: 1000;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                border: 1px solid ${color};
+                box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                border: 2px solid ${color};
+                min-width: 200px;
             `;
             document.body.appendChild(window.hoverPopup);
         }
@@ -1669,10 +1671,59 @@ function rightSideVehicleInfo(data, totalDistance) {
             myMap.getCanvas().style.cursor = 'pointer';
             window.hoverPopup.style.display = 'block';
             window.hoverPopup.style.borderColor = color;
+            
+            // Find closest point in the data
+            const point = e.lngLat;
+            const deviceData = deviceDataMap.get(deviceId);
+            if (!deviceData) return;
+
+            let closestPoint = deviceData[0];
+            let minDistance = Infinity;
+            let totalDistance = 0;
+            let currentDistance = 0;
+
+            deviceData.forEach((data, index) => {
+                const coord = data.coordinates;
+                const dist = Math.sqrt(
+                    Math.pow(point.lng - coord[0], 2) + 
+                    Math.pow(point.lat - coord[1], 2)
+                );
+                
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestPoint = data;
+                    currentDistance = totalDistance;
+                }
+                
+                if (index > 0) {
+                    const prevCoord = deviceData[index - 1].coordinates;
+                    totalDistance += calculateDistance(
+                        prevCoord[1], prevCoord[0],
+                        coord[1], coord[0]
+                    );
+                }
+            });
+
             window.hoverPopup.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${color};"></div>
-                    <div>${deviceName}</div>
+                <div style="border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${color};"></div>
+                        <div style="font-weight: 600;">${deviceName}</div>
+                    </div>
+                </div>
+                <div style="display: grid; gap: 6px;">
+                  <div style="display: flex; justify-content: between;">
+                    <span style="color: #666; min-width: 80px;">Time:</span>
+                    <span style="font-weight: 500;">${closestPoint.date.split('.')[0]}</span>
+                    </div>
+                    <div style="display: flex; justify-content: between;">
+                      <span style="color: #666; min-width: 80px;">Distance:</span>
+                      <span style="font-weight: 500;">${currentDistance.toFixed(2)} km</span>
+                      </div>
+                      <div style="display: flex; justify-content: between;">
+                          <span style="color: #666; min-width: 80px;">Speed:</span>
+                          <span style="font-weight: 500;">${Math.round(closestPoint.speed)} km/h</span>
+                      </div>
                 </div>
             `;
         });
