@@ -1745,13 +1745,29 @@
             }
         }
         // Add event listener for speed threshold changes
-        document.getElementById('overSpeedingThreshold').addEventListener('change', function () {
-            speedThreshold = parseInt(this.value);
+        document.getElementById('overSpeedingThreshold').addEventListener('change', function() {
+    const newThreshold = parseInt(this.value);
+    updatePolylineColors(newThreshold);
+});
 
-            if (playbackInterval || isPaused) {
-                redrawEntirePolyline();
-            }
-        });
+// Function to update polyline colors based on new threshold
+function updatePolylineColors(threshold) {
+    // Only update if playback is active or paused
+    if (!playbackInterval && !isPaused) return;
+
+    pathPolylines.forEach((polyline, i) => {
+        // Skip arrow polylines (every second element)
+        if (i % 2 === 1) return;
+        
+        // Get the point index for this segment
+        const pointIndex = Math.floor(i / 2) + 1;
+        if (pointIndex < playbackData.length) {
+            const speed = parseFloat(playbackData[pointIndex].speed);
+            const color = speed >= threshold ? '#FF0000' : '#00FF00';
+            polyline.setOptions({ strokeColor: color });
+        }
+    });
+}
 
         function redrawEntirePolyline() {
             clearAllPolylines();
@@ -2143,210 +2159,186 @@
         }
 
         // Update start time display function
-        function startPlayback(isSpeedUpdate = false) {
-            const selectedVehicle = document.getElementById('selectedVehicle');
-            if (selectedVehicle.textContent === 'Select Vehicle') {
-                alert('Please select a vehicle before starting playback');
-                return;
-            }
+        // Add these variables at the top with your other global variables
+            let activeInfoWindow = null;
+            let isInfoWindowOpen = false;
 
-            document.getElementById("startPlayback").disabled = true;
-            document.getElementById("pausePlayback").disabled = false;
-            document.getElementById("stopPlayback").disabled = false;
-
-            if (fetching) {
-                console.log("Data is still being fetched...");
-                return;
-            }
-
-            if (playbackData.length === 0) {
-                console.error("Playback data is empty.");
-                alert("Playback data is empty");
-                return;
-            }
-
-            if (!isSpeedUpdate) {
-                // Draw initial polyline only if this isn't a speed update
-                redrawEntirePolyline();
-            }
-
-
-            // Remove existing marker if not paused and not a speed update
-            if (vehicleMarker && !isPaused && !isSpeedUpdate) {
-                vehicleMarker.setMap(null);
-                vehicleMarker = null;
-                index = 0;
-                totalDistance = 0;
-            }
-
-            // Create new marker if it doesn't exist
-            if (!vehicleMarker) {
-                const startPoint = playbackData[0];
-                vehicleMarker = new google.maps.Marker({
-                    position: {
-                        lat: parseFloat(startPoint.coordinates[1]),
-                        lng: parseFloat(startPoint.coordinates[0])
-                    },
-                    map: map,
-                    icon: {
-                        url: '/images/truck1.png#vehicleMarker',
-                        scaledSize: new google.maps.Size(30, 30),
-                        anchor: new google.maps.Point(15, 15)
-                    }
-                });
-
-
-                const initialAngle = startPoint.angle + ANGLE_OFFSET;
-                rotateMarker(vehicleMarker, initialAngle);
-
-                // Add click event for vehicle marker
-                vehicleMarker.addListener('click', () => {
-                    const content = createPopupContent(playbackData[index], calculateCumulativeDistance(index));
-                    infoWindow.setContent(content);
-                    infoWindow.open(map, vehicleMarker);
-                });
-
-                addStartEndMarkers();
-                map.setCenter(vehicleMarker.getPosition());
-            }
-
-            let coordinates = [];
-            playbackData.forEach(point => {
-                coordinates.push({
-                    lat: parseFloat(point.coordinates[1]),
-                    lng: parseFloat(point.coordinates[0])
-                });
-            });
-
-            detectStopDuringPlayback();
-
-            // Remove existing polyline if it exists
-            if (pathPolyline) {
-                pathPolyline.setMap(null);
-            }
-
-            // Create polyline with initial color
-            // pathPolyline = new google.maps.Polyline({
-            //     path: coordinates,
-            //     geodesic: true,
-            //     strokeColor: '#00FF00', // Initial color (green)
-            //     strokeOpacity: 1.0,
-            //     strokeWeight: 2,
-            //     map: map
-            // });
-
-            // Start playback interval with speed control
-            isPaused = false;
-            clearInterval(playbackInterval);
-            playbackInterval = setInterval(() => {
-                if (index < playbackData.length) {
-                    const currentPoint = playbackData[index];
-                    const position = {
-                        lat: parseFloat(currentPoint.coordinates[1]),
-                        lng: parseFloat(currentPoint.coordinates[0])
-                    };
-
-                    // Update marker position
-                    vehicleMarker.setPosition(position);
-
-                    // Apply smooth rotation
-                    rotateMarker(vehicleMarker, currentPoint.angle + ANGLE_OFFSET);
-
-                    // Center map
-                    map.setCenter(position);
-
-                    addStopMarkersDuringPlayback(index);
-
-                    // Add polyline segment if not first point
-                    if (index > 0) {
-                        const prevPoint = playbackData[index - 1];
-                        const path = [
-                            { lat: parseFloat(prevPoint.coordinates[1]), lng: parseFloat(prevPoint.coordinates[0]) },
-                            position
-                        ];
-
-                        const color = currentPoint.speed >= speedThreshold ? '#FF0000' : '#00FF00';
-
-                        const segment = new google.maps.Polyline({
-                            path: path,
-                            geodesic: true,
-                            strokeColor: color,
-                            strokeOpacity: 0.9,
-                            strokeWeight: 3,
-                            map: map
-                        });
-                        
-                        // Add direction arrow for this segment
-                        const arrow = addDirectionArrow(path);
-
-                        pathPolylines.push(segment);
-                        pathPolylines.push(arrow);
-                    }
-
-                    // Update info and other existing code...
-                    const cumulativeDistance = calculateCumulativeDistance(index);
-                    updateVehicleInfo(currentPoint, cumulativeDistance);
-
-                    // Rest of your existing code...
-
-                    index++;
-                } else {
-                    clearInterval(playbackInterval);
-                    document.getElementById("startPlayback").disabled = false;
+            function startPlayback(isSpeedUpdate = false) {
+                const selectedVehicle = document.getElementById('selectedVehicle');
+                if (selectedVehicle.textContent === 'Select Vehicle') {
+                    alert('Please select a vehicle before starting playback');
+                    return;
                 }
-            }, 1000 / playbackSpeed);
-            const style = document.createElement('style');
-            style.textContent = `
-    img[src="/images/truck1.png"] {
-        transition: transform 0.3s ease-out;
-        transform-origin: center;
-    }
-`;
-            document.head.appendChild(style);// Use playbackSpeed instead of speedMultiplier
-        }
 
+                document.getElementById("startPlayback").disabled = true;
+                document.getElementById("pausePlayback").disabled = false;
+                document.getElementById("stopPlayback").disabled = false;
+
+                if (fetching) {
+                    console.log("Data is still being fetched...");
+                    return;
+                }
+
+                if (playbackData.length === 0) {
+                    console.error("Playback data is empty.");
+                    alert("Playback data is empty");
+                    return;
+                }
+
+                // Clear existing polylines only if not paused and not updating speed
+                if (!isPaused && !isSpeedUpdate) {
+                    clearAllPolylines();
+                    index = 0;
+                }
+
+                // Create or update vehicle marker
+                if (!vehicleMarker) {
+                    const startPoint = playbackData[0];
+                    vehicleMarker = new google.maps.Marker({
+                        position: {
+                            lat: parseFloat(startPoint.coordinates[1]),
+                            lng: parseFloat(startPoint.coordinates[0])
+                        },
+                        map: map,
+                        icon: {
+                            url: '/images/truck1.png#vehicleMarker',
+                            scaledSize: new google.maps.Size(30, 30),
+                            anchor: new google.maps.Point(15, 15)
+                        }
+                    });
+
+                    const initialAngle = startPoint.angle + ANGLE_OFFSET;
+                    rotateMarker(vehicleMarker, initialAngle);
+                    
+                    // Modified click event listener for vehicle marker
+                    vehicleMarker.addListener('click', () => {
+                        if (activeInfoWindow) {
+                            activeInfoWindow.close();
+                        }
+                        
+                        activeInfoWindow = new google.maps.InfoWindow();
+                        isInfoWindowOpen = true;
+                        
+                        const content = createPopupContent(playbackData[index], calculateCumulativeDistance(index));
+                        activeInfoWindow.setContent(content);
+                        activeInfoWindow.open(map, vehicleMarker);
+
+                        // Add close listener to reset state when popup is closed
+                        google.maps.event.addListener(activeInfoWindow, 'closeclick', () => {
+                            isInfoWindowOpen = false;
+                            activeInfoWindow = null;
+                        });
+                    });
+                    
+                    map.setCenter(vehicleMarker.getPosition());
+                    addStartEndMarkers();
+                }
+
+                // Start playback with speed control
+                isPaused = false;
+                clearInterval(playbackInterval);
+                playbackInterval = setInterval(() => {
+                    if (index < playbackData.length) {
+                        const currentPoint = playbackData[index];
+                        const position = {
+                            lat: parseFloat(currentPoint.coordinates[1]),
+                            lng: parseFloat(currentPoint.coordinates[0])
+                        };
+
+                        // Update vehicle marker position
+                        vehicleMarker.setPosition(position);
+                        rotateMarker(vehicleMarker, currentPoint.angle + ANGLE_OFFSET);
+                        map.setCenter(position);
+
+                        // Update popup content if it's open
+                        if (isInfoWindowOpen && activeInfoWindow) {
+                            const updatedContent = createPopupContent(currentPoint, calculateCumulativeDistance(index));
+                            activeInfoWindow.setContent(updatedContent);
+                        }
+
+                        // Get current speed threshold
+                        const currentSpeedThreshold = parseInt(document.getElementById('overSpeedingThreshold').value);
+
+                        // Add polyline segment for current movement
+                        if (index > 0) {
+                            const prevPoint = playbackData[index - 1];
+                            const path = [
+                                { 
+                                    lat: parseFloat(prevPoint.coordinates[1]), 
+                                    lng: parseFloat(prevPoint.coordinates[0]) 
+                                },
+                                position
+                            ];
+
+                            // Determine color based on current speed and threshold
+                            const speed = parseFloat(currentPoint.speed);
+                            const color = speed >= currentSpeedThreshold ? '#FF0000' : '#00FF00';
+
+                            // Create new polyline segment
+                            const segment = new google.maps.Polyline({
+                                path: path,
+                                geodesic: true,
+                                strokeColor: color,
+                                strokeOpacity: 0.9,
+                                strokeWeight: 3,
+                                map: map
+                            });
+
+                            // Add directional arrow
+                            const arrow = addDirectionArrow(path);
+
+                            // Store segments for later reference
+                            pathPolylines.push(segment);
+                            pathPolylines.push(arrow);
+                        }
+
+                        // Update vehicle info display
+                        const cumulativeDistance = calculateCumulativeDistance(index);
+                        updateVehicleInfo(currentPoint, cumulativeDistance);
+
+                        // Add stop markers if needed
+                        addStopMarkersDuringPlayback(index);
+
+                        index++;
+                    } else {
+                        clearInterval(playbackInterval);
+                        document.getElementById("startPlayback").disabled = false;
+                    }
+                }, 1000 / playbackSpeed);
+            }
 
         // Add this function to create direction arrow symbols
         function addDirectionArrow(path) {
-    const p1 = path[0];
-    const p2 = path[1];
-    
-    // Calculate heading
-    const heading = google.maps.geometry.spherical.computeHeading(
-        new google.maps.LatLng(p1.lat, p1.lng),
-        new google.maps.LatLng(p2.lat, p2.lng)
-    );
-
-    // Create polyline with arrow symbols
-    return new google.maps.Polyline({
-        path: path,
-        icons: [{
-            icon: {
-                path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                scale: 2,
-                strokeColor: "#000000",
-                strokeWeight: 2,
-                fillColor: "#000000",
-                fillOpacity: 1
-            },
-            offset: '50%',
-            repeat: '70px'  // Repeat arrows every 70 pixels
-        }],
-        geodesic: true,
-        strokeOpacity: 0,  // Make the actual line invisible
-        map: map
-    });
-}
-
-// Update clearAllPolylines function to handle arrows
-function clearAllPolylines() {
-    pathPolylines.forEach(item => {
-        if (item) {
-            item.setMap(null);
+            // Create the polyline with minimal arrow symbols
+            return new google.maps.Polyline({
+                path: path,
+                geodesic: true,
+                strokeOpacity: 0,
+                icons: [{
+                    icon: {
+                        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                        scale: 1.5,
+                        strokeWeight: 2,
+                        strokeColor: '#000000',
+                        fillColor: '#000000',
+                        fillOpacity: 1
+                    },
+                    offset: '50%',
+                    repeat: '500px'  // Much larger repeat distance
+                }],
+                map: map
+            });
         }
-    });
-    pathPolylines = [];
-}
+
+        // Update clearAllPolylines function to handle arrows
+        function clearAllPolylines() {
+            pathPolylines.forEach(item => {
+                if (item) {
+                    item.setMap(null);
+                }
+            });
+            pathPolylines = [];
+        }
 
         function updatePolylineColor(currentIndex) {
             if (currentIndex === 0) return;
@@ -2384,6 +2376,8 @@ function clearAllPolylines() {
                 });
             }
         }
+
+        
         // Modify the creation of the starting marker to include both symbol and time display
         // Add this helper function to calculate cumulative distance
         function calculateCumulativeDistance(currentIndex) {
