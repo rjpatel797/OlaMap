@@ -1934,49 +1934,59 @@ function updatePolylineColors(threshold) {
 
         // **Detect Stop During Playback** (this is the main change)
         function detectStopDuringPlayback() {
-            // Clear any existing stop markers
-            stopMarkers.forEach(marker => {
-                if (marker && marker.marker) {
-                    marker.marker.setMap(null);
-                }
-            });
-
-            // Reset the array
-            stopMarkers = [];
-            potentialStops = [];
-
-            const holdTime = parseInt(document.getElementById("holdTime").value);
-
-            // Iterate through playback data to find stops
-            for (let i = 1; i < playbackData.length; i++) {
-                const prevPoint = playbackData[i - 1];
-                const currentPoint = playbackData[i];
-
-                // Parse dates consistently
-                const prevDate = new Date(parseDateString(prevPoint.date));
-                const currentDate = new Date(parseDateString(currentPoint.date));
-
-                // Calculate time difference in minutes
-                const timeDiff = (currentDate - prevDate) / (1000 * 60);
-
-                // Check if stop duration meets threshold
-                if (timeDiff >= holdTime) {
-                    potentialStops.push({
-                        index: i - 1,
-                        position: {
-                            lat: parseFloat(prevPoint.coordinates[1]),
-                            lng: parseFloat(prevPoint.coordinates[0])
-                        },
-                        startTime: prevPoint.date,
-                        endTime: currentPoint.date,
-                        duration: timeDiff,
-                        marker: null,
-                        isPlaced: false
-                    });
-                }
-            }
+    // Clear existing markers and arrays
+    stopMarkers.forEach(marker => {
+        if (marker && marker.marker) {
+            marker.marker.setMap(null);
         }
-        
+    });
+    stopMarkers = [];
+    potentialStops = [];
+
+    const holdTime = parseInt(document.getElementById("holdTime").value);
+    let currentStopStart = null;
+    let stopDuration = 0;
+
+    // Iterate through playback data to find stops
+    for (let i = 1; i < playbackData.length; i++) {
+        const prevPoint = playbackData[i - 1];
+        const currentPoint = playbackData[i];
+
+        // Calculate time difference
+        const prevDate = new Date(parseDateString(prevPoint.date));
+        const currentDate = new Date(parseDateString(currentPoint.date));
+        const timeDiff = (currentDate - prevDate) / (1000 * 60);
+
+        // Start of a potential stop
+        if (!currentStopStart && timeDiff >= holdTime) {
+            currentStopStart = i - 1;
+            stopDuration = timeDiff;
+        } 
+        // Continuation of current stop
+        else if (currentStopStart !== null && timeDiff >= holdTime) {
+            stopDuration += timeDiff;
+        }
+        // End of stop
+        else if (currentStopStart !== null) {
+            if (stopDuration >= holdTime) {
+                potentialStops.push({
+                    index: currentStopStart,
+                    position: {
+                        lat: parseFloat(playbackData[currentStopStart].coordinates[1]),
+                        lng: parseFloat(playbackData[currentStopStart].coordinates[0])
+                    },
+                    startTime: playbackData[currentStopStart].date,
+                    endTime: prevPoint.date,
+                    duration: stopDuration,
+                    marker: null,
+                    isPlaced: false
+                });
+            }
+            currentStopStart = null;
+            stopDuration = 0;
+        }
+    }
+}        
         function parseDateString(dateString) {
             // Handle different potential date formats
             const parts = dateString.split(/[-\s:]/);
@@ -2047,52 +2057,78 @@ function updatePolylineColors(threshold) {
         }
 
         function addStopMarkersDuringPlayback(currentIndex) {
-            potentialStops.forEach(stopData => {
-                // Only place the marker if we've reached its index and it hasn't been placed yet
-                if (currentIndex >= stopData.index && !stopData.isPlaced) {
-                    // Create new stop marker
-                    const stopMarker = new google.maps.Marker({
-                        position: new google.maps.LatLng(
-                            stopData.position.lat,
-                            stopData.position.lng
-                        ),
-                        map: map,
-                        icon: {
-                            url: createStopMarkerIcon(stopData.duration),
-                            scaledSize: new google.maps.Size(40, 40)
-                        }
-                    });
-
-                    // Add click event for stop details
-                    stopMarker.addListener('click', () => {
-                        const content = `
-                            <div style="padding: 10px;">
-                                <h3>Stop Details</h3>
-                                <p><strong>Duration:</strong> ${stopData.duration.toFixed(0)} minutes</p>
-                                <p><strong>Start Time:</strong> ${stopData.startTime}</p>
-                                <p><strong>End Time:</strong> ${stopData.endTime}</p>
-                                <p><strong>Location:</strong> 
-                                    <div id="stopLocationDetails" style="color: #666;">
-                                        <a href="#" onclick="fetchStopLocation('${stopData.position.lat},${stopData.position.lng}'); return false;">
-                                            View Location
-                                        </a>
-                                    </div>
-                                </p>
-                            </div>
-                        `;
-
-                        infoWindow.setContent(content);
-                        infoWindow.open(map, stopMarker);
-                    });
-
-                    // Store the marker and mark it as placed
-                    stopData.marker = stopMarker;
-                    stopData.isPlaced = true;
-                    stopMarkers.push(stopData);
+    potentialStops.forEach(stopData => {
+        // Only place marker if we've reached its index and it's not placed yet
+        if (currentIndex >= stopData.index && !stopData.isPlaced) {
+            const stopMarker = new google.maps.Marker({
+                position: new google.maps.LatLng(
+                    stopData.position.lat,
+                    stopData.position.lng
+                ),
+                map: map,
+                icon: {
+                    url: createStopMarkerIcon(stopData.duration),
+                    scaledSize: new google.maps.Size(40, 40)
                 }
             });
-        }
 
+            // Add click event for stop details
+            stopMarker.addListener('click', () => {
+                const content = `
+                    <div style="padding: 10px;">
+                        <h3>Stop Details</h3>
+                        <p><strong>Duration:</strong> ${formatDuration(stopData.duration)}</p>
+                        <p><strong>Start Time:</strong> ${stopData.startTime}</p>
+                        <p><strong>End Time:</strong> ${stopData.endTime}</p>
+                        <p><strong>Location:</strong> 
+                            <div id="stopLocationDetails" style="color: #666;">
+                                <a href="#" onclick="fetchStopLocation('${stopData.position.lat},${stopData.position.lng}'); return false;">
+                                    View Location
+                                </a>
+                            </div>
+                        </p>
+                    </div>
+                `;
+
+                infoWindow.setContent(content);
+                infoWindow.open(map, stopMarker);
+            });
+
+            stopData.marker = stopMarker;
+            stopData.isPlaced = true;
+            stopMarkers.push({
+                position: stopData.position,
+                marker: stopMarker,
+                startTime: stopData.startTime,
+                endTime: stopData.endTime,
+                duration: stopData.duration
+            });
+        }
+    });
+}
+
+// Add this near your other event listeners at the bottom
+document.getElementById("holdTime").addEventListener('change', function() {
+    // Reset stop tracking
+    stopMarkers.forEach(marker => {
+        if (marker && marker.marker) {
+            marker.marker.setMap(null);
+        }
+    });
+    stopMarkers = [];
+    potentialStops = [];
+
+    // If playback is active or paused, redetect stops
+    if (playbackInterval || isPaused) {
+        detectStopDuringPlayback();
+        if (typeof index !== 'undefined' && index > 0) {
+            // Recheck all points up to current index
+            for (let i = 0; i <= index; i++) {
+                addStopMarkersDuringPlayback(i);
+            }
+        }
+    }
+});
         function findMarkerAtLocation(position) {
             // This function assumes you're keeping track of markers manually
             // You might need to modify this based on how you manage markers
