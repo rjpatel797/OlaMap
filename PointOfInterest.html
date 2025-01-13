@@ -323,6 +323,7 @@
         let markerLayer = null;
         let styleLoaded = false;
         let map;
+        let draggedMarker = null;
         // Initialize Ola Map
         const olaMap = new OlaMapsSDK.OlaMaps({
             apiKey: '0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9'
@@ -611,7 +612,8 @@ function selectPlace(place) {
                 },
                 properties: {
                     title: place.description,
-                    description: place.description
+                    description: place.description,
+                    draggable: true
                 }
             };
 
@@ -636,6 +638,8 @@ function selectPlace(place) {
                     }
                 });
 
+                makeMarkerDraggable();
+
                 // Fly to the location
                 map.flyTo({
                     center: [lng, lat],
@@ -655,6 +659,79 @@ function selectPlace(place) {
     }
 }
 
+function makeMarkerDraggable() {
+            const canvas = map.getCanvas();
+            canvas.style.cursor = 'move';
+
+            // Variables to track dragging
+            let isDragging = false;
+            let startPos = null;
+
+            // Mouse down event to start dragging
+            map.on('mousedown', 'selected-place-marker', (e) => {
+                e.preventDefault();
+                isDragging = true;
+                startPos = e.lngLat;
+                canvas.style.cursor = 'grabbing';
+            });
+
+            // Mouse move event during dragging
+            map.on('mousemove', (e) => {
+                if (!isDragging) return;
+
+                // Update marker position
+                const newCoords = [e.lngLat.lng, e.lngLat.lat];
+                
+                // Update the marker's coordinates
+                const source = map.getSource('selected-place');
+                if (source) {
+                    source.setData({
+                        type: 'Feature',
+                        geometry: {
+                            type: 'Point',
+                            coordinates: newCoords
+                        },
+                        properties: {
+                            draggable: true
+                        }
+                    });
+                }
+            });
+
+            // Mouse up event to finalize dragging
+            map.on('mouseup', (e) => {
+                if (!isDragging) return;
+
+                isDragging = false;
+                canvas.style.cursor = 'move';
+
+                // Update form fields with new coordinates
+                const newLat = e.lngLat.lat;
+                const newLng = e.lngLat.lng;
+
+                document.getElementById('latitude').value = newLat.toFixed(6);
+                document.getElementById('longitude').value = newLng.toFixed(6);
+
+                // Perform reverse geocoding to update address
+                reverseGeocode(newLat, newLng).then(address => {
+                    if (address) {
+                        document.getElementById('address').value = address;
+                    }
+                });
+            });
+
+            // Prevent dragging from happening on the whole map
+            map.on('mousedown', (e) => {
+                const features = map.queryRenderedFeatures(e.point, {
+                    layers: ['selected-place-marker']
+                });
+                
+                if (features.length === 0) {
+                    isDragging = false;
+                    canvas.style.cursor = 'default';
+                }
+            });
+        }
 
 
 async function getPlaceDetails(placeId) {
