@@ -1295,16 +1295,16 @@ function addPermanentLabel(marker, timestamp) {
 }
 
 // Optional: Add this to your map event listener to ensure labels stay visible
-map.on('zoom', function() {
-    if (startMarker) {
-        const startLabel = startMarker.getElement().querySelector('div');
-        if (startLabel) startLabel.style.display = 'block';
-    }
-    if (endMarker) {
-        const endLabel = endMarker.getElement().querySelector('div');
-        if (endLabel) endLabel.style.display = 'block';
-    }
-});
+// map.on('zoom', function() {
+//     if (startMarker) {
+//         const startLabel = startMarker.getElement().querySelector('div');
+//         if (startLabel) startLabel.style.display = 'block';
+//     }
+//     if (endMarker) {
+//         const endLabel = endMarker.getElement().querySelector('div');
+//         if (endLabel) endLabel.style.display = 'block';
+//     }
+// });
 
 
 // function createCustomMarker(label, color, timestamp) {
@@ -1475,32 +1475,75 @@ function updateVehicleRotation(angle) {
     }
     
     function stopPlayback() {
+    // Clear interval
     clearInterval(playbackInterval);
     playbackInterval = null;
-    
+
+    // Remove vehicle marker
     if (vehicleMarker) {
-        vehicleMarker.setMap(null);
+        vehicleMarker.remove();  // Markers use remove()
         vehicleMarker = null;
     }
-    
+
+    // Remove start and end markers
+    if (startMarker) {
+        startMarker.remove();  // Markers use remove()
+        startMarker = null;
+    }
+    if (endMarker) {
+        endMarker.remove();  // Markers use remove()
+        endMarker = null;
+    }
+
+    // Remove polyline
+    if (polyline) {
+        polyline.setMap(null);  // Polylines use setMap(null)
+        polyline = null;
+    }
+
+    // Reset device selection
+    document.getElementById('selectedVehicle').textContent = 'Select Vehicle';
+    selectedDeviceId = null;
+
+    // Reset all counters and flags
     index = 0;
     isPaused = false;
     totalDistance = 0;
+    playbackData = [];
+    pathCoordinates = [];
     
     // Reset info displays
     document.getElementById('speedDisplay').textContent = '0 km/h';
     document.getElementById('dateTimeDisplay').textContent = '--';
     document.getElementById('distanceDisplay').textContent = '0.00 km';
     
-    // Center map on first coordinate if available
-    if (playbackData && playbackData.length > 0) {
-        map.setCenter(new MapmyIndia.LatLng(
-            playbackData[0].coordinates[0],
-            playbackData[0].coordinates[1]
-        ));
+    // Reset dropdown state
+    const dropdown = document.getElementById('deviceDropdown');
+    if (dropdown) {
+        dropdown.style.display = 'none';
+    }
+
+    // Hide any popups
+    const customPopup = document.getElementById('customPopup');
+    if (customPopup) {
+        customPopup.style.display = 'none';
+    }
+
+    // Remove any direction arrows
+    const arrows = document.querySelectorAll('.direction-arrow');
+    arrows.forEach(arrow => arrow.remove());
+
+    try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('device');
+        url.searchParams.delete('from');
+        url.searchParams.delete('to');
+        window.history.replaceState({}, '', url);
+    } catch (error) {
+        console.error('Error resetting URL parameters:', error);
     }
 }
-    
+
     // Helper functions
     function isValidCoordinate(lng, lat) {
         return (
