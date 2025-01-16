@@ -1726,19 +1726,26 @@ function createDeviceList() {
             });
 
             item.on("click", function(e) {
-                if (!e.target.classList.contains('deviceCheckbox')) {
-                    if (currentMarker && currentMarker === markers[devices.indexOf(device)]) {
-                        hidePopup();
-                    } else {
-                        showPopup(devices.indexOf(device), markers[devices.indexOf(device)]);
-                        myMap.flyTo({
-                            center: device.coordinates,
-                            zoom: 14,
-                            speed: 1.5
-                        });
-                    }
-                }
-            });
+              if (!e.target.classList.contains('deviceCheckbox')) {
+                  const deviceIndex = parseInt(item.find('.deviceCheckbox').data('index'));
+                  const device = devices[deviceIndex];
+                  const correspondingMarker = markers[deviceIndex];
+
+                  if (currentMarker && currentMarker === correspondingMarker) {
+                      hidePopup();
+                  } else {
+                      // Show popup for the device
+                      // showPopup(deviceIndex, correspondingMarker);
+
+                      // Pan and zoom to the marker's location
+                      map.panTo({
+                          lat: device.coordinates[0],
+                          lng: device.coordinates[1]
+                      });
+                      map.setZoom(15);
+                  }
+              }
+          });
 
             groupContainer.append(item);
         });
@@ -2018,7 +2025,10 @@ function initializeMarkers() {
     // Remove existing markers
     markers.forEach(marker => {
         marker.setMap(null);
+        marker = null;
+        console.log("called")
     });
+    markers = null;
     markers = [];
 
     console.log('Total devices:', devices.length);
@@ -3333,96 +3343,71 @@ function updateVehicleMarker(vehicleData) {
 
 function showVehiclePopup(data) {
     const popup = document.getElementById('customPopup');
-    const popupTitle = document.getElementById('popupTitle');
-    const popupContent = document.getElementById('popupContent');
-
-    // Determine status and icon
     const currentDate = new Date();
-    const deviceDate = new Date(data.ddate);
-    const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-    const ignitionStatus = typeof data.ignition === 'string' 
-        ? data.ignition.toLowerCase() === 'true' 
-        : Boolean(data.ignition);
+    const deviceDate = new Date(data.date);
+    const timeDiff = Math.floor((currentDate - deviceDate) / 60000); // minutes
+    const timeAgo = timeDiff === 0 ? 'just now' : `${timeDiff} min ago`;
 
-    let statusClass = 'status-off';
-    let statusText = 'Offline';
-    if (hoursDifference <= 2) {
-        if (!ignitionStatus) {
-            statusClass = 'status-off';
-            statusText = 'Stopped';
-        } else if (data.speed > 0) {
-            statusClass = 'status-on';
-            statusText = 'Moving';
-        } else {
-            statusClass = 'status-on';
-            statusText = 'Idle';
-        }
-    }
-
-    // Update popup title
-    popupTitle.innerHTML = `
-        <div class="title">
-            ${data.dname}
-            <div class="status">
-                <b>GPS:</b> <span class="status-indicator ${data.gps ? 'status-on' : 'status-off'}">
-                    ${data.gps ? 'ON' : 'OFF'}
-                </span><br/>
-                <b>Engine:</b> <span class="status-indicator ${ignitionStatus ? 'status-on' : 'status-off'}">
-                    ${ignitionStatus ? 'ON' : 'OFF'}
-                </span><br/>
-                <b>Power:</b> <span class="status-indicator ${data.power ? 'status-on' : 'status-off'}">
-                    ${data.power ? 'ON' : 'OFF'}
+    popup.innerHTML = `
+        <div class="popup-header">
+            <div class="vehicle-id">${data.deviceId}</div>
+            <div class="status-group">
+                GPS: <div class="status-indicator ${data.gps ? 'status-on' : 'status-off'}"></div>
+                Engine: <div class="status-indicator ${data.ignition === 'true' ? 'status-on' : 'status-off'}"></div>
+                Power: <div class="status-indicator ${data.power === 'true' ? 'status-on' : 'status-off'}"></div>
+            </div>
+        </div>
+        <div class="popup-content">
+            <div class="info-row">
+                <span class="info-label">Date:</span>
+                <span class="info-value">${data.dateNew} <span class="time-ago">(${timeAgo})</span></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Speed:</span>
+                <span class="info-value">${data.speed} km/h</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Hold Time:</span>
+                <span class="info-value">${formatHoldTime(parseInt(data.holdtime))}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Status:</span>
+                <span class="status-text">Online</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Battery:</span>
+                <span class="info-value">${data.battery}V</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Location:</span>
+                <span class="info-value">
+                    <a href="#" onclick="updateLocationPopup('${data.deviceId}', '${data.latlang}')">Get Location</a>
                 </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Distance:</span>
+                <span class="info-value">0 km</span>
+            </div>
+            <div class="action-buttons">
+                <button onclick="updateDistance('${data.deviceId}')" class="action-button">Get Distance</button>
+                <button onclick="viewNearbyVehicles('${data.deviceId}', ${data.coordinates[0]}, ${data.coordinates[1]})" class="action-button">View Nearby</button>
+                <button onclick="shareLocation(${data.coordinates[0]}, ${data.coordinates[1]})" class="action-button">Share Location</button>
+                <button onclick="addPOIForDevice('${data.name}', ${data.coordinates[0]}, ${data.coordinates[1]})" class="action-button">Add POI</button>
             </div>
         </div>
     `;
 
-    // Update popup content
-    popupContent.innerHTML = `
-        <b>Date:</b> ${data.ddatenew} <br/>
-        <b>Speed:</b> ${data.speed} km/h <br/>
-        <b>Hold Time:</b> ${formatHoldTime(data.holdtime || 0)} <br/>
-        <b>Status:</b> <span class="status-indicator-status ${statusClass}">${statusText}</span> <br/>
-        <b>Battery:</b> ${data.Battery}V <br/>
-        
-        <div style="display: flex; align-items: center; gap: 5px;">
-            <b>Location:</b> 
-            <span id="location-popup-${data.did}">
-                <button onclick="updateLocationPopup('${data.did}', '${data.latlang}')" 
-                    class="popup-btn">
-                    Get Location
-                </button>
-            </span>
-        </div>
-        
-        <div class="popup-actions" style="margin-top: 10px; display: flex; gap: 5px;">
-            <button onclick="viewTodayTrip('${data.dname}')" class="popup-btn">
-                Today's Trip
-            </button>
-            <button onclick="viewLiveTracking('${data.dname}')" class="popup-btn">
-                Live Tracking
-            </button>
-            <button onclick="shareLocation(${data.latlang.split(',')[0]}, ${data.latlang.split(',')[1]})" class="popup-btn">
-                Share Location
-            </button>
-        </div>
-    `;
-
-    // Show popup
     popup.style.display = 'block';
 
     // Position popup relative to marker
     if (currentMarker) {
         const markerPosition = currentMarker.getPosition();
         const point = map.getPixel(markerPosition);
-        
         popup.style.left = `${point.x}px`;
-        popup.style.top = `${point.y - 20}px`;
+        popup.style.top = `${point.y - popup.offsetHeight - 20}px`;
     }
 }
 
-
-// Close popup when clicking outside
 document.addEventListener('click', function(event) {
     const popup = document.getElementById('customPopup');
     const popupCloseBtn = popup.querySelector('.close-btn');
