@@ -912,7 +912,7 @@
   </div>
 
   <script src="js/api.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap"
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap&libraries=geometry"
     async defer></script>
   <script>
     // Global variables
@@ -1511,6 +1511,34 @@ document.head.insertAdjacentHTML('beforeend', `<style>${markerStyles}</style>`);
       endMarker.addListener('mouseout', () => endInfo.close());
     }
 
+    function findClosestPoint(mouseEvent, polyline) {
+  const bounds = map.getBounds();
+  const path = polyline.getPath();
+  let closestPoint = null;
+  let minDistance = Infinity;
+  let closestIndex = -1;
+
+  for (let i = 0; i < path.getLength(); i++) {
+    const point = path.getAt(i);
+    if (bounds.contains(point)) {
+      const distance = google.maps.geometry.spherical.computeDistanceBetween(
+        point,
+        mouseEvent.latLng
+      );
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestPoint = point;
+        closestIndex = i;
+      }
+    }
+  }
+
+  return {
+    point: closestPoint,
+    index: closestIndex,
+    distance: minDistance
+  };
+}
     // Add polyline to map
     function addPolyline() {
   if (pathPolyline) {
@@ -1518,6 +1546,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>${markerStyles}</style>`);
   }
 
   const path = playbackData.map(point => point.position);
+  const polylinePopup = document.getElementById('polylinePopup');
 
   // Create the polyline
   pathPolyline = new google.maps.Polyline({
@@ -1532,6 +1561,33 @@ document.head.insertAdjacentHTML('beforeend', `<style>${markerStyles}</style>`);
       offset: '50%',
       repeat: '100px'  // Arrows will repeat every 100 pixels
     }]
+  });
+
+  pathPolyline.addListener('mousemove', (e) => {
+    const closest = findClosestPoint(e, pathPolyline);
+    
+    if (closest.point && closest.distance < 50) { // 50 meters threshold
+      const data = playbackData[closest.index];
+      const cumulativeDistance = calculateCumulativeDistance(closest.index);
+      
+      const content = `
+        <strong>Date-Time:</strong> ${data.date.split('.')[0]}<br>
+        <strong>Speed:</strong> ${Math.round(data.speed)} km/h<br>
+        <strong>Distance:</strong> ${cumulativeDistance.toFixed(2)} km
+      `;
+      
+      polylinePopup.innerHTML = content;
+      polylinePopup.style.display = 'block';
+      polylinePopup.style.left = e.domEvent.clientX + 15 + 'px';
+      polylinePopup.style.top = e.domEvent.clientY - 40 + 'px';
+    } else {
+      polylinePopup.style.display = 'none';
+    }
+  });
+
+  // Add mouseout listener to hide popup
+  pathPolyline.addListener('mouseout', () => {
+    polylinePopup.style.display = 'none';
   });
 
   // Add hover effect on polyline
