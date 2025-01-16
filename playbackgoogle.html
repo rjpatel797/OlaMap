@@ -813,18 +813,16 @@
 
         /* Add these styles to your existing CSS */
         .polyline-popup {
+            position: fixed;
             display: none;
-            position: absolute;
             background: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            font-size: 12px;
-            pointer-events: none;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             z-index: 1000;
-            color: #333;
-            max-width: 200px;
-            border: 1px solid rgba(0, 0, 0, 0.1);
+            pointer-events: none;
+            max-width: 250px;
         }
 
         .polyline-popup::after {
@@ -2219,6 +2217,68 @@ function updatePolylineColors(threshold) {
             let activeInfoWindow = null;
             let isInfoWindowOpen = false;
 
+            function findClosestPoint(mouseEvent, polyline) {
+  const bounds = map.getBounds();
+  const path = polyline.getPath();
+  let closestPoint = null;
+  let minDistance = Infinity;
+  let closestIndex = -1;
+
+  for (let i = 0; i < path.getLength(); i++) {
+    const point = path.getAt(i);
+    if (bounds.contains(point)) {
+      const distance = google.maps.geometry.spherical.computeDistanceBetween(
+        point,
+        mouseEvent.latLng
+      );
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestPoint = point;
+        closestIndex = i;
+      }
+    }
+  }
+
+  return {
+    point: closestPoint,
+    index: closestIndex,
+    distance: minDistance
+  };
+}
+
+function addPolylineHoverListeners(segment, index) {
+        const polylinePopup = document.getElementById('polylinePopup');
+        const popupContent = document.getElementById('polylinePopupContent');
+
+        google.maps.event.addListener(segment, 'mousemove', (event) => {
+            if (index < 0 || index >= playbackData.length) {
+                polylinePopup.style.display = 'none';
+                return;
+            }
+
+            const currentPoint = playbackData[index];
+            const cumulativeDistance = calculateCumulativeDistance(index);
+            
+            const content = `
+                <strong>Date-Time:</strong> ${currentPoint.date.split('.')[0]}<br>
+                <strong>Speed:</strong> ${Math.round(currentPoint.speed)} km/h<br>
+                <strong>Distance:</strong> ${cumulativeDistance.toFixed(2)} km
+            `;
+            
+            popupContent.innerHTML = content;
+            polylinePopup.style.display = 'block';
+            
+            const event_xy = event.pixel;
+            polylinePopup.style.left = `${event.domEvent.clientX + 10}px`;
+            polylinePopup.style.top = `${event.domEvent.clientY - 40}px`;
+        });
+
+        google.maps.event.addListener(segment, 'mouseout', () => {
+            polylinePopup.style.display = 'none';
+        });
+    }
+
+
             function startPlayback(isSpeedUpdate = false) {
                 const selectedVehicle = document.getElementById('selectedVehicle');
                 if (selectedVehicle.textContent === 'Select Vehicle') {
@@ -2318,36 +2378,43 @@ function updatePolylineColors(threshold) {
 
                         // Add polyline segment for current movement
                         if (index > 0) {
-                            const prevPoint = playbackData[index - 1];
-                            const path = [
-                                { 
-                                    lat: parseFloat(prevPoint.coordinates[1]), 
-                                    lng: parseFloat(prevPoint.coordinates[0]) 
-                                },
-                                position
-                            ];
-
-                            // Determine color based on current speed and threshold
-                            const speed = parseFloat(currentPoint.speed);
-                            const color = speed >= currentSpeedThreshold ? '#FF0000' : '#00FF00';
-
-                            // Create new polyline segment
-                            const segment = new google.maps.Polyline({
-                                path: path,
-                                geodesic: true,
-                                strokeColor: color,
-                                strokeOpacity: 0.9,
-                                strokeWeight: 3,
-                                map: map
-                            });
-
-                            // Add directional arrow
-                            const arrow = addDirectionArrow(path);
-
-                            // Store segments for later reference
-                            pathPolylines.push(segment);
-                            pathPolylines.push(arrow);
+                    const prevPoint = playbackData[index - 1];
+                    const path = [
+                        { 
+                            lat: parseFloat(prevPoint.coordinates[1]), 
+                            lng: parseFloat(prevPoint.coordinates[0]) 
+                        },
+                        {
+                            lat: parseFloat(currentPoint.coordinates[1]),
+                            lng: parseFloat(currentPoint.coordinates[0])
                         }
+                    ];
+
+                    // Determine color based on current speed and threshold
+                    const speed = parseFloat(currentPoint.speed);
+                    const currentSpeedThreshold = parseInt(document.getElementById('overSpeedingThreshold').value);
+                    const color = speed >= currentSpeedThreshold ? '#FF0000' : '#00FF00';
+
+                    // Create new polyline segment
+                    let segment = new google.maps.Polyline({
+                        path: path,
+                        geodesic: true,
+                        strokeColor: color,
+                        strokeOpacity: 0.9,
+                        strokeWeight: 3,
+                        map: map
+                    });
+
+                    // Add hover listeners with the current index
+                    addPolylineHoverListeners(segment, index);
+
+                    // Add directional arrow
+                    const arrow = addDirectionArrow(path);
+
+                    // Store segments for later reference
+                    pathPolylines.push(segment);
+                    pathPolylines.push(arrow);
+                }
 
                         // Update vehicle info display
                         const cumulativeDistance = calculateCumulativeDistance(index);
@@ -2575,11 +2642,11 @@ function updatePolylineColors(threshold) {
         }
 
         // Function to update hover popup position
-        function updatePolylinePopupPosition(e) {
-            const popup = document.getElementById("polylinePopup");
-            popup.style.left = `${e.point.x - 70}px`;
-            popup.style.top = `${e.point.y + 20}px`; // Position above the cursor
-        }
+        function updatePolylinePopupPosition(event) {
+        const polylinePopup = document.getElementById('polylinePopup');
+        polylinePopup.style.left = `${event.clientX + 10}px`;
+        polylinePopup.style.top = `${event.clientY - 40}px`;
+    }
 
         const originalStopPlayback = stopPlayback;
         stopPlayback = function () {
@@ -2850,7 +2917,7 @@ function updatePolylineColors(threshold) {
         $("#increaseSpeed").on("click", increaseSpeed);
         $("#decreaseSpeed").on("click", decreaseSpeed);
 
-
+        document.getElementById('map').addEventListener('mousemove', updatePolylinePopupPosition);
     </script>
 </body>
 
