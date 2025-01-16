@@ -2025,9 +2025,12 @@ function initializeMarkers() {
     // Remove existing markers
     markers.forEach(marker => {
         marker.setMap(null);
+        marker.setVisible(false)
+
         marker = null;
         console.log("called")
     });
+
     markers = null;
     markers = [];
 
