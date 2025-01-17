@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -51,83 +52,84 @@
         }
 
         .customMarkerClass {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
 
-.popup {
-    position: fixed; /* Keep only this position property */
-    background: white;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
-    min-width: 120px;
-    transform: translate(-50%, -100%);
-    pointer-events: auto;
-}
+        .popup {
+            position: fixed;
+            /* Keep only this position property */
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            min-width: 120px;
+            transform: translate(-50%, -100%);
+            pointer-events: auto;
+        }
 
-.popup-close {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    background: #f1f1f1;
-    border-radius: 50%;
-    font-size: 14px;
-    line-height: 1;
-    color: #666;
-    transition: all 0.2s ease;
-}
+        .popup-close {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: #f1f1f1;
+            border-radius: 50%;
+            font-size: 14px;
+            line-height: 1;
+            color: #666;
+            transition: all 0.2s ease;
+        }
 
-.popup-close:hover {
-    background: #e1e1e1;
-    color: #333;
-}
+        .popup-close:hover {
+            background: #e1e1e1;
+            color: #333;
+        }
 
-.popup h3 {
-    margin-right: 20px;
-    margin-top: 5px;
-}
+        .popup h3 {
+            margin-right: 20px;
+            margin-top: 5px;
+        }
 
-    .popup:hover {
-        transform: translate(-50%, -100%) scale(1.05);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    }
+        .popup:hover {
+            transform: translate(-50%, -100%) scale(1.05);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
 
-.popup p {
-    margin: 5px 0;
-    color: #34495e;
-    font-size: 13px;
-}
+        .popup p {
+            margin: 5px 0;
+            color: #34495e;
+            font-size: 13px;
+        }
 
-.view-trip-btn {
-    margin-top: 10px;
-    padding: 6px 12px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    transition: background-color 0.3s;
-}
+        .view-trip-btn {
+            margin-top: 10px;
+            padding: 6px 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s;
+        }
 
-.view-trip-btn:hover {
-    background-color: #45a049;
-}
-
-</style>
+        .view-trip-btn:hover {
+            background-color: #45a049;
+        }
+    </style>
 </head>
+
 <body>
     <div class="container">
         <div id="navbar-container"></div>
@@ -141,11 +143,12 @@
         <div id="map"></div>
     </div>
     <script src="js/api.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap&libraries=geometry"
-    async defer></script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap&libraries=geometry"
+        async defer></script>
     <script>
 
-let map;
+        let map;
         let radiusCircle;
         let markers = [];
         const urlParams = new URLSearchParams(window.location.search);
@@ -183,10 +186,10 @@ let map;
             radiusValue.textContent = `${radius} km`;
 
             // Add event listener only once
-            radiusSlider.addEventListener('input', function() {
+            radiusSlider.addEventListener('input', function () {
                 radius = parseInt(this.value);
                 radiusValue.textContent = `${radius} km`;
-                
+
                 // Add a debounce to prevent too frequent updates
                 if (this.timeoutId) {
                     clearTimeout(this.timeoutId);
@@ -196,7 +199,7 @@ let map;
                 }, 300); // Wait 300ms after slider stops moving
             });
         }
-        
+
 
         // Update radius circle when slider changes
         const radiusSlider = document.getElementById('radiusSlider');
@@ -205,61 +208,61 @@ let map;
         radiusSlider.value = radius;
         radiusValue.textContent = `${radius} km`;
 
-        radiusSlider.addEventListener('input', function() {
+        radiusSlider.addEventListener('input', function () {
             radius = parseInt(this.value);
             radiusValue.textContent = `${radius} km`;
             updateNearbyVehicles();
         });
 
         let throttleTimer;
-function updateNearbyVehicles() {
-    const mid = localStorage.getItem("mid");
-    if (!mid) {
-        console.error("No mid found in localStorage");
-        return;
-    }
-
-    // Prevent multiple calls within 2 seconds
-    if (throttleTimer) return;
-    throttleTimer = setTimeout(() => {
-        throttleTimer = null;
-    }, 2000);
-
-    fetch(`${API}opr=getVehileByMid&mid=${mid}`)
-        .then(response => response.json())
-        .then(data => {
-            if (!Array.isArray(data)) {
-                console.warn("Received non-array data:", data);
+        function updateNearbyVehicles() {
+            const mid = localStorage.getItem("mid");
+            if (!mid) {
+                console.error("No mid found in localStorage");
                 return;
             }
 
-            const nearbyVehicles = data.filter(vehicle => {
-                if (!vehicle.latlang) return false;
-                const [lat, lng] = vehicle.latlang.split(',').map(Number);
-                if (isNaN(lat) || isNaN(lng)) return false;
-                const distance = calculateDistance(centerLat, centerLng, lat, lng);
-                return distance <= radius;
-            });
+            // Prevent multiple calls within 2 seconds
+            if (throttleTimer) return;
+            throttleTimer = setTimeout(() => {
+                throttleTimer = null;
+            }, 2000);
 
-            displayNearbyVehicles(nearbyVehicles);
-        })
-        .catch(error => {
-            console.error("Error fetching nearby vehicles:", error);
+            fetch(`${API}opr=getVehileByMid&mid=${mid}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!Array.isArray(data)) {
+                        console.warn("Received non-array data:", data);
+                        return;
+                    }
+
+                    const nearbyVehicles = data.filter(vehicle => {
+                        if (!vehicle.latlang) return false;
+                        const [lat, lng] = vehicle.latlang.split(',').map(Number);
+                        if (isNaN(lat) || isNaN(lng)) return false;
+                        const distance = calculateDistance(centerLat, centerLng, lat, lng);
+                        return distance <= radius;
+                    });
+
+                    displayNearbyVehicles(nearbyVehicles);
+                })
+                .catch(error => {
+                    console.error("Error fetching nearby vehicles:", error);
+                });
+        }
+
+        if (typeof API === 'undefined') {
+            console.error('API variable is not defined. Make sure api.js is loaded correctly.');
+        }
+
+        window.addEventListener('load', function () {
+            if (!localStorage.getItem("mid")) {
+                window.location.href = "index.html";
+                return;
+            }
         });
-}
 
-if (typeof API === 'undefined') {
-    console.error('API variable is not defined. Make sure api.js is loaded correctly.');
-}
-
-window.addEventListener('load', function() {
-    if (!localStorage.getItem("mid")) {
-        window.location.href = "index.html";
-        return;
-    }
-});
-
-function displayNearbyVehicles(vehicles) {
+        function displayNearbyVehicles(vehicles) {
             // Clear existing markers and InfoWindows
             markers.forEach(marker => {
                 if (marker.infoWindow) {
@@ -273,8 +276,8 @@ function displayNearbyVehicles(vehicles) {
             drawRadiusCircle([centerLng, centerLat], radius);
 
             const urlDeviceId = deviceId.toString();
-            const selectedVehicle = vehicles.find(v => 
-                (v.did?.toString() === urlDeviceId) || 
+            const selectedVehicle = vehicles.find(v =>
+                (v.did?.toString() === urlDeviceId) ||
                 (v.deviceid?.toString() === urlDeviceId) ||
                 (v.id?.toString() === urlDeviceId) ||
                 (v.dname?.toString() === urlDeviceId)
@@ -298,7 +301,7 @@ function displayNearbyVehicles(vehicles) {
                 const deviceDate = new Date(vehicle.ddate);
                 const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
                 const ignitionStatus = vehicle.ignition?.toLowerCase() === 'true';
-                
+
                 let iconUrl;
                 if (hoursDifference > 2) {
                     iconUrl = '/deviceTracking/images/blackcar1.png';
@@ -319,12 +322,12 @@ function displayNearbyVehicles(vehicles) {
                     }
                 });
 
-                const isSelected = 
-                    (vehicle.did?.toString() === urlDeviceId) || 
+                const isSelected =
+                    (vehicle.did?.toString() === urlDeviceId) ||
                     (vehicle.deviceid?.toString() === urlDeviceId) ||
                     (vehicle.id?.toString() === urlDeviceId) ||
                     (vehicle.dname?.toString() === urlDeviceId);
-                    
+
                 const isNearest = nearestToSelected && vehicle.dname === nearestToSelected.dname;
 
                 if (isSelected || isNearest) {
@@ -335,10 +338,10 @@ function displayNearbyVehicles(vehicles) {
                     markers.forEach(m => {
                         if (m.infoWindow) m.infoWindow.close();
                     });
-                    
+
                     const newNearest = findNearestToSelected(vehicles, vehicle);
                     showVehicleInfoWindow(vehicle, marker, 'selected');
-                    
+
                     if (newNearest) {
                         const nearestMarker = markers.find(m => {
                             const [lat, lng] = newNearest.latlang.split(',').map(Number);
@@ -356,7 +359,7 @@ function displayNearbyVehicles(vehicles) {
 
         function showVehicleInfoWindow(vehicle, marker, type = 'normal') {
             let content = '';
-            switch(type) {
+            switch (type) {
                 case 'selected':
                     content = `
                         <div style="border: 2px solid #FF4444; padding: 10px; border-radius: 5px;">
@@ -404,7 +407,7 @@ function displayNearbyVehicles(vehicles) {
                 if (!vehicle.latlang || vehicle.dname === selectedVehicle.dname) return;
                 const [vlat, vlng] = vehicle.latlang.split(',').map(Number);
                 if (isNaN(vlat) || isNaN(vlng)) return;
-                
+
                 const distance = calculateDistance(selectedLat, selectedLng, vlat, vlng);
                 if (distance < minDistance) {
                     minDistance = distance;
@@ -415,101 +418,101 @@ function displayNearbyVehicles(vehicles) {
             return nearestVehicle;
         }
 
-function showVehiclePopup(vehicle, marker, type = 'normal') {
-    const existingPopup = document.querySelector('.popup-' + vehicle.dname?.replace(/\s+/g, '-'));
-    if (existingPopup) {
-        existingPopup.remove();
-    }
+        function showVehiclePopup(vehicle, marker, type = 'normal') {
+            const existingPopup = document.querySelector('.popup-' + vehicle.dname?.replace(/\s+/g, '-'));
+            if (existingPopup) {
+                existingPopup.remove();
+            }
 
-    const popup = document.createElement('div');
-    popup.className = 'popup popup-' + vehicle.dname?.replace(/\s+/g, '-');
+            const popup = document.createElement('div');
+            popup.className = 'popup popup-' + vehicle.dname?.replace(/\s+/g, '-');
 
-    const closeButton = document.createElement('span');
-    closeButton.className = 'popup-close';
-    closeButton.innerHTML = '×';
-    closeButton.onclick = (e) => {
-        e.stopPropagation();
-        popup.remove();
-    };
-    
-    // Style based on type
-    switch(type) {
-        case 'selected':
-            popup.style.border = '2px solid #FF4444';
-            popup.innerHTML = `
+            const closeButton = document.createElement('span');
+            closeButton.className = 'popup-close';
+            closeButton.innerHTML = '×';
+            closeButton.onclick = (e) => {
+                e.stopPropagation();
+                popup.remove();
+            };
+
+            // Style based on type
+            switch (type) {
+                case 'selected':
+                    popup.style.border = '2px solid #FF4444';
+                    popup.innerHTML = `
                 <h3>${vehicle.dname}</h3>
                 <p style="color: #FF4444; font-weight: bold">Selected Vehicle</p>
             `;
-            break;
-        case 'nearest':
-            popup.style.border = '2px solid #4CAF50';
-            popup.innerHTML = `
+                    break;
+                case 'nearest':
+                    popup.style.border = '2px solid #4CAF50';
+                    popup.innerHTML = `
                 <h3>${vehicle.dname}</h3>
                 <p style="color: #4CAF50; font-weight: bold">Nearest Vehicle</p>
                 <p>Distance: ${vehicle.distance?.toFixed(2)} km</p>
             `;
-            break;
-        default:
-            popup.innerHTML = `<h3>${vehicle.dname}</h3>`;
-    }
+                    break;
+                default:
+                    popup.innerHTML = `<h3>${vehicle.dname}</h3>`;
+            }
 
-    popup.insertBefore(closeButton, popup.firstChild);
+            popup.insertBefore(closeButton, popup.firstChild);
 
-    document.body.appendChild(popup);
+            document.body.appendChild(popup);
 
-    // Position popup above marker using the map's project method
-    function updatePopupPosition() {
-        if (!vehicle.latlang) return;
-        const [lat, lng] = vehicle.latlang.split(',').map(Number);
-        // const point = myMap.project([lng, lat]);
-        
-        // Get map container position
-        const mapContainer = document.getElementById('map');
-        const mapRect = mapContainer.getBoundingClientRect();
-        
-        // Calculate position relative to map container
-        // const left = point.x + mapRect.left + 75;
-        // const top = point.y + mapRect.top - 15; // 10px above marker
-        
-        // popup.style.left = `${left - (popup.offsetWidth / 2)}px`; // Center horizontally
-        // popup.style.top = `${top}px`;
-    }
+            // Position popup above marker using the map's project method
+            function updatePopupPosition() {
+                if (!vehicle.latlang) return;
+                const [lat, lng] = vehicle.latlang.split(',').map(Number);
+                // const point = myMap.project([lng, lat]);
 
-    // Initial positioning
-    updatePopupPosition();
+                // Get map container position
+                const mapContainer = document.getElementById('map');
+                const mapRect = mapContainer.getBoundingClientRect();
 
-    // Update position when map moves
-    // myMap.on('move', updatePopupPosition);
-    // myMap.on('zoom', updatePopupPosition);
+                // Calculate position relative to map container
+                // const left = point.x + mapRect.left + 75;
+                // const top = point.y + mapRect.top - 15; // 10px above marker
 
-    return popup;
-}
+                // popup.style.left = `${left - (popup.offsetWidth / 2)}px`; // Center horizontally
+                // popup.style.top = `${top}px`;
+            }
 
-function viewTodayTrip(deviceName) {
-    const today = new Date();
-    const formattedDate = today.toISOString().split('T')[0];
-    
-    const params = new URLSearchParams({
-        device: deviceName,
-        from: formattedDate,
-        to: formattedDate
-    });
-    
-    window.location.href = `drawableplayback.html?${params.toString()}`;
-}
+            // Initial positioning
+            updatePopupPosition();
 
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.popup') && !e.target.closest('.customMarkerClass')) {
-        // Remove all non-nearest popups
-        document.querySelectorAll('.popup').forEach(popup => {
-            if (!popup.querySelector('p[style*="color: #4CAF50"]')) {
-                popup.remove();
+            // Update position when map moves
+            // myMap.on('move', updatePopupPosition);
+            // myMap.on('zoom', updatePopupPosition);
+
+            return popup;
+        }
+
+        function viewTodayTrip(deviceName) {
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+
+            const params = new URLSearchParams({
+                device: deviceName,
+                from: formattedDate,
+                to: formattedDate
+            });
+
+            window.location.href = `drawableplayback.html?${params.toString()}`;
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.popup') && !e.target.closest('.customMarkerClass')) {
+                // Remove all non-nearest popups
+                document.querySelectorAll('.popup').forEach(popup => {
+                    if (!popup.querySelector('p[style*="color: #4CAF50"]')) {
+                        popup.remove();
+                    }
+                });
             }
         });
-    }
-});
 
-function drawRadiusCircle(center, radiusKm) {
+        function drawRadiusCircle(center, radiusKm) {
             // Remove existing circle if it exists
             if (radiusCircle) {
                 radiusCircle.setMap(null);
@@ -537,16 +540,16 @@ function drawRadiusCircle(center, radiusKm) {
             const R = 6371;
             const dLat = deg2rad(lat2 - lat1);
             const dLon = deg2rad(lon2 - lon1);
-            const a = 
-                Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-                Math.sin(dLon/2) * Math.sin(dLon/2); 
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             return R * c;
         }
 
         function deg2rad(deg) {
-            return deg * (Math.PI/180);
+            return deg * (Math.PI / 180);
         }
 
         // Load navbar
@@ -558,4 +561,5 @@ function drawRadiusCircle(center, radiusKm) {
         });
     </script>
 </body>
+
 </html>
