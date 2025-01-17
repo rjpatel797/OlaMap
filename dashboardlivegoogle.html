@@ -1292,6 +1292,7 @@ let refreshInterval = 60000;
 let refreshTimer;
 let selectedDevices = new Set();
 let isInitialLoad = true;
+let markerCluster;
 
 function initMap() {
       map = new google.maps.Map(document.getElementById('map'), {
@@ -2074,7 +2075,8 @@ function initializeMarkers() {
                     icon:getMarkerIcon(device),
                     map: map,
                     deviceId: device.deviceId,
-                    title: device.name
+                    title: device.name,
+                    // visible: true
                 });
 
                 const minDifference = Math.floor((currentDate - deviceDate) / (1000 * 60));
@@ -2146,7 +2148,7 @@ function initializeMarkers() {
             });
 
         // Create a single MarkerClusterer for all markers
-        const markerCluster = new markerClusterer.MarkerClusterer({
+       markerCluster = new markerClusterer.MarkerClusterer({
             map,
             markers: validMarkers,
             algorithm: new markerClusterer.SuperClusterAlgorithm({
@@ -2155,19 +2157,20 @@ function initializeMarkers() {
             }),
             renderer: {
                 render: ({ count, position }) => {
+                  // if (count <= 0) return null;
                     // Custom cluster marker styling
                     return new google.maps.Marker({
                         position,
                         label: {
                             text: String(count),
                             color: '#ffffff',
-                            fontSize: '14px'
+                            fontSize: count === 0 ? '0px' : '14px'
                         },
                         icon: {
                             path: google.maps.SymbolPath.CIRCLE,
-                            scale: 20,
+                            scale: count === 0? 0 : 20,
                             fillColor: getClusterColor(count),
-                            fillOpacity: 0.9,
+                            fillOpacity: count === 0 ? 0 : 0.9,
                             strokeWeight: 2,
                             strokeColor: '#ffffff'
                         },
@@ -2179,7 +2182,7 @@ function initializeMarkers() {
 
         markers = validMarkers;
 
-        // Fit bounds if markers exist
+        // Fit bounds if markers existw
         if (markers.length > 0) {
             const bounds = new google.maps.LatLngBounds();
             markers.forEach(marker => bounds.extend(marker.getPosition()));
@@ -2190,13 +2193,18 @@ function initializeMarkers() {
     }
 }
 
+function deleteOverlays() {
+          
+  markerCluster.clearMarkers();
+                
+                }
+
 function getClusterColor(count) {
     if (count > 50) return '#ff6961';  // Red for large clusters
     if (count > 20) return '#FFA726';  // Yellow for medium-large
     if (count > 5) return '#77dd77';   // Green for small
     return '#108cff';                  // Blue for tiny clusters
 }
-
 // Modify getMarkerIcon to work with a device object
 function getMarkerIcon(device) {
     const currentDate = new Date();
@@ -2304,6 +2312,8 @@ function createMarker(device) {
 }
 
 function filterMarkers() {
+  deleteOverlays();
+
   initializeMarkers();
 
     // Filter features based on selected devices
