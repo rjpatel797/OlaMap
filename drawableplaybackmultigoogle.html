@@ -2180,46 +2180,45 @@ function stopPlayback() {
     playbackInterval = null;
     isPaused = false;
 
-    // Clean up all arrows - Add this line
+    // Clean up all arrows
     cleanupAllArrows();
 
     // Clear all vehicle markers
-    deviceMarkers.forEach(marker => marker.remove());
+    deviceMarkers.forEach(marker => {
+        marker.setMap(null);  // Changed from remove()
+        google.maps.event.clearInstanceListeners(marker); // Clean up any event listeners
+    });
     deviceMarkers.clear();
 
     // Remove all polylines and their events
-    selectedDevices.forEach(device => {
-        const polylineId = `polyline-${device.did}`;
-        
-        // Remove polyline layer and source
-        if (map.getLayer(polylineId)) {
-            map.removeLayer(polylineId);
-        }
-        if (map.getSource(polylineId)) {
-            map.removeSource(polylineId);
-        }
-        
-        // Remove polyline hover events
-        if (map.getLayer(polylineId)) {
-            map.off('mouseenter', polylineId);
-            map.off('mousemove', polylineId);
-            map.off('mouseleave', polylineId);
+    devicePolylines.forEach((polyline, deviceId) => {
+        // Remove the polyline from the map
+        if (polyline) {
+            google.maps.event.clearListeners(polyline, 'mouseover');
+            google.maps.event.clearListeners(polyline, 'mouseout');
+            polyline.setMap(null);
         }
 
-        // Remove start/end markers
-        const startMarkerId = `start-${device.did}`;
-        const endMarkerId = `end-${device.did}`;
+        // Remove start/end markers for this device
+        const startMarkerId = `start-${deviceId}`;
+        const endMarkerId = `end-${deviceId}`;
+        
         if (deviceMarkers.has(startMarkerId)) {
-            deviceMarkers.get(startMarkerId).remove();
+            const startMarker = deviceMarkers.get(startMarkerId);
+            startMarker.setMap(null);
+            google.maps.event.clearInstanceListeners(startMarker);
             deviceMarkers.delete(startMarkerId);
         }
+        
         if (deviceMarkers.has(endMarkerId)) {
-            deviceMarkers.get(endMarkerId).remove();
+            const endMarker = deviceMarkers.get(endMarkerId);
+            endMarker.setMap(null);
+            google.maps.event.clearInstanceListeners(endMarker);
             deviceMarkers.delete(endMarkerId);
         }
     });
 
-    // Clear device data
+    // Clear collection data
     deviceDataMap.clear();
     devicePolylines.clear();
 
@@ -2239,22 +2238,53 @@ function stopPlayback() {
         items.forEach(item => item.classList.remove('selected'));
     }
 
-    // Hide hover popup if it exists
-    if (window.hoverPopup) {
-        window.hoverPopup.style.display = 'none';
+    // Hide polyline popup
+    const polylinePopup = document.getElementById('polylinePopup');
+    if (polylinePopup) {
+        polylinePopup.style.display = 'none';
     }
 
-    // Hide vehicle info popup
+    // Hide and reset vehicle info popup
     const vehicleInfoPopup = document.getElementById('vehicleInfoPopup');
     if (vehicleInfoPopup) {
-        // Reset the values
-        document.getElementById('speedDisplay').textContent = '0 km/h';
-        document.getElementById('dateTimeDisplay').textContent = '--';
-        document.getElementById('distanceDisplay').textContent = '0 km';
+        vehicleInfoPopup.style.display = 'none';
+        if (document.getElementById('speedDisplay')) {
+            document.getElementById('speedDisplay').textContent = '0 km/h';
+        }
+        if (document.getElementById('dateTimeDisplay')) {
+            document.getElementById('dateTimeDisplay').textContent = '--';
+        }
+        if (document.getElementById('distanceDisplay')) {
+            document.getElementById('distanceDisplay').textContent = '0 km';
+        }
     }
 
-    // Redraw the vehicle list to reflect changes
+    // Clean up any remaining map event listeners
+    if (map) {
+        google.maps.event.clearListeners(map, 'mousemove');
+    }
+
+    // Redraw the vehicle list
     populateVehicleList(devices);
+}
+
+// Helper function to clean up all direction arrows
+function cleanupAllArrows() {
+    // Remove all event listeners
+    deviceEventListeners.forEach((listener, deviceId) => {
+        if (map) {
+            google.maps.event.removeListener(listener);
+        }
+    });
+    deviceEventListeners.clear();
+
+    // Remove all arrow elements
+    const allArrows = document.querySelectorAll('[class*="direction-arrow"]');
+    allArrows.forEach(arrow => arrow.remove());
+
+    // Remove all arrow containers
+    const allContainers = document.querySelectorAll('[class*="direction-arrows-"]');
+    allContainers.forEach(container => container.remove());
 }
 
 function pausePlayback() {
