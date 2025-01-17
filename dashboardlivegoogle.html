@@ -1839,87 +1839,87 @@ function hidePopup() {
         return `${days}d ${remainingHours}h ago`;
       }
 
-      function showPopup(index, marker) {
-    console.log('Showing popup for index:', index);
+//       function showPopup(index, marker) {
+//     console.log('Showing popup for index:', index);
 
-    if (!marker || !devices[index]) {
-        console.error('Invalid marker or device index');
-        return;
-    }
+//     if (!marker || !devices[index]) {
+//         console.error('Invalid marker or device index');
+//         return;
+//     }
 
-    const popup = document.getElementById('customPopup');
-    const popupTitle = document.getElementById('popupTitle');
-    const popupContent = document.getElementById('popupContent');
+//     const popup = document.getElementById('customPopup');
+//     const popupTitle = document.getElementById('popupTitle');
+//     const popupContent = document.getElementById('popupContent');
 
-    const device = devices[index];
+//     const device = devices[index];
     
-    // Set popup content
-    popupTitle.innerHTML = `<div class="title">${
-        device.name
-    }<div class="status"><b>GPS:</b> <span class="status-indicator ${
-        device.gps == true ? "status-on" : "status-off"
-    }">
-        ${device.gps == true ? "ON" : "OFF"}
-    </span><br />
-    <b>Engine:</b> <span class="status-indicator ${
-        device.ignition == "true" ? "status-on" : "status-off"
-    }">
-        ${device.ignition == "true" ? "ON" : "OFF"}
-    </span><br />
-    <b>Power:</b> <span class="status-indicator ${
-        device.power === "true" ? "status-on" : "status-off"
-    }">
-        ${device.power === "true" ? "ON" : "OFF"}
-    </span></div></div>`;
+//     // Set popup content
+//     popupTitle.innerHTML = `<div class="title">${
+//         device.name
+//     }<div class="status"><b>GPS:</b> <span class="status-indicator ${
+//         device.gps == true ? "status-on" : "status-off"
+//     }">
+//         ${device.gps == true ? "ON" : "OFF"}
+//     </span><br />
+//     <b>Engine:</b> <span class="status-indicator ${
+//         device.ignition == "true" ? "status-on" : "status-off"
+//     }">
+//         ${device.ignition == "true" ? "ON" : "OFF"}
+//     </span><br />
+//     <b>Power:</b> <span class="status-indicator ${
+//         device.power === "true" ? "status-on" : "status-off"
+//     }">
+//         ${device.power === "true" ? "ON" : "OFF"}
+//     </span></div></div>`;
 
-    popupContent.innerHTML = `
-        <b>Date:</b> ${device.dateNew} <br />
-        <b>Speed:</b> ${device.speed} km/h <br />
-        <b>Hold Time:</b> ${device.holdtime} <br />
-        <b>Status:</b> <span class="status-indicator-status ${
-            device.status == "Online" ? "status-on" : "status-off"
-        }">${device.status}</span> <br />
-        <b>Battery:</b> ${device.battery}V <br />
-        <div style="display: flex; align-items: center; gap: 5px;">
-            <b>Location:</b> <span id="location-popup-${device.deviceId}">
-                <button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" 
-                    style="background: none; border: none; padding: 0; color: #3498db; text-decoration: underline; cursor: pointer; font-size: 11px;">
-                    Get Location
-                </button>
-            </span>
-        </div>
-    `;
+//     popupContent.innerHTML = `
+//         <b>Date:</b> ${device.dateNew} <br />
+//         <b>Speed:</b> ${device.speed}asdasdasasd km/h <br />
+//         <b>Hold Time:</b> ${device.holdtime} <br />
+//         <b>Status:</b> <span class="status-indicator-status ${
+//             device.status == "Online" ? "status-on" : "status-off"
+//         }">${device.status}</span> <br />
+//         <b>Battery:</b> ${device.battery}V <br />
+//         <div style="display: flex; align-items: center; gap: 5px;">
+//             <b>Location:</b> <span id="location-popup-${device.deviceId}">
+//                 <button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" 
+//                     style="background: none; border: none; padding: 0; color: #3498db; text-decoration: underline; cursor: pointer; font-size: 11px;">
+//                     Get Location
+//                 </button>
+//             </span>
+//         </div>
+//     `;
 
-    // Show the popup
-    popup.style.display = "block";
+//     // Show the popup
+//     popup.style.display = "block";
 
-    try {
-        // Get the marker's DOM element
-        const markerElement = marker.getElement();
-        if (markerElement) {
-            // Get the marker's position relative to the map container
-            const markerRect = markerElement.getBoundingClientRect();
-            const mapContainer = map.getContainer();
-            const mapRect = mapContainer.getBoundingClientRect();
+//     try {
+//         // Get the marker's DOM element
+//         const markerElement = marker.getElement();
+//         if (markerElement) {
+//             // Get the marker's position relative to the map container
+//             const markerRect = markerElement.getBoundingClientRect();
+//             const mapContainer = map.getContainer();
+//             const mapRect = mapContainer.getBoundingClientRect();
 
-            // Position the popup relative to the marker
-            popup.style.left = `${markerRect.left - mapRect.left + markerRect.width / 2}px`;
-            popup.style.top = `${markerRect.top - mapRect.top - popup.offsetHeight - 20}px`;
-        }
-    } catch (error) {
-        console.error('Error positioning popup:', error);
+//             // Position the popup relative to the marker
+//             popup.style.left = `${markerRect.left - mapRect.left + markerRect.width / 2}px`;
+//             popup.style.top = `${markerRect.top - mapRect.top - popup.offsetHeight - 20}px`;
+//         }
+//     } catch (error) {
+//         console.error('Error positioning popup:', error);
 
-        // Fallback positioning
-        const mapContainer = map.getContainer();
-        const containerRect = mapContainer.getBoundingClientRect();
-        popup.style.left = `${containerRect.width / 2}px`;
-        popup.style.top = `${containerRect.height / 2}px`;
-    }
+//         // Fallback positioning
+//         const mapContainer = map.getContainer();
+//         const containerRect = mapContainer.getBoundingClientRect();
+//         popup.style.left = `${containerRect.width / 2}px`;
+//         popup.style.top = `${containerRect.height / 2}px`;
+//     }
 
-    currentMarker = marker;
-    isPopupOpen = true;
-    currentPopupDid = device.deviceId;
-}
+//     currentMarker = marker;
+//     isPopupOpen = true;
+//     currentPopupDid = device.deviceId;
+// }
 
 
 function updatePopupPosition() {
@@ -1966,61 +1966,63 @@ function updatePopupPosition() {
         }
       }
 
-      function generatePopupContent(device) {
-        return `
-                    <div class="popup-content" style="">
-                            <div class="status">
-                                <b></b> <span class="status-indicator ${device.gps == true ? "status-on" : "status-off"}">
-                                    GPS
-                                </span><br/>
-                                <b></b> <span class="status-indicator ${device.ignition == "true" ? "status-on" : "status-off"}">
-                                    Eng
-                                </span><br/>
-                                <b></b> <span class="status-indicator ${device.power === "true" ? "status-on" : "status-off"}">
-                                    Pow
-                                </span><br/>
-                            </div>
-                        </div>
-                        <div class="popup-details">
-                            <b>Date:</b> ${device.dateNew}<br/>
-                            <b>Speed:</b> ${device.speed} km/h<br/>
-                            <b>Hold Time:</b> ${formatHoldTime(parseInt(device.holdtime))}<br/>
-                            <b>Status:</b> <span class="status-indicator-status ${device.status == "Online" ? "status-on" : "status-off"}">${device.status}</span><br/>
-                            <b>Battery:</b> ${device.battery}V<br/>
-                            <div style="display: flex; align-items: center; gap: 5px;">
-                                <b>Location:</b> 
-                                <span id="location-popup-${device.deviceId}" style="max-width: 140px">
-                                    <button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" 
-                                        style="background: none; border: none; padding: 0; color: #3498db; 
-                                        text-decoration: underline; cursor: pointer; font-size: 11px;">
-                                        Get Location
-                                    </button>
-                                </span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 5px;">
-                                <b>Distance:</b> <span id="distance-value">0 km</span>
-                            </div>
-                            <div class="button-container" style="margin-top: 5px; gap: 5px;">
-                                <button onclick="updateDistance('${device.deviceId}')" class="distance-btn">
-                                    Get Distance
-                                </button>
-                                <button onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[1]}, ${device.coordinates[0]})" 
-                                    class="nearby-btn">
-                                    View Nearby
-                                </button>
-                                <button onclick="shareLocation(${device.coordinates[1]}, ${device.coordinates[0]})" 
-                                    class="nearby-btn">
-                                    Share Location
-                                </button>
-                                <button onclick="addPOIForDevice('${device.name}', ${device.coordinates[1]}, ${device.coordinates[0]})" 
-                                    class="nearby-btn">
-                                    Add POI
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-      }
+      // function generatePopupContent(device) {
+      //   return `
+      //               <div class="popup-content" style="">
+      //                       <div class="status">
+      //                           <b></b> <span class="status-indicator ${device.gps == true ? "status-on" : "status-off"}">
+      //                               GPS
+      //                           </span><br/>
+      //                           <b></b> <span class="status-indicator ${device.ignition == "true" ? "status-on" : "status-off"}">
+      //                               Eng
+      //                           </span><br/>
+      //                           <b></b> <span class="status-indicator ${device.power === "true" ? "status-on" : "status-off"}">
+      //                               Pow
+      //                           </span><br/>
+      //                       </div>
+      //                   </div>
+      //                   <div class="popup-details">
+      //                       <b>Date:</b> ${device.dateNew}<br/>
+      //                       <b>Speed:</b> ${device.speed}adasdasd km/h<br/>
+      //                       <b>Hold Time:</b> ${formatHoldTime(parseInt(device.holdtime))}<br/>
+      //                       <b>Status:</b> <span class="status-indicator-status ${device.status == "Online" ? "status-on" : "status-off"}">${device.status}</span><br/>
+      //                       <div style="display: flex; align-items: center; gap: 5px;">
+      //                         <b>Battery:</b> <span>${device.battery}V</span>
+      //                       </div>
+      //                       <div style="display: flex; align-items: center; gap: 5px;">
+      //                           <b>Location:</b> 
+      //                           <span id="location-popup-${device.deviceId}" style="max-width: 140px">
+      //                               <button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" 
+      //                                   style="background: none; border: none; padding: 0; color: #3498db; 
+      //                                   text-decoration: underline; cursor: pointer; font-size: 11px;">
+      //                                   Get Location
+      //                               </button>
+      //                           </span>
+      //                       </div>
+      //                       <div style="display: flex; align-items: center; gap: 5px;">
+      //                           <b>Distance:</b> <span id="distance-value">0 km</span>
+      //                       </div>
+      //                       <div class="button-container" style="margin-top: 5px; gap: 5px;">
+      //                           <button onclick="updateDistance('${device.deviceId}')" class="distance-btn">
+      //                               Get Distance
+      //                           </button>
+      //                           <button onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[1]}, ${device.coordinates[0]})" 
+      //                               class="nearby-btn">
+      //                               View Nearby
+      //                           </button>
+      //                           <button onclick="shareLocation(${device.coordinates[1]}, ${device.coordinates[0]})" 
+      //                               class="nearby-btn">
+      //                               Share Location
+      //                           </button>
+      //                           <button onclick="addPOIForDevice('${device.name}', ${device.coordinates[1]}, ${device.coordinates[0]})" 
+      //                               class="nearby-btn">
+      //                               Add POI
+      //                           </button>
+      //                       </div>
+      //                   </div>
+      //               </div>
+      //           `;
+      // }
 
 function initializeMarkers() {
     // Remove existing markers
@@ -2098,11 +2100,21 @@ function initializeMarkers() {
                             </div>
                         </div>
                         <div class="content">
-                            <b>Date:</b> ${device.dateNew} <span style="color: #666; font-size: 12px;">(${timeAgo})</span><br />
-                            <b>Speed:</b> ${device.speed} km/h <br />
-                            <b>Hold Time:</b> ${device.holdtime} <br />
-                            <b>Status:</b> <span class="status-indicator-status ${device.status == "Online" ? "status-on" : "status-off"}">${device.status}</span> <br />
-                            <b>Battery:</b> ${device.battery}V <br />
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                              <b>Date:</b> ${device.dateNew} <span style="color: #666; font-size: 12px;">(${timeAgo})</span><br />
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                              <b>Speed:</b> ${device.speed} km/h <br />
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                              <b>Hold Time:</b> ${device.holdtime} <br />
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                              <b>Status:</b> <span class="status-indicator-status ${device.status == "Online" ? "status-on" : "status-off"}">${device.status}</span> <br />
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                              <b>Battery:</b> ${device.battery}V <br />
+                            </div>
                             <div style="display: flex; align-items: center; gap: 5px;">
                                 <b>Location:</b> <span id="location-popup-${device.deviceId}">
                                     <button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" 
@@ -2266,50 +2278,50 @@ function getClusterIcon(count) {
     };
 }
 
-function getPopupContent(feature) {
-    const device = feature.properties;
-    return generatePopupContent(device);
-}
+// function getPopupContent(feature) {
+//     const device = feature.properties;
+//     return generatePopupContent(device);
+// }
 
-function createMarker(device) {
-    const customElement = document.createElement('div');
-    customElement.className = 'customMarkerClass';
+// function createMarker(device) {
+//     const customElement = document.createElement('div');
+//     customElement.className = 'customMarkerClass';
     
-    const carImage = document.createElement('img');
-    // Set image based on device status
-    const currentDate = new Date();
-    const deviceDate = new Date(device.date);
-    const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-    const ignitionStatus = typeof device.ignition === 'string' ? 
-        device.ignition.toLowerCase() === 'true' : Boolean(device.ignition);
+//     const carImage = document.createElement('img');
+//     // Set image based on device status
+//     const currentDate = new Date();
+//     const deviceDate = new Date(device.date);
+//     const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+//     const ignitionStatus = typeof device.ignition === 'string' ? 
+//         device.ignition.toLowerCase() === 'true' : Boolean(device.ignition);
 
-    if (hoursDifference > 2) {
-        carImage.src = '/deviceTracking/images/blackcar1.png';
-    } else if (!ignitionStatus) {
-        carImage.src = '/images/icon/red/car0.png';
-    } else if (ignitionStatus && device.speed > 0) {
-        carImage.src = '/deviceTracking/images/green.png';
-    } else {
-        carImage.src = '/deviceTracking/images/yellow.png';
-    }
+//     if (hoursDifference > 2) {
+//         carImage.src = '/deviceTracking/images/blackcar1.png';
+//     } else if (!ignitionStatus) {
+//         carImage.src = '/images/icon/red/car0.png';
+//     } else if (ignitionStatus && device.speed > 0) {
+//         carImage.src = '/deviceTracking/images/green.png';
+//     } else {
+//         carImage.src = '/deviceTracking/images/yellow.png';
+//     }
 
-    carImage.style.transform = `rotate(${device.angle || 0}deg)`;
-    customElement.appendChild(carImage);
+//     carImage.style.transform = `rotate(${device.angle || 0}deg)`;
+//     customElement.appendChild(carImage);
 
-    const marker = new mappls.Marker({
-        map: map,
-        position: {
-            lat: device.coordinates[0],
-            lng: device.coordinates[1]
-        },
-        icon: customElement,
-        draggable: false
-    });
+//     const marker = new mappls.Marker({
+//         map: map,
+//         position: {
+//             lat: device.coordinates[0],
+//             lng: device.coordinates[1]
+//         },
+//         icon: customElement,
+//         draggable: false
+//     });
 
-    // Add click event
-    marker.addListener('click', () => showPopup(device, marker));
-    return marker;
-}
+//     // Add click event
+//     // marker.addListener('click', () => showPopup(device, marker));
+//     return marker;
+// }
 
 function filterMarkers() {
   deleteOverlays();
@@ -3286,140 +3298,140 @@ function toDegrees(radians) {
     return radians * (180 / Math.PI);
 }
 
-function updateVehicleMarker(vehicleData) {
-    if (!vehicleData || vehicleData.length === 0) return;
+// function updateVehicleMarker(vehicleData) {
+//     if (!vehicleData || vehicleData.length === 0) return;
 
-    const data = vehicleData[0];
-    if (!data.latlang) {
-        console.error('No position data available');
-        return;
-    }
+//     const data = vehicleData[0];
+//     if (!data.latlang) {
+//         console.error('No position data available');
+//         return;
+//     }
 
-    try {
-        const [lat, lng] = data.latlang.split(",").map(coord => parseFloat(coord));
-        const position = {
-            lat: lat || 23.0225,
-            lng: lng || 72.5714
-        };
+//     try {
+//         const [lat, lng] = data.latlang.split(",").map(coord => parseFloat(coord));
+//         const position = {
+//             lat: lat || 23.0225,
+//             lng: lng || 72.5714
+//         };
 
-        const initialAngle = parseFloat(data.angle) || 0;
+//         const initialAngle = parseFloat(data.angle) || 0;
 
-        if (!currentMarker) {
-            // Create new marker
-            currentMarker = new mappls.Marker({
-                map: map,
-                position: {
-                    lat: position.lat,
-                    lng: position.lng
-                },
-                icon: '/deviceTracking/images/car_image_transparent.png',
-                width: 40,
-                height: 40,
-                rotateWithMap: true
-            });
+//         if (!currentMarker) {
+//             // Create new marker
+//             currentMarker = new mappls.Marker({
+//                 map: map,
+//                 position: {
+//                     lat: position.lat,
+//                     lng: position.lng
+//                 },
+//                 icon: '/deviceTracking/images/car_image_transparent.png',
+//                 width: 40,
+//                 height: 40,
+//                 rotateWithMap: true
+//             });
 
-            // Center map on marker
-            map.setCenter({ lat: position.lat, lng: position.lng });
-            map.setZoom(15);
+//             // Center map on marker
+//             map.setCenter({ lat: position.lat, lng: position.lng });
+//             map.setZoom(15);
             
-            lastPosition = position;
-        } else {
-            // Update existing marker position and rotation
-            if (lastPosition && !isAnimating) {
-                let targetAngle = initialAngle;
+//             lastPosition = position;
+//         } else {
+//             // Update existing marker position and rotation
+//             if (lastPosition && !isAnimating) {
+//                 let targetAngle = initialAngle;
                 
-                if (lastPosition.lat !== position.lat || lastPosition.lng !== position.lng) {
-                    targetAngle = calculateBearing(lastPosition, position);
-                    animateMarkerMovement(lastPosition, position, targetAngle);
-                } else {
-                    currentMarker.setRotation(initialAngle);
-                }
-            } else {
-                currentMarker.setPosition({
-                    lat: position.lat,
-                    lng: position.lng
-                });
-                currentMarker.setRotation(initialAngle);
-            }
+//                 if (lastPosition.lat !== position.lat || lastPosition.lng !== position.lng) {
+//                     targetAngle = calculateBearing(lastPosition, position);
+//                     animateMarkerMovement(lastPosition, position, targetAngle);
+//                 } else {
+//                     currentMarker.setRotation(initialAngle);
+//                 }
+//             } else {
+//                 currentMarker.setPosition({
+//                     lat: position.lat,
+//                     lng: position.lng
+//                 });
+//                 currentMarker.setRotation(initialAngle);
+//             }
             
-            lastPosition = { ...position };
-        }
+//             lastPosition = { ...position };
+//         }
 
-        // Add click event to marker
-        currentMarker.addListener('click', () => {
-            showVehiclePopup(data);
-        });
-    } catch (error) {
-        console.error('Error updating vehicle marker:', error);
-    }
-}
+//         // Add click event to marker
+//         currentMarker.addListener('click', () => {
+//             // showVehiclePopup(data);
+//         });
+//     } catch (error) {
+//         console.error('Error updating vehicle marker:', error);
+//     }
+// }
 
-function showVehiclePopup(data) {
-    const popup = document.getElementById('customPopup');
-    const currentDate = new Date();
-    const deviceDate = new Date(data.date);
-    const timeDiff = Math.floor((currentDate - deviceDate) / 60000); // minutes
-    const timeAgo = timeDiff === 0 ? 'just now' : `${timeDiff} min ago`;
+// function showVehiclePopup(data) {
+//     const popup = document.getElementById('customPopup');
+//     const currentDate = new Date();
+//     const deviceDate = new Date(data.date);
+//     const timeDiff = Math.floor((currentDate - deviceDate) / 60000); // minutes
+//     const timeAgo = timeDiff === 0 ? 'just now' : `${timeDiff} min ago`;
 
-    popup.innerHTML = `
-        <div class="popup-header">
-            <div class="vehicle-id">${data.deviceId}</div>
-            <div class="status-group">
-                GPS: <div class="status-indicator ${data.gps ? 'status-on' : 'status-off'}"></div>
-                Engine: <div class="status-indicator ${data.ignition === 'true' ? 'status-on' : 'status-off'}"></div>
-                Power: <div class="status-indicator ${data.power === 'true' ? 'status-on' : 'status-off'}"></div>
-            </div>
-        </div>
-        <div class="popup-content">
-            <div class="info-row">
-                <span class="info-label">Date:</span>
-                <span class="info-value">${data.dateNew} <span class="time-ago">(${timeAgo})</span></span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Speed:</span>
-                <span class="info-value">${data.speed} km/h</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Hold Time:</span>
-                <span class="info-value">${formatHoldTime(parseInt(data.holdtime))}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Status:</span>
-                <span class="status-text">Online</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Battery:</span>
-                <span class="info-value">${data.battery}V</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Location:</span>
-                <span class="info-value">
-                    <a href="#" onclick="updateLocationPopup('${data.deviceId}', '${data.latlang}')">Get Location</a>
-                </span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Distance:</span>
-                <span class="info-value">0 km</span>
-            </div>
-            <div class="action-buttons">
-                <button onclick="updateDistance('${data.deviceId}')" class="action-button">Get Distance</button>
-                <button onclick="viewNearbyVehicles('${data.deviceId}', ${data.coordinates[0]}, ${data.coordinates[1]})" class="action-button">View Nearby</button>
-                <button onclick="shareLocation(${data.coordinates[0]}, ${data.coordinates[1]})" class="action-button">Share Location</button>
-                <button onclick="addPOIForDevice('${data.name}', ${data.coordinates[0]}, ${data.coordinates[1]})" class="action-button">Add POI</button>
-            </div>
-        </div>
-    `;
+//     popup.innerHTML = `
+//         <div class="popup-header">
+//             <div class="vehicle-id">${data.deviceId}</div>
+//             <div class="status-group">
+//                 GPS: <div class="status-indicator ${data.gps ? 'status-on' : 'status-off'}"></div>
+//                 Engine: <div class="status-indicator ${data.ignition === 'true' ? 'status-on' : 'status-off'}"></div>
+//                 Power: <div class="status-indicator ${data.power === 'true' ? 'status-on' : 'status-off'}"></div>
+//             </div>
+//         </div>
+//         <div class="popup-content">
+//             <div class="info-row">
+//                 <span class="info-label">Date:</span>
+//                 <span class="info-value">${data.dateNew} <span class="time-ago">(${timeAgo})</span></span>
+//             </div>
+//             <div class="info-row" style="display: flex; align-items: center; gap: 5px;">
+//                 <span class="info-label">Speed:</span>
+//                 <span class="info-value">${data.speed}asdasdasdasdasd km/h</span>
+//             </div>
+//             <div class="info-row">
+//                 <span class="info-label">Hold Time:</span>
+//                 <span class="info-value">${formatHoldTime(parseInt(data.holdtime))}</span>
+//             </div>
+//             <div class="info-row">
+//                 <span class="info-label">Status:</span>
+//                 <span class="status-text">Online</span>
+//             </div>
+//             <div class="info-row">
+//                 <span class="info-label">Battery:</span>
+//                 <span class="info-value">${data.battery}V</span>
+//             </div>
+//             <div class="info-row">
+//                 <span class="info-label">Location:</span>
+//                 <span class="info-value">
+//                     <a href="#" onclick="updateLocationPopup('${data.deviceId}', '${data.latlang}')">Get Location</a>
+//                 </span>
+//             </div>
+//             <div class="info-row">
+//                 <span class="info-label">Distance:</span>
+//                 <span class="info-value">0 km</span>
+//             </div>
+//             <div class="action-buttons">
+//                 <button onclick="updateDistance('${data.deviceId}')" class="action-button">Get Distance</button>
+//                 <button onclick="viewNearbyVehicles('${data.deviceId}', ${data.coordinates[0]}, ${data.coordinates[1]})" class="action-button">View Nearby</button>
+//                 <button onclick="shareLocation(${data.coordinates[0]}, ${data.coordinates[1]})" class="action-button">Share Location</button>
+//                 <button onclick="addPOIForDevice('${data.name}', ${data.coordinates[0]}, ${data.coordinates[1]})" class="action-button">Add POI</button>
+//             </div>
+//         </div>
+//     `;
 
-    popup.style.display = 'block';
+//     popup.style.display = 'block';
 
-    // Position popup relative to marker
-    if (currentMarker) {
-        const markerPosition = currentMarker.getPosition();
-        const point = map.getPixel(markerPosition);
-        popup.style.left = `${point.x}px`;
-        popup.style.top = `${point.y - popup.offsetHeight - 20}px`;
-    }
-}
+//     // Position popup relative to marker
+//     if (currentMarker) {
+//         const markerPosition = currentMarker.getPosition();
+//         const point = map.getPixel(markerPosition);
+//         popup.style.left = `${point.x}px`;
+//         popup.style.top = `${point.y - popup.offsetHeight - 20}px`;
+//     }
+// }
 
 document.addEventListener('click', function(event) {
     const popup = document.getElementById('customPopup');
