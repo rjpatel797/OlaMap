@@ -1608,7 +1608,9 @@ async function fetchDeviceData() {
             power: item.power,
             latlang: item.latlang,
             devicegroup: item.devicegroup,
-            holdtime: item.holdtime
+            holdtime: item.holdtime,
+            location: item.location,
+            locationflag: item.locationflag,
         }));
 
         if (isInitialLoad) {
@@ -2131,18 +2133,45 @@ function initializeMarkers() {
                                 <button onclick="updateDistance('${device.deviceId}')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 8px;">
                                     Get Distance
                                 </button>
-                                <button onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[1]}, ${device.coordinates[0]})" 
+                                <button onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[0]}, ${device.coordinates[1]})" 
                                     class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">
                                     View Nearby
                                 </button>
-                                <button onclick="shareLocation(${device.coordinates[1]}, ${device.coordinates[0]})" 
-                                    class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">
-                                    Share Location
-                                </button>
-                                <button onclick="addPOIForDevice('${device.name}', ${device.coordinates[1]}, ${device.coordinates[0]})" 
+                                <button onclick="shareLocation(${
+                                    device.coordinates[0]
+                                  }, ${
+                                    device.coordinates[1]
+                                  })" class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">Share Location</button>
+                                <button onclick="addPOIForDevice('${device.name}', ${device.coordinates[0]}, ${device.coordinates[1]})" 
                                     class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">
                                     Add POI
                                 </button>
+                                <div id="shareModal" class="modal">
+                                  <div class="modal-content">
+                                      <div class="modal-header">
+                                          <h2>Share Location</h2>
+                                          <span class="close">&times;</span>
+                                      </div>
+                                      <div class="copy-section">
+                                          <input type="text" id="shareUrl" readonly>
+                                          <button id="copyButton">Copy Link</button>
+                                      </div>
+                                      <div class="share-options">
+                                          <button onclick="shareVia('whatsapp')" class="share-button">
+                                              <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
+                                              WhatsApp
+                                          </button>
+                                          <button onclick="shareVia('twitter')" class="share-button">
+                                              <img src="https://upload.wikimedia.org/wikipedia/commons/6/6f/Logo_of_Twitter.svg" alt="Twitter">
+                                              Twitter
+                                          </button>
+                                          <button onclick="shareVia('email')" class="share-button">
+                                              <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Email">
+                                              Email
+                                          </button>
+                                      </div>
+                                  </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2511,9 +2540,9 @@ function setRefreshInterval() {
             <td>${device.speed} km/h</td>
             <td>${formatHoldTime(parseInt(device.holdtime))}</td>
             <td id="location-${device.deviceId}">
-                <button onclick="updateLocation('${device.deviceId}', '${device.latlang}')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+                ${device.locationflag === "true" ? device.location : `<button onclick="updateLocation('${device.deviceId}', '${device.latlang}')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
                     <i class="fas fa-map-marker-alt" style="margin-right: 0"></i>
-                </button>
+                </button>`}
             </td>
             <td>
                 <button onclick="viewTodayTrip('${device.name}')" class="view-trip-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
@@ -2586,7 +2615,7 @@ function setRefreshInterval() {
         });
 
         // Redirect to playback page with parameters
-        window.open(`drawableplayback.html?${params.toString()}`);
+        window.open(`drawableplaybackgoogle.html?${params.toString()}`);
       }
 
       function viewPlaybackTrip(deviceName) {
@@ -2608,7 +2637,7 @@ function setRefreshInterval() {
         });
 
         // Redirect to playback page with parameters
-        window.open(`playbackola.html?${params.toString()}`);
+        window.open(`playbackgoogle.html?${params.toString()}`);
       }
 
 
@@ -2619,7 +2648,7 @@ function setRefreshInterval() {
         });
 
         // Redirect to playback page with parameters
-        window.open(`livetrackingola.html?${params.toString()}`)
+        window.open(`livetrackinggoogle.html?${params.toString()}`)
       }
 
       async function fetchDistance(deviceId) {
@@ -2653,7 +2682,7 @@ function setRefreshInterval() {
           lng: lng,
           radius: radius,
         });
-        window.open(`viewnearby.html?${params.toString()}`);
+        window.open(`viewnearbygoogle.html?${params.toString()}`);
       }
 
       let currentLat, currentLng;
@@ -2702,6 +2731,8 @@ function setRefreshInterval() {
         };
     }
 }
+
+
 
 // Add notification function
 function showNotification(message, type) {
@@ -3118,7 +3149,7 @@ function addPOIForDevice(deviceName, lat, lng) {
         lat: lat,
         lng: lng
     });
-    window.open(`PointOfInterest.html?${params.toString()}`);
+    window.open(`PointOfInterestgoogle.html?${params.toString()}`);
 }
 
 document.querySelectorAll('.status-item').forEach(item => {
