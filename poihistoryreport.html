@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>POI History Report</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        #navbar-container {
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 0;
+        }
+
+        .content {
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .report-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #2c3e50;
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+
+        .date-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-group label,
+        .device-selector label,
+        .interval-selector label {
+            color: white;
+            font-size: 13px;
+        }
+
+        .form-select {
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            min-width: 200px;
+        }
+
+        .date-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-input input[type="date"],
+        .date-input input[type="time"] {
+            padding: 5px 8px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #2c3e50;
+            background-color: white;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .submit-btn,
+        .reset-btn {
+            padding: 6px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .submit-btn {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .reset-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .detail-location {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: white;
+        }
+
+        .export-buttons {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .export-buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            background: #34495e;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .export-buttons button:hover {
+            background: #2c3e50;
+        }
+
+        .report-table {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .report-table table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .report-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 12px 15px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .report-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .report-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* for drop-down */
+        .device-selector {
+            position: relative;
+            width: 250px;
+        }
+
+        .dropdown-container {
+            position: relative;
+        }
+
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1000;
+        }
+
+        .dropdown-search {
+            padding: 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .dropdown-search input {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            color: rgb(0, 0, 0);
+            font-size: 13px;
+        }
+
+        .dropdown-items {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .dropdown-item {
+            padding: 8px 10px;
+            color: black;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: #f0f0f0;
+        }
+
+        .selected-vehicle {
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            color: rgb(0, 0, 0);
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .selected-vehicle:after {
+            content: '▼';
+            font-size: 10px;
+            margin-left: 8px;
+        }
+
+        /* Add this to your CSS section */
+.interval-selector {
+    position: relative;
+    width: 250px;
+}
+
+.interval-selector .dropdown-container {
+    position: relative;
+    width: 100%;
+}
+
+.interval-selector .dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    display: none;
+    z-index: 1000;
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navbar -->
+        <div id="navbar-container"></div>
+
+        <div class="content">
+            <div class="report-controls">
+                <!-- Device Selector -->
+                <div class="device-selector">
+                    <div class="dropdown-container">
+                        <div class="selected-vehicle" id="deviceSelect" onclick="toggleDropdown()">
+                            Select Vehicle
+                        </div>
+                        <div class="dropdown-list" id="deviceDropdown">
+                            <div class="dropdown-search">
+                                <input type="text" placeholder="Search vehicle..." id="vehicleSearch" 
+                                    onclick="event.stopPropagation()" 
+                                    oninput="filterVehicles(this.value)" />
+                            </div>
+                            <div class="dropdown-items" id="vehicleList">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Start DateTime -->
+                <div class="date-group">
+                    <label>Start DateTime:</label>
+                    <div class="date-input">
+                        <input type="date" id="startDate">
+                        <input type="time" id="startTime" value="00:00">
+                    </div>
+                </div>
+
+                <!-- End DateTime -->
+                <div class="date-group">
+                    <label>End DateTime:</label>
+                    <div class="date-input">
+                        <input type="date" id="endDate">
+                        <input type="time" id="endTime" value="23:59">
+                    </div>
+                </div>
+
+                <!-- Time Interval -->
+                <div class="interval-selector">
+                    <div class="dropdown-container">
+                        <div class="selected-vehicle" id="poiSelect" onclick="toggleDropdownPOI()">
+                            Select POI
+                        </div>
+                        <div class="dropdown-list" id="poiDropdown">
+                            <div class="dropdown-search">
+                                <input type="text" placeholder="Search poi..." id="poiSearch" 
+                                    onclick="event.stopPropagation()" 
+                                    oninput="filterPOIs(this.value)" />
+                            </div>
+                            <div class="dropdown-items" id="poiList">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="interval-selector">
+                    <label>Radius:</label>
+                    <input type="text" id="timeInterval" class="form-select" placeholder="Enter radius in km">
+                </div>
+
+                <!-- Action Buttons -->
+                <button class="submit-btn" onclick="generateReport()">Submit</button>
+                <button class="reset-btn" onclick="resetForm()">Reset</button>
+
+                <!-- Detail Location Checkbox -->
+                <div class="detail-location">
+                    <input type="checkbox" id="detailLocation">
+                    <label for="detailLocation">with Detail Location(slow)</label>
+                </div>
+            </div>
+
+            <div class="export-buttons">
+                <button onclick="copyToClipboard()">Copy</button>
+                <button onclick="exportCSV()">CSV</button>
+                <button onclick="exportExcel()">Excel</button>
+                <button onclick="exportPDF()">PDF</button>
+                <button onclick="window.print()">Print</button>
+                <button onclick="saveReport()">Save</button>
+            </div>
+
+            <div class="report-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sr</th>
+                            <th>Entry Date</th>
+                            <th>Exit Date</th>
+                            <th>POI Location</th>
+                            <th>Hold Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportData">
+                        <!-- Report data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let selectedDeviceId = null;
+        let devices = [];
+        let poiList = [];
+        let selectedPOI = null;
+
+        $(document).ready(function() {
+            // Check for mid in localStorage
+            if (!localStorage.getItem('mid')) {
+                window.location.href = '/index.html';
+            }
+
+            // Load navbar
+            $("#navbar-container").load("navbarola.html", function() {
+                console.log("Navbar loaded successfully!");
+            });
+
+            setDefaultDates();
+            fetchDeviceData();
+            fetchPOIs();
+        });
+
+        function setDefaultDates() {
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            
+            document.getElementById('endDate').value = today;
+            document.getElementById('endTime').value = '23:59';
+            
+            document.getElementById('startDate').value = today;
+            document.getElementById('startTime').value = '00:00';
+        }
+
+        function toggleDropdown() {
+    const dropdown = document.getElementById("deviceDropdown");
+    const currentDisplay = dropdown.style.display;
+    dropdown.style.display = currentDisplay === "block" ? "none" : "block";
+    
+    if (dropdown.style.display === "block") {
+        document.getElementById("vehicleSearch").value = "";
+        populateVehicleList(devices);
+    }
+}
+
+function toggleDropdownPOI() {
+    const dropdown = document.getElementById("poiDropdown");
+    console.log("Current display:", dropdown.style.display); // Debug log
+    
+    const currentDisplay = dropdown.style.display;
+    dropdown.style.display = currentDisplay === "block" ? "none" : "block";
+    
+    console.log("New display:", dropdown.style.display); // Debug log
+    
+    if (dropdown.style.display === "block") {
+        document.getElementById("poiSearch").value = "";
+        console.log("POI list:", poiList); // Debug log
+        populatePoiList(poiList);
+    }
+}
+
+
+function filterPOIs(searchText) {
+    if (!searchText) {
+        populatePoiList(poiList);
+        return;
+    }
+    const filteredPOIs = poiList.filter(poi => 
+        poi.name.toLowerCase().includes(searchText.toLowerCase())
+    );
+    populatePoiList(filteredPOIs);
+}
+
+function filterVehicles(searchText) {
+    if (!searchText) {
+        populateVehicleList(devices);
+        return;
+    }
+    const filteredDevices = devices.filter(device => 
+        device.name.toLowerCase().includes(searchText.toLowerCase())
+    );
+    populateVehicleList(filteredDevices);
+}
+
+function selectPoi(poiName) {
+    selectedPOI = poiName; // Store the selected POI
+    document.getElementById("poiSelect").textContent = poiName;
+    document.getElementById("poiSelect").value = poiName;
+    document.getElementById("poiDropdown").style.display = "none";
+}
+
+function selectVehicle(deviceId, deviceName) {
+    selectedDeviceId = deviceId;
+    document.getElementById("deviceSelect").textContent = deviceName;
+    document.getElementById("deviceSelect").value = deviceId;
+    document.getElementById("deviceDropdown").style.display = "none";
+}
+
+function populatePoiList(poiItems) {
+    const poiListElement = document.getElementById("poiList");
+    poiListElement.innerHTML = "";
+
+    if (poiItems.length === 0) {
+        const noResults = document.createElement("div");
+        noResults.className = "dropdown-item";
+        noResults.textContent = "No POIs found";
+        poiListElement.appendChild(noResults);
+        return;
+    }
+
+    poiItems.forEach(poi => {
+        const item = document.createElement("div");
+        item.className = "dropdown-item";
+        item.textContent = poi.name;
+        item.onclick = () => selectPoi(poi.name);
+        poiListElement.appendChild(item);
+    });
+}
+
+function populateVehicleList(devicesList) {
+    const vehicleList = document.getElementById("vehicleList");
+    vehicleList.innerHTML = "";
+
+    if (devicesList.length === 0) {
+        const noResults = document.createElement("div");
+        noResults.className = "dropdown-item";
+        noResults.textContent = "No vehicles found";
+        vehicleList.appendChild(noResults);
+        return;
+    }
+
+    devicesList.forEach(device => {
+        const item = document.createElement("div");
+        item.className = "dropdown-item";
+        item.textContent = device.name;
+        item.onclick = () => selectVehicle(device.did, device.name);
+        vehicleList.appendChild(item);
+    });
+}
+
+// Add click outside handler
+document.addEventListener("click", function(event) {
+    const dropdown = document.getElementById("deviceDropdown");
+    const deviceSelect = document.getElementById("deviceSelect");
+    
+    if (!event.target.closest(".device-selector")) {
+        dropdown.style.display = "none";
+    }
+});
+
+function fetchPOIs() {
+    const mid = localStorage.getItem("mid");
+    console.log("Fetching poi with mid:", mid);
+
+    fetch(`${API}opr=getpoilistByMid&mid=${mid}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log("POI data received:", data); // Changed log message to be more specific
+            
+            if (Array.isArray(data)) {
+                poiList = data.map(item => ({
+                    name: item.plocation || 'Unnamed poi',
+                }));
+                console.log("Processed POI list:", poiList); // Added debug log
+                populatePoiList(poiList);
+                
+                const poiSelect = document.getElementById('poiSelect');
+                if (poiSelect) {
+                    poiSelect.textContent = 'Select POI';
+                } else {
+                    console.error('POI select element not found');
+                }
+            } else {
+                console.error('Invalid POI data format received:', data);
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching POIs:", error);
+        });
+}
+
+function fetchDeviceData() {
+    const mid = localStorage.getItem("mid");
+    console.log("Fetching devices with mid:", mid);
+
+    fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log("Device data received:", data);
+            
+            if (Array.isArray(data)) {
+                devices = data.map(item => ({
+                    name: item.dname || 'Unnamed Vehicle',
+                    did: item.did
+                }));
+                populateVehicleList(devices);
+                
+                const deviceSelect = document.getElementById('deviceSelect');
+                if (deviceSelect) {
+                    deviceSelect.textContent = 'Select Vehicle';
+                } else {
+                    console.error('Device select element not found');
+                }
+            } else {
+                console.error('Invalid data format received:', data);
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching Vehicles:", error);
+        });
+}
+
+function generateReport() {
+    const startDate = document.getElementById('startDate').value;
+    const startTime = document.getElementById('startTime').value;
+    const endDate = document.getElementById('endDate').value;
+    const endTime = document.getElementById('endTime').value;
+    const interval = document.getElementById('timeInterval').value;
+    const withDetail = document.getElementById('detailLocation').checked;
+
+    if (!selectedDeviceId) {
+        alert("Please select a vehicle");
+        return;
+    }
+
+    if (!selectedPOI) {
+        alert("Please select a POI");
+        return;
+    }
+
+    // Combine date and time
+    const fromdate = `${startDate} ${startTime}:00`;
+    const todate = `${endDate} ${endTime}:59`;
+
+    fetchHistoryReport(fromdate, todate, selectedDeviceId, interval, withDetail);
+}
+
+function fetchHistoryReport(fromdate, todate, did, interval, withDetail) {
+    const mid = localStorage.getItem("mid")
+    const reportBody = document.getElementById('reportData');
+    reportBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Loading...</td></tr>';
+
+    // Format dates for API
+    const formattedFromDate = formatDateForAPI(fromdate);
+    const formattedToDate = formatDateForAPI(todate);
+
+    const url = `${API}opr=poihistoryreport&mid=${mid}&did=${did}&sdate=${formattedFromDate}&edate=${formattedToDate}&poiname=${encodeURIComponent(selectedPOI)}&radius=${interval}`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            displayReport(data);
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            reportBody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; color: red;">
+                        Error loading report data: ${error.message}
+                    </td>
+                </tr>
+            `;
+        });
+}
+
+        function formatDateForAPI(dateStr) {
+    // Convert date string to format: YYYY-MM-DD HH:mm:ss
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+    return encodeURIComponent(`${year}-${month}-${day} ${hours}:${minutes}:${seconds}`);
+}
+
+        function displayReport(data) {
+            const reportBody = document.getElementById('reportData');
+            
+            if (!data || data.length === 0) {
+                reportBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center;">No data available</td>
+                    </tr>
+                `;
+                return;
+            }
+
+
+            reportBody.innerHTML = data.map((item, index) =>
+            `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.date || ''}</td>
+                    <td>${item.speed || '0'}</td>
+                    <td>${item.Location || ''}</td>
+                    <td>${item.latitute},${item.Langitude || ''}</td>
+                </tr>
+            `).join('');
+        }
+
+        function resetForm() {
+            setDefaultDates();
+            document.getElementById('deviceSelect').value = '';
+            document.getElementById('timeInterval').value = '1';
+            document.getElementById('detailLocation').checked = false;
+            selectedDeviceId = null;
+            selectedPOI = null; // Reset selected POI
+            document.getElementById('poiSelect').textContent = 'Select POI'; // Reset POI dropdown text
+            document.getElementById('reportData').innerHTML = '';
+        }
+
+        function copyToClipboard() {
+            const table = document.querySelector('.report-table');
+            const range = document.createRange();
+            range.selectNode(table);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+            alert('Table copied to clipboard!');
+        }
+
+        function exportCSV() {
+            const rows = document.querySelectorAll('.report-table tr');
+            const csv = [];
+            rows.forEach(row => {
+                const rowData = [];
+                row.querySelectorAll('td, th').forEach(cell => {
+                    rowData.push('"' + cell.textContent.trim() + '"');
+                });
+                csv.push(rowData.join(','));
+            });
+            downloadFile(csv.join('\n'), 'history_report.csv', 'text/csv');
+        }
+
+        function exportExcel() {
+            const table = document.querySelector('.report-table');
+            const ws = XLSX.utils.table_to_sheet(table);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'History Report');
+            XLSX.writeFile(wb, 'history_report.xlsx');
+        }
+
+        function exportPDF() {
+    try {
+        // Create new jsPDF instance
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
+
+        // Add title
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(20);
+        doc.text("History Report", doc.internal.pageSize.width / 2, 15, { align: 'center' });
+
+        // Add date range
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        const startDate = document.getElementById('startDate').value;
+        const startTime = document.getElementById('startTime').value;
+        const endDate = document.getElementById('endDate').value;
+        const endTime = document.getElementById('endTime').value;
+        doc.text(`Report Period: ${startDate} ${startTime} to ${endDate} ${endTime}`, 15, 25);
+
+        // Get vehicle name
+        const deviceSelect = document.getElementById('deviceSelect');
+        const vehicleName = deviceSelect.options[deviceSelect.selectedIndex]?.text || 'Unknown Vehicle';
+        doc.text(`Vehicle: ${vehicleName}`, 15, 30);
+
+        // Define table headers
+        const headers = [[
+            'Sr',
+            'Entry Date',
+            'Exit Date',
+            'POI Location',
+            'Hold Time'
+        ]];
+
+        // Get table data
+        const rows = document.querySelectorAll('#reportData tr');
+        const data = Array.from(rows).map(row => {
+            const cells = row.querySelectorAll('td');
+            return Array.from(cells).map(cell => cell.textContent.trim());
+        });
+
+        // Add table
+        doc.autoTable({
+            head: headers,
+            body: data,
+            startY: 35,
+            theme: 'grid',
+            styles: {
+                fontSize: 7,
+                cellPadding: 2
+            },
+            headStyles: {
+                fillColor: [41, 128, 185],
+                textColor: 255,
+                fontSize: 8,
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            columnStyles: {
+                0: { cellWidth: 15 },  // Sr
+                1: { cellWidth: 35 },  // Start Time
+                2: { cellWidth: 25 },  // Speed
+                3: { cellWidth: 80 },  // Location
+                4: { cellWidth: 40 }   // Latitude,Longitude
+            },
+            didDrawPage: function(data) {
+                // Add footer
+                doc.setFontSize(8);
+                doc.setFont("helvetica", "italic");
+                
+                // Add timestamp
+                doc.text(
+                    `Generated on: ${new Date().toLocaleString()}`, 
+                    doc.internal.pageSize.width - 15, 
+                    doc.internal.pageSize.height - 10, 
+                    { align: 'right' }
+                );
+                
+                // Add page numbers
+                const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
+                const totalPages = doc.internal.getNumberOfPages();
+                doc.text(
+                    `Page ${pageNumber} of ${totalPages}`, 
+                    15, 
+                    doc.internal.pageSize.height - 10
+                );
+            }
+        });
+
+        // Save the PDF
+        const now = new Date();
+        const dateStr = now.toLocaleDateString().replace(/\//g, '-');
+        const timeStr = now.toLocaleTimeString().replace(/:/g, '-');
+        doc.save(`history_report_${vehicleName}_${dateStr}_${timeStr}.pdf`);
+
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert(`Error generating PDF: ${error.message}\nPlease check the console for more details.`);
+    }
+}
+
+        function downloadFile(content, fileName, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function saveReport() {
+    const data = {
+        startDate: document.getElementById('startDate').value,
+        startTime: document.getElementById('startTime').value,
+        endDate: document.getElementById('endDate').value,
+        endTime: document.getElementById('endTime').value,
+        device: document.getElementById('deviceSelect').value,
+        reportData: Array.from(document.querySelectorAll('#reportData tr')).map(row => {
+            const cells = row.querySelectorAll('td');
+            return Array.from(cells).map(cell => cell.textContent.trim());
+        })
+    };
+    
+    const jsonString = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    
+    link.href = url;
+    link.download = 'history_report.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+document.addEventListener("click", function(event) {
+    const poiDropdown = document.getElementById("poiDropdown");
+    const poiSelect = document.getElementById("poiSelect");
+    
+    if (!event.target.closest(".interval-selector")) {
+        poiDropdown.style.display = "none";
+    }
+});
+
+// Update the POI search input event handler
+document.getElementById("poiSearch").oninput = function() {
+    filterPOIs(this.value);
+};
+        
+    </script>
+</body>
+</html>
+
