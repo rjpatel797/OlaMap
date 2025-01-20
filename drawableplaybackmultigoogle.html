@@ -1014,9 +1014,9 @@
 
       //   map.on("load", () => {
       //   console.log("Map loaded successfully");
-      //   fetchDeviceData().catch((error) => {
-      //     console.error("Error fetching device data:", error);
-      //   });
+         fetchDeviceData().catch((error) => {
+           console.error("Error fetching device data:", error);
+         });
       // });
     });
 
@@ -2608,9 +2608,6 @@
         console.log("Navbar loaded.");
       });
 
-      window.onload = function () {
-        fetchDeviceData(); // Fetch and populate devices when the page loads
-      };
 
       $("#startPlayback").on("click", startPlayback);
       $("#pausePlayback").on("click", pausePlayback);
