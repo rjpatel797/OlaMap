@@ -816,26 +816,30 @@
             position: fixed;
             display: none;
             background: white;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            z-index: 1000;
+            padding: 0;
+            border: 1px solid rgba(0,0,0,0.15);
+            border-radius: 6px;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.15);
+            z-index: 10000;
             pointer-events: none;
-            max-width: 250px;
+            min-width: 180px;
+            font-size: 12px;
+            color: #333;
+            transform: translate(-50%, -100%);
+            margin-top: -10px;
         }
 
         .polyline-popup::after {
             content: "";
             position: absolute;
-            bottom: -5px;
+            bottom: -6px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
-            border-left: 5px solid transparent;
-            border-right: 5px solid transparent;
-            border-top: 5px solid white;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid white;
         }
 
         /* pop-up display righ-side*/
@@ -1281,7 +1285,7 @@
     </div>
 
     <script src="js/api.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap"
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap&libraries=geometry"
         async defer></script>
     <script>
         // Initialize when document is ready
@@ -2246,37 +2250,111 @@ function updatePolylineColors(threshold) {
   };
 }
 
-function addPolylineHoverListeners(segment, index) {
-        const polylinePopup = document.getElementById('polylinePopup');
-        const popupContent = document.getElementById('polylinePopupContent');
-
-        google.maps.event.addListener(segment, 'mousemove', (event) => {
-            if (index < 0 || index >= playbackData.length) {
-                polylinePopup.style.display = 'none';
-                return;
-            }
-
-            const currentPoint = playbackData[index];
-            const cumulativeDistance = calculateCumulativeDistance(index);
-            
-            const content = `
-                <strong>Date-Time:</strong> ${currentPoint.date.split('.')[0]}<br>
-                <strong>Speed:</strong> ${Math.round(currentPoint.speed)} km/h<br>
-                <strong>Distance:</strong> ${cumulativeDistance.toFixed(2)} km
-            `;
-            
-            popupContent.innerHTML = content;
-            polylinePopup.style.display = 'block';
-            
-            const event_xy = event.pixel;
-            polylinePopup.style.left = `${event.domEvent.clientX + 10}px`;
-            polylinePopup.style.top = `${event.domEvent.clientY - 40}px`;
-        });
-
-        google.maps.event.addListener(segment, 'mouseout', () => {
-            polylinePopup.style.display = 'none';
-        });
+function createPolylinePopup() {
+    // Remove existing popup if it exists
+    let existingPopup = document.getElementById('polylinePopup');
+    if (existingPopup) {
+        existingPopup.remove();
     }
+
+    // Create new popup
+    const popup = document.createElement('div');
+    popup.id = 'polylinePopup';
+    popup.className = 'polyline-popup';
+    
+    const content = document.createElement('div');
+    content.id = 'polylinePopupContent';
+    popup.appendChild(content);
+    
+    document.body.appendChild(popup);
+}
+// Update the addPolylineHoverListeners function
+function addPolylineHoverListeners(segment, index) {
+
+    createPolylinePopup();
+
+    const polylinePopup = document.getElementById('polylinePopup');
+    const popupContent = document.getElementById('polylinePopupContent');
+
+    // Add mouseover event listener
+    segment.addListener('mouseover', (event) => {
+        if (index < 0 || index >= playbackData.length) {
+            polylinePopup.style.display = 'none';
+            return;
+        }
+
+        const currentPoint = playbackData[index];
+        const cumulativeDistance = calculateCumulativeDistance(index);
+        
+        const content = `
+            <div style="padding: 8px;">
+                <div style="margin-bottom: 4px;"><strong>Date-Time:</strong> ${currentPoint.date.split('.')[0]}</div>
+                <div style="margin-bottom: 4px;"><strong>Speed:</strong> ${Math.round(currentPoint.speed)} km/h</div>
+                <div><strong>Distance:</strong> ${cumulativeDistance.toFixed(2)} km</div>
+            </div>
+        `;
+        
+        popupContent.innerHTML = content;
+        polylinePopup.style.display = 'block';
+
+        // Position the popup near the mouse cursor
+        const x = event.domEvent.clientX;
+        const y = event.domEvent.clientY;
+        
+        // Add offset to prevent popup from appearing directly under cursor
+        polylinePopup.style.left = `${x + 15}px`;
+        polylinePopup.style.top = `${y - 60}px`;
+    });
+
+    // Add mousemove event listener to update popup position
+    segment.addListener('mousemove', (event) => {
+        if (polylinePopup.style.display === 'block') {
+            const x = event.domEvent.clientX;
+            const y = event.domEvent.clientY;
+            
+            polylinePopup.style.left = `${x + 15}px`;
+            polylinePopup.style.top = `${y - 60}px`;
+        }
+    });
+
+    // Add mouseout event listener
+    segment.addListener('mouseout', () => {
+        polylinePopup.style.display = 'none';
+    });
+}
+
+// Update the polyline popup CSS
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+    .polyline-popup {
+        position: fixed;
+        display: none;
+        background: white;
+        padding: 0;
+        border: 1px solid rgba(0,0,0,0.1);
+        border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        z-index: 1000;
+        pointer-events: none;
+        min-width: 200px;
+        font-size: 13px;
+        color: #333;
+    }
+
+    .polyline-popup::after {
+        content: "";
+        position: absolute;
+        bottom: -6px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 6px solid white;
+    }
+`;
+document.head.appendChild(styleSheet);
 
 
             function startPlayback(isSpeedUpdate = false) {
@@ -2376,45 +2454,171 @@ function addPolylineHoverListeners(segment, index) {
                         // Get current speed threshold
                         const currentSpeedThreshold = parseInt(document.getElementById('overSpeedingThreshold').value);
 
-                        // Add polyline segment for current movement
+                                                // Add polyline segment for current movement
+                                                // Update the part inside your startPlayback function where polylines are created
                         if (index > 0) {
-                    const prevPoint = playbackData[index - 1];
-                    const path = [
-                        { 
-                            lat: parseFloat(prevPoint.coordinates[1]), 
-                            lng: parseFloat(prevPoint.coordinates[0]) 
-                        },
-                        {
-                            lat: parseFloat(currentPoint.coordinates[1]),
-                            lng: parseFloat(currentPoint.coordinates[0])
+                            const prevPoint = playbackData[index - 1];
+                            const path = [
+                                { 
+                                    lat: parseFloat(prevPoint.coordinates[1]), 
+                                    lng: parseFloat(prevPoint.coordinates[0]) 
+                                },
+                                {
+                                    lat: parseFloat(currentPoint.coordinates[1]),
+                                    lng: parseFloat(currentPoint.coordinates[0])
+                                }
+                            ];
+
+                            const speed = parseFloat(currentPoint.speed);
+                            const currentSpeedThreshold = parseInt(document.getElementById('overSpeedingThreshold').value);
+                            const color = speed >= currentSpeedThreshold ? '#FF0000' : '#00FF00';
+
+                            // Create segment with hover capabilities
+                            const iconSettings = {
+        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+        scale: 2,
+        strokeColor: '#FFFFFF',
+        strokeWeight: 1,
+        fillColor: '#000000',
+        fillOpacity: 1
+    };
+
+    // Define polyline options with icons
+    const polylineOptions = {
+        path: [
+            new google.maps.LatLng(path[0].lat, path[0].lng),
+            new google.maps.LatLng(path[1].lat, path[1].lng)
+        ],
+        strokeColor: color,
+        strokeOpacity: 0.9,
+        strokeWeight: 3,
+        map: map,
+        clickable: true,
+        zIndex: 1,
+        icons: [{
+            icon: iconSettings,
+            offset: '100%'
+        }]
+    };
+
+    // Create segment with combined line and arrow
+    const segment = new google.maps.Polyline(polylineOptions);
+
+                            // Store segment data for hover
+                            const segmentData = {
+                                startPoint: prevPoint,
+                                endPoint: currentPoint,
+                                startIndex: index - 1,
+                                endIndex: index
+                            };
+
+                            // Add hover listeners for this segment
+                            segment.addListener('mousemove', function(event) {
+                                const polylinePopup = document.getElementById('polylinePopup');
+                                
+                                // Get mouse position in LatLng
+                                const mouseLatLng = event.latLng;
+                                
+                                // Get segment endpoints
+                                const startLatLng = new google.maps.LatLng(path[0].lat, path[0].lng);
+                                const endLatLng = new google.maps.LatLng(path[1].lat, path[1].lng);
+                                
+                                // Calculate distances
+                                const distToStart = google.maps.geometry.spherical.computeDistanceBetween(mouseLatLng, startLatLng);
+                                const distToEnd = google.maps.geometry.spherical.computeDistanceBetween(mouseLatLng, endLatLng);
+                                
+                                // Choose closest point data
+                                const pointData = distToStart < distToEnd ? segmentData.startPoint : segmentData.endPoint;
+                                const pointIndex = distToStart < distToEnd ? segmentData.startIndex : segmentData.endIndex;
+                                
+                                // Calculate total distance up to this segment's start
+                                let distanceTraveled = 0;
+                                for (let i = 0; i < pointIndex; i++) {
+                                    if (i + 1 < playbackData.length) {
+                                        const curr = playbackData[i];
+                                        const next = playbackData[i + 1];
+                                        const d = google.maps.geometry.spherical.computeDistanceBetween(
+                                            new google.maps.LatLng(
+                                                parseFloat(curr.coordinates[1]), 
+                                                parseFloat(curr.coordinates[0])
+                                            ),
+                                            new google.maps.LatLng(
+                                                parseFloat(next.coordinates[1]), 
+                                                parseFloat(next.coordinates[0])
+                                            )
+                                        ) / 1000; // Convert to kilometers
+                                        distanceTraveled += d;
+                                    }
+                                }
+
+                                // Add partial distance for current segment if mouse is closer to end point
+                                if (distToEnd < distToStart) {
+                                    const partialDist = google.maps.geometry.spherical.computeDistanceBetween(
+                                        startLatLng,
+                                        endLatLng
+                                    ) / 1000;
+                                    distanceTraveled += partialDist;
+                                }
+
+                                // Update popup content
+                                polylinePopup.innerHTML = `
+                                    <div style="padding: 8px;">
+                                        <div><strong>Time:</strong> ${pointData.date.split('.')[0]}</div>
+                                        <div><strong>Speed:</strong> ${Math.round(pointData.speed)} km/h</div>
+                                        <div><strong>Distance:</strong> ${distanceTraveled.toFixed(2)} km</div>
+                                    </div>
+                                `;
+                                
+                                const mapContainer = map.getDiv();
+                                const mapBounds = mapContainer.getBoundingClientRect();
+                                
+                                // Get mouse coordinates relative to the map container
+                                const mouseX = event.domEvent.pageX - mapBounds.left;
+                                const mouseY = event.domEvent.pageY - mapBounds.top;
+
+                                // Consider scroll position
+                                const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+                                const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+                                // Position popup with offset
+                                polylinePopup.style.position = 'fixed';
+                                polylinePopup.style.display = 'block';
+                                polylinePopup.style.left = `${mouseX + mapBounds.left + 15}px`;
+                                polylinePopup.style.top = `${mouseY + mapBounds.top - 20}px`;
+                                polylinePopup.style.zIndex = '99999';
+
+                                // Highlight segment
+                                // segment.setOptions({
+                                //     strokeWeight: 5,
+                                //     strokeOpacity: 1.0
+                                // });
+                            });
+
+                            segment.addListener('mouseout', function() {
+                                const polylinePopup = document.getElementById('polylinePopup');
+                                polylinePopup.style.display = 'none';
+                                
+                                // Reset segment appearance
+                                segment.setOptions({
+                                    strokeWeight: 3,
+                                    strokeOpacity: 0.9
+                                });
+                            });
+
+                            // Add directional arrow
+                            // const arrow = addDirectionArrow(path);
+
+                            // Store segments
+                            pathPolylines.push(segment);
+                            // pathPolylines.push(arrow);
                         }
-                    ];
 
-                    // Determine color based on current speed and threshold
-                    const speed = parseFloat(currentPoint.speed);
-                    const currentSpeedThreshold = parseInt(document.getElementById('overSpeedingThreshold').value);
-                    const color = speed >= currentSpeedThreshold ? '#FF0000' : '#00FF00';
-
-                    // Create new polyline segment
-                    let segment = new google.maps.Polyline({
-                        path: path,
-                        geodesic: true,
-                        strokeColor: color,
-                        strokeOpacity: 0.9,
-                        strokeWeight: 3,
-                        map: map
-                    });
-
-                    // Add hover listeners with the current index
-                    addPolylineHoverListeners(segment, index);
-
-                    // Add directional arrow
-                    const arrow = addDirectionArrow(path);
-
-                    // Store segments for later reference
-                    pathPolylines.push(segment);
-                    pathPolylines.push(arrow);
-                }
+                                                function calculateDistance(lat1, lng1, lat2, lng2) {
+                            return google.maps.geometry.spherical.computeDistanceBetween(
+                                new google.maps.LatLng(lat1, lng1),
+                                new google.maps.LatLng(lat2, lng2)
+                            ) / 1000; // Convert to kilometers
+                        }
 
                         // Update vehicle info display
                         const cumulativeDistance = calculateCumulativeDistance(index);
@@ -2430,29 +2634,6 @@ function addPolylineHoverListeners(segment, index) {
                     }
                 }, 1000 / playbackSpeed);
             }
-
-        // Add this function to create direction arrow symbols
-        function addDirectionArrow(path) {
-            // Create the polyline with minimal arrow symbols
-            return new google.maps.Polyline({
-                path: path,
-                geodesic: true,
-                strokeOpacity: 0,
-                icons: [{
-                    icon: {
-                        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                        scale: 1.5,
-                        strokeWeight: 2,
-                        strokeColor: '#000000',
-                        fillColor: '#000000',
-                        fillOpacity: 1
-                    },
-                    offset: '50%',
-                    repeat: '500px'  // Much larger repeat distance
-                }],
-                map: map
-            });
-        }
 
         // Update clearAllPolylines function to handle arrows
         function clearAllPolylines() {
