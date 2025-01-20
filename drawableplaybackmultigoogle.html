@@ -882,6 +882,34 @@
       pointer-events: none;
       z-index: 1000;
     }
+
+    #polyline-hover-popup {
+        position: absolute;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        z-index: 1000;
+        max-width: 250px;
+        display: none;
+    }
+
+    .point-details {
+        font-size: 13px;
+    }
+
+    .point-header {
+        font-weight: bold;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 5px;
+        margin-bottom: 5px;
+        color: #333;
+    }
+
+    .point-info div {
+        margin-bottom: 4px;
+    }
   </style>
 </head>
 
@@ -1550,39 +1578,39 @@
 
     // Function to add polyline
     function addPolyline(deviceId, color) {
-        if (!deviceId) {
-            console.error('Device ID is required for adding polyline');
-            return;
-        }
+    if (!deviceId) {
+        console.error('Device ID is required for adding polyline');
+        return;
+    }
 
-        const data = deviceDataMap.get(deviceId);
-        if (!data || data.length === 0) return;
+    const data = deviceDataMap.get(deviceId);
+    if (!data || data.length === 0) return;
 
-        // Clean up existing polylines and markers
-        if (devicePolylines.has(deviceId)) {
-            const existingPolyline = devicePolylines.get(deviceId);
-            if (existingPolyline) {
+    // Clean up existing polylines and markers
+    if (devicePolylines.has(deviceId)) {
+        const existingPolyline = devicePolylines.get(deviceId);
+        if (existingPolyline) {
             existingPolyline.setMap(null);
-            google.maps.event.clearListeners(existingPolyline, 'mouseover');
+            google.maps.event.clearListeners(existingPolyline, 'mousemove');
             google.maps.event.clearListeners(existingPolyline, 'mouseout');
-            }
-            devicePolylines.delete(deviceId);
         }
+        devicePolylines.delete(deviceId);
+    }
 
-        // Convert data points to path
-        const path = data.map(item => ({
-            lat: item.coordinates[1],
-            lng: item.coordinates[0]
-        }));
+    // Convert data points to path
+    const path = data.map(item => ({
+        lat: item.coordinates[1],
+        lng: item.coordinates[0]
+    }));
 
-        // Create the polyline
-        const polyline = new google.maps.Polyline({
-            path: path,
-            geodesic: true,
-            strokeColor: color,
-            strokeOpacity: 1.0,
-            strokeWeight: 3,
-            icons: [{
+    // Create the polyline
+    const polyline = new google.maps.Polyline({
+        path: path,
+        geodesic: true,
+        strokeColor: color,
+        strokeOpacity: 1.0,
+        strokeWeight: 3,
+        icons: [{
             icon: {
                 path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
                 scale: 3,
@@ -1592,58 +1620,95 @@
                 strokeColor: "#ffff"
             },
             repeat: '100px'
-            }]
-        });
+        }]
+    });
 
-        // Add the polyline to the map
-        polyline.setMap(map);
-        devicePolylines.set(deviceId, polyline);
+    // Add the polyline to the map
+    polyline.setMap(map);
+    devicePolylines.set(deviceId, polyline);
 
-        // Add hover effects
-        google.maps.event.addListener(polyline, 'mouseover', function(e) {
-            this.setOptions({
-            strokeWeight: 5,
-            icons: [{
-                icon: {
-                path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                scale: 4,
-                fillColor: color,
-                fillOpacity: 1,
-                strokeWeight: 3,
-                strokeColor: "#ffffff"
-                },
-                repeat: '100px'
-            }]
-            });
-            showPolylineInfo(e.latLng, deviceId, data);
-        });
-
-        google.maps.event.addListener(polyline, 'mouseout', function() {
-            this.setOptions({
-            strokeWeight: 3,
-            icons: [{
-                icon: {
-                path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                scale: 3,
-                fillColor: color,
-                fillOpacity: 1,
-                strokeWeight: 2,
-                strokeColor: "#ffff"
-                },
-                repeat: '100px'
-            }]
-            });
-            hidePolylineInfo();
-        });
-
-        // Add start/end markers
-        addStartEndMarkersForDevice(deviceId, path, color, data);
-
-        // Fit bounds to show all points
-        const bounds = new google.maps.LatLngBounds();
-        path.forEach(point => bounds.extend(point));
-        map.fitBounds(bounds);
+    // Create a custom popup element if it doesn't exist
+    let hoverPopup = document.getElementById('polyline-hover-popup');
+    if (!hoverPopup) {
+        hoverPopup = document.createElement('div');
+        hoverPopup.id = 'polyline-hover-popup';
+        hoverPopup.className = 'polyline-popup';
+        document.body.appendChild(hoverPopup);
     }
+
+    // Add event listener to the map div to track mouse movement
+    const mapDiv = map.getDiv();
+
+    // Add hover effects with dynamic point information
+    google.maps.event.addListener(polyline, 'mousemove', function(event) {
+    if (!event.latLng) return;
+
+    // Find the closest point to the mouse position
+    const closestPoint = findClosestPointOnPolyline(event.latLng, data);
+    
+    if (closestPoint) {
+        const popupContent = createPointInfoContent(closestPoint, deviceId);
+        hoverPopup.innerHTML = popupContent;
+        
+        // Position the popup above the cursor
+        const mapRect = mapDiv.getBoundingClientRect();
+        
+        hoverPopup.style.display = 'block';
+        hoverPopup.style.position = 'fixed';
+        hoverPopup.style.left = `${event.domEvent.clientX}px`;
+        hoverPopup.style.top = `${event.domEvent.clientY - hoverPopup.offsetHeight - 10}px`; // Move above cursor
+        hoverPopup.style.transform = 'translate(-50%, 0)';
+    }
+});
+
+    google.maps.event.addListener(polyline, 'mouseout', function() {
+        const hoverPopup = document.getElementById('polyline-hover-popup');
+        if (hoverPopup) {
+            hoverPopup.style.display = 'none';
+        }
+    });
+
+    // Add start/end markers for the device
+    addStartEndMarkersForDevice(deviceId, path, color, data);
+}
+
+function findClosestPointOnPolyline(latLng, data) {
+    let minDistance = Infinity;
+    let closestPoint = null;
+
+    for (let i = 0; i < data.length; i++) {
+        const point = new google.maps.LatLng(
+            data[i].coordinates[1], 
+            data[i].coordinates[0]
+        );
+        
+        const distance = google.maps.geometry.spherical.computeDistanceBetween(latLng, point);
+        
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestPoint = data[i];
+        }
+    }
+
+    return closestPoint;
+}
+
+// Helper function to create detailed point information
+function createPointInfoContent(point, deviceId) {
+    // Calculate distance from the start
+    const totalDistance = calculateCumulativeDistance(point, deviceId);
+
+    return `
+        <div class="point-details">
+            <div class="point-header">Point Details</div>
+            <div class="point-info">
+                <div><strong>Time:</strong> ${point.date.split('.')[0]}</div>
+                <div><strong>Speed:</strong> ${point.speed.toFixed(1)} km/h</div>
+                <div><strong>Distance:</strong> ${totalDistance.toFixed(2)} km</div>
+            </div>
+        </div>
+    `;
+}
 
     function showPolylineInfo(latLng, deviceId, data) {
       const popup = document.getElementById('polylinePopup');
@@ -1942,23 +2007,32 @@
       return R * c;
     }
 
-    function calculateCumulativeDistance(currentIndex) {
-      let distance = 0;
-      for (let i = 0; i < currentIndex; i++) {
-        const currentPoint = playbackData[i];
-        const nextPoint = playbackData[i + 1];
+    function calculateCumulativeDistance(targetPoint, deviceId) {
+    const data = deviceDataMap.get(deviceId);
+    if (!data) return 0;
 
-        if (nextPoint) {  // Make sure there is a next point to calculate distance to
-          distance += calculateDistance(
-            currentPoint.coordinates[1],
-            currentPoint.coordinates[0],
-            nextPoint.coordinates[1],
-            nextPoint.coordinates[0]
-          );
+    let totalDistance = 0;
+    for (let i = 1; i < data.length; i++) {
+        const prevPoint = data[i-1];
+        const currentPoint = data[i];
+
+        // Calculate and add distance between points
+        const distance = calculateDistance(
+            prevPoint.coordinates[1], 
+            prevPoint.coordinates[0],
+            currentPoint.coordinates[1], 
+            currentPoint.coordinates[0]
+        );
+        totalDistance += distance;
+
+        // Stop when we reach the target point
+        if (currentPoint === targetPoint) {
+            break;
         }
-      }
-      return distance;
     }
+
+    return totalDistance;
+}
 
     function startPlayback() {
       if (selectedDevices.length === 0) {
