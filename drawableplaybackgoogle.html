@@ -376,25 +376,76 @@
     }
 
     #customPopup {
-      position: absolute;
-      background: #fff;
-      padding: 15px 20px;
-      border: none;
-      border-radius: 8px;
-      box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
-      display: none;
-      z-index: 1000;
-      /* Ensure popup stays above marker */
-      min-width: 280px;
-      text-align: left;
-      transform: translate(-50%, -100%);
-      /* Center horizontally and move up */
-      margin-top: -20px;
-      /* Add extra space between popup and marker */
+    position: absolute;
+    background: #fff;
+    padding: 0;  /* Remove all padding */
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
+    display: none;
+    z-index: 1000;
+    min-width: 220px;
+    text-align: left;
+    transform: translate(-50%, -100%);
+    margin-top: -10px;
+  }
+
+    #popupContent {
+      padding: 0;  /* Remove inner padding */
+      line-height: 1.4;
+      color: #2c3e50;
+      font-size: 12px;
     }
 
-    /* Update arrow position */
-    .popup::after {
+    .vehicle-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .info-row {
+      display: grid;
+      grid-template-columns: 100px auto;
+      padding: 4px 12px;  /* Add padding to rows instead */
+      align-items: center;
+    }
+
+    .info-label {
+      color: #64748b;
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 12px;
+    }
+
+    .info-value {
+      color: #1e293b;
+      font-weight: 400;
+      font-size: 12px;
+    }
+
+    /* Status indicators */
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      min-width: 35px;
+    }
+
+    .status-on {
+      background-color: #dcfce7;
+      color: #166534;
+    }
+
+    .status-off {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+
+    /* Arrow indicator */
+    #customPopup:after {
       content: "";
       position: absolute;
       bottom: -8px;
@@ -406,74 +457,20 @@
       filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
     }
 
-    #popupContent {
-      line-height: 1.8;
-      color: #2c3e50;
-      font-size: 13px;
-    }
-
-    #popupContent b {
-      color: #34495e;
-      width: 100px;
-      display: inline-block;
-      font-weight: 600;
-    }
-
-    /* Status indicators */
-    .status-indicator {
-      display: inline-block;
-      padding: 2px 6px;
-      border-radius: 12px;
-      font-size: 10px;
-      font-weight: 500;
-      margin-left: 5px;
-    }
-
-    .status-on {
-      background-color: #2ecc71;
-      color: white;
-    }
-
-    .status-off {
-      background-color: #e74c3c;
-      color: white;
-    }
-
-    /* Popup styling */
-    .popup {
-      position: absolute;
-      background: white;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
-      display: none;
-      z-index: 1000;
-      min-width: 280px;
-      text-align: left;
-      transform: translateX(-50%);
-      /* Center the popup horizontally */
-    }
-
-    .popup .close-btn {
+    .close-btn {
       position: absolute;
       top: 8px;
       right: 8px;
-      cursor: pointer;
-      color: #95a5a6;
-      font-size: 16px;
-      transition: color 0.2s ease;
       width: 20px;
       height: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
+      cursor: pointer;
+      color: #95a5a6;
+      font-size: 14px;
       border-radius: 50%;
-    }
-
-    .popup .close-btn:hover {
-      color: #34495e;
-      background: #f5f6f7;
+      z-index: 2;
     }
 
     /* Arrow indicator */
@@ -912,7 +909,7 @@
   </div>
 
   <script src="js/api.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap"
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap&libraries=geometry"
     async defer></script>
   <script>
     // Global variables
@@ -1214,22 +1211,40 @@
     // Create popup content
     function createPopupContent(data, totalDistance) {
       return `
-                <div style="padding: 10px;">
-                    <div style="border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 5px;">
-                        <b>Vehicle:</b> ${data.deviceId}
-                    </div>
-                    <div>
-                        <b>Speed:</b> ${Math.round(data.speed)} km/h<br/>
-                        <b>GPS:</b> <span class="status-indicator ${data.gps === "true" ? "status-on" : "status-off"}">
-                            ${data.gps === "true" ? "ON" : "OFF"}
-                        </span><br/>
-                        <b>Engine:</b> <span class="status-indicator ${data.engine === "true" ? "status-on" : "status-off"}">
-                            ${data.engine === "true" ? "ON" : "OFF"}
-                        </span><br/>
-                        <b>Date-Time:</b> ${data.date.split(".")[0]}<br/>
-                        <b>Distance:</b> ${totalDistance.toFixed(2)} km
-                    </div>
-                </div>`;
+        <div class="vehicle-info">
+          <div class="info-row">
+            <span class="info-label">Vehicle:</span>
+            <span class="info-value">${data.deviceId}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Speed:</span>
+            <span class="info-value">${Math.round(data.speed)} km/h</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">GPS:</span>
+            <span class="info-value">
+              <span class="status-indicator ${data.gps === "true" ? "status-on" : "status-off"}">
+                ${data.gps === "true" ? "ON" : "OFF"}
+              </span>
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Engine:</span>
+            <span class="info-value">
+              <span class="status-indicator ${data.engine === "true" ? "status-on" : "status-off"}">
+                ${data.engine === "true" ? "ON" : "OFF"}
+              </span>
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Date-Time:</span>
+            <span class="info-value">${data.date.split(".")[0]}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Distance:</span>
+            <span class="info-value">${totalDistance.toFixed(2)} km</span>
+          </div>
+        </div>`;
     }
 
     // Update vehicle info panel
@@ -1240,13 +1255,13 @@
     }
 
     // Function to create marker icon
-function createMarkerIcon() {
-  return {
-    url: '/images/truck1.png#vehicleMarker',
-    scaledSize: new google.maps.Size(30, 30),
-    anchor: new google.maps.Point(15, 15)
-  };
-}
+  function createMarkerIcon() {
+    return {
+      url: '/images/truck1.png#vehicleMarker',
+      scaledSize: new google.maps.Size(30, 30),
+      anchor: new google.maps.Point(15, 15)
+    };
+  }
 
 // Function to rotate marker
 function rotateMarker(newAngle) {
@@ -1511,6 +1526,34 @@ document.head.insertAdjacentHTML('beforeend', `<style>${markerStyles}</style>`);
       endMarker.addListener('mouseout', () => endInfo.close());
     }
 
+    function findClosestPoint(mouseEvent, polyline) {
+  const bounds = map.getBounds();
+  const path = polyline.getPath();
+  let closestPoint = null;
+  let minDistance = Infinity;
+  let closestIndex = -1;
+
+  for (let i = 0; i < path.getLength(); i++) {
+    const point = path.getAt(i);
+    if (bounds.contains(point)) {
+      const distance = google.maps.geometry.spherical.computeDistanceBetween(
+        point,
+        mouseEvent.latLng
+      );
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestPoint = point;
+        closestIndex = i;
+      }
+    }
+  }
+
+  return {
+    point: closestPoint,
+    index: closestIndex,
+    distance: minDistance
+  };
+}
     // Add polyline to map
     function addPolyline() {
   if (pathPolyline) {
@@ -1518,6 +1561,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>${markerStyles}</style>`);
   }
 
   const path = playbackData.map(point => point.position);
+  const polylinePopup = document.getElementById('polylinePopup');
 
   // Create the polyline
   pathPolyline = new google.maps.Polyline({
@@ -1532,6 +1576,33 @@ document.head.insertAdjacentHTML('beforeend', `<style>${markerStyles}</style>`);
       offset: '50%',
       repeat: '100px'  // Arrows will repeat every 100 pixels
     }]
+  });
+
+  pathPolyline.addListener('mousemove', (e) => {
+    const closest = findClosestPoint(e, pathPolyline);
+    
+    if (closest.point && closest.distance < 50) { // 50 meters threshold
+      const data = playbackData[closest.index];
+      const cumulativeDistance = calculateCumulativeDistance(closest.index);
+      
+      const content = `
+        <strong>Date-Time:</strong> ${data.date.split('.')[0]}<br>
+        <strong>Speed:</strong> ${Math.round(data.speed)} km/h<br>
+        <strong>Distance:</strong> ${cumulativeDistance.toFixed(2)} km
+      `;
+      
+      polylinePopup.innerHTML = content;
+      polylinePopup.style.display = 'block';
+      polylinePopup.style.left = e.domEvent.clientX + 15 + 'px';
+      polylinePopup.style.top = e.domEvent.clientY - 40 + 'px';
+    } else {
+      polylinePopup.style.display = 'none';
+    }
+  });
+
+  // Add mouseout listener to hide popup
+  pathPolyline.addListener('mouseout', () => {
+    polylinePopup.style.display = 'none';
   });
 
   // Add hover effect on polyline
@@ -1559,6 +1630,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>${markerStyles}</style>`);
     });
   });
 }
+
 // Function to create arrow symbol
 function createArrowSymbol() {
   return {

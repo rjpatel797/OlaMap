@@ -189,13 +189,11 @@
       border: none;
       border-radius: 8px;
       box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
-      display: none;
       z-index: 1000;
       min-width: 280px;
       text-align: left;
-      transform: translate(-50%, -100%);
-      /* Center horizontally and move up */
-      margin-top: 70px;
+      transform: translate(-50%, -130%);
+      margin-top: -20px;
       /* Increased negative margin to move higher */
     }
 
@@ -209,7 +207,6 @@
       border-left: 8px solid transparent;
       border-right: 8px solid transparent;
       border-top: 8px solid #fff;
-      filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
     }
 
     #popupContent {
@@ -734,10 +731,6 @@
       <div id="map"></div>
 
       <!-- Custom Popup Element -->
-      <div id="customPopup" class="popup">
-        <span class="close-btn" onclick="hidePopup(true)">✖</span>
-        <div id="popupContent"></div>
-      </div>
 
       <div id="vehicleInfoPopup" class="vehicle-info-popup">
         <div class="info-container">
@@ -763,16 +756,15 @@
       <script src="js/api.js"></script>
       <script>
       let map;
+      let mapOverlay = null;
       let currentMarker = null;
       let trackingInterval = null;
       let isTracking = false;
       let lastPosition = null;
+      let customInfoWindow = null;
       let isAnimating = false;
       let isMapDragging = false;
       let devices = [];
-      const popup = document.getElementById("customPopup");
-      const popupContent = document.getElementById("popupContent");
-
 // Create and append MapMyIndia script dynamically
 const script = document.createElement('script');
 script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap&libraries=marker&v=beta`;
@@ -783,40 +775,106 @@ document.head.appendChild(script);
 function initMap() {
     try {
         map = new google.maps.Map(document.getElementById('map'), {
-          mapTypeId: google.maps.MapTypeId.ROADMAP,
-            center: { lat: 28.612964,
-              lng: 77.229463 },
+            mapTypeId: google.maps.MapTypeId.ROADMAP,
+            center: { 
+                lat: 28.612964,
+                lng: 77.229463 
+            },
             zoom: 15,
         });
+
+        // Add this new line to initialize custom overlay
+        initializeCustomOverlay();
 
         map.addListener('idle', () => {
             console.log("Map loaded");
             fetchDeviceData();
         });
-
-        // Map event listeners
-        // map.on('dragstart', () => {
-        //     isMapDragging = true;
-        // });
-
-        // map.on('dragend', () => {
-        //     isMapDragging = false;
-        //     if (currentMarker && lastPosition) {
-        //         updateMarkerPosition(lastPosition);
-        //         updatePopupPosition();
-        //     }
-        // });
-
-        // map.on('drag', () => {
-        //     if (currentMarker && lastPosition) {
-        //         updateMarkerPosition(lastPosition);
-        //     }
-        // });
-
-        // map.on("move", updatePopupPosition);
     } catch (error) {
         console.error("Error initializing map:", error);
     }
+}
+
+function initializeCustomOverlay() {
+    window.CustomInfoWindow = class extends google.maps.OverlayView {
+        constructor(content, position) {
+            super();
+            this.content = content;
+            this.position = position;
+            this.div = null;
+        }
+
+        onAdd() {
+          const div = document.createElement('div');
+            div.id = 'customPopup';
+            div.className = 'popup';
+            div.style.position = 'absolute';
+            div.style.display = 'block';  // Add this line
+            div.style.transform = 'translate(-50%, -130%)';  // Add this line
+            
+            // Create main content div
+            const contentDiv = document.createElement('div');
+            contentDiv.id = 'popupContent';  // Add id for content
+            contentDiv.innerHTML = this.content;
+            
+            // Create close button
+            const closeBtn = document.createElement('span');
+            closeBtn.className = 'close-btn';
+            closeBtn.innerHTML = '✖';
+            closeBtn.onclick = () => hidePopup(true);
+            
+            // Append elements
+            div.appendChild(closeBtn);
+            div.appendChild(contentDiv);
+            
+            this.div = div;
+            const panes = this.getPanes();
+            panes.floatPane.appendChild(div);
+        }
+
+        draw() {
+            if (!this.div) return;
+            const overlayProjection = this.getProjection();
+            const position = overlayProjection.fromLatLngToDivPixel(this.position);
+            this.div.style.left = position.x + 'px';
+            this.div.style.top = (position.y + 20) + 'px';
+        }
+
+        onRemove() {
+            if (this.div) {
+                this.div.parentNode.removeChild(this.div);
+                this.div = null;
+            }
+        }
+
+        setContent(content) {
+            if (this.div) {
+                const contentDiv = this.div.querySelector('#popupContent');
+                if (contentDiv) {
+                    contentDiv.innerHTML = content;
+                }
+            }
+        }
+
+        setPosition(position) {
+            this.position = position;
+            this.draw();
+        }
+    };
+}
+
+function initializeOverlay() {
+  if (!map || mapOverlay) return;
+  
+  class CustomOverlay extends google.maps.OverlayView {
+    constructor(map) {
+      super();
+      this.setMap(map);
+    }
+    draw() {} // Required but empty
+  }
+  
+  mapOverlay = new CustomOverlay(map);
 }
 
 
@@ -1089,6 +1147,10 @@ function updateVehicleMarker(vehicleData) {
       showVehicleInfo(vehicleData, false);
       debouncedUpdatePopupPosition();
     }
+
+    if (isPopupOpen && customInfoWindow) {
+    customInfoWindow.setPosition(currentMarker.getPosition());
+  }
   } catch (error) {
     console.error('Error updating vehicle marker:', error);
   }
@@ -1206,79 +1268,57 @@ function generatePopupContent(data) {
 }
 
 function showVehicleInfo(vehicleData, showPopup = false) {
-    if (!vehicleData || vehicleData.length === 0) return;
+  if (!vehicleData || vehicleData.length === 0) return;
 
-    const data = vehicleData[0];
-    
-    if (showPopup && (!isPopupOpen || currentPopupDid !== data.did)) {
-        popupContent.innerHTML = generatePopupContent(data);
-        popup.style.display = "block";
-        
-        // Force layout recalculation before positioning
-        popup.getBoundingClientRect();
-        
-        
-        debouncedUpdatePopupPosition();
-        
-        
-        isPopupOpen = true;
-        currentPopupDid = data.did;
-    } else if (isPopupOpen && currentPopupDid === data.did) {
-        popupContent.innerHTML = generatePopupContent(data);
-        debouncedUpdatePopupPosition();
+  const data = vehicleData[0];
+  
+  if (showPopup && (!isPopupOpen || currentPopupDid !== data.did)) {
+    const content = generatePopupContent(data);
+    const position = currentMarker.getPosition();
+
+    if (!customInfoWindow) {
+      customInfoWindow = new CustomInfoWindow(content, position);
+      customInfoWindow.setMap(map);
+    } else {
+      customInfoWindow.setContent(content);
+      customInfoWindow.setPosition(position);
     }
+    
+    isPopupOpen = true;
+    currentPopupDid = data.did;
+  } else if (isPopupOpen && currentPopupDid === data.did) {
+    const content = generatePopupContent(data);
+    if (customInfoWindow) {
+      customInfoWindow.setContent(content);
+      customInfoWindow.setPosition(currentMarker.getPosition());
+    }
+  }
 }
-
-
 
 let isPopupUpdating = false;
 
 function updatePopupPosition() {
-  if (isPopupUpdating || !currentMarker || !isPopupOpen || !lastPosition || !map) return;
+    if (!currentMarker || !isPopupOpen) return;
 
-  try {
-    // Get the marker's pixel position on the map
-    const latLng = new google.maps.LatLng(lastPosition.lat, lastPosition.lng);
+    try {
+        const markerPosition = currentMarker.getPosition();
+        if (!markerPosition) return;
 
-  // Convert the marker's position to pixel coordinates
-  const markerPosition = map.getProjection().fromLatLngToPoint(latLng);
-console.log(markerPosition)
-  // Get the map's container pixel dimensions
-  const mapDiv = map.getDiv();
-  const mapWidth = mapDiv.clientWidth;
-  const mapHeight = mapDiv.clientHeight;
-
-  // Calculate the desired popup position relative to the map
-  const offsetX = 585; // Adjust horizontal offset
-  const offsetY = 190; // Adjust vertical offset
-  const popupLeft = markerPosition.x + offsetX;
-  const popupTop = markerPosition.y + offsetY;
-
-  // Set the popup's absolute position
-  popup.style.left = `${popupLeft}px`;
-  popup.style.top = `${popupTop}px`;
-
-    // Ensure the popup stays within the map bounds
-    const popupWidth = popup.offsetWidth;
-    const popupHeight = popup.offsetHeight;
-
-    // Adjust the popup position if it exceeds the map bounds
-    if (popupLeft < 0) {
-      popup.style.left = '0px';
-    } else if (popupLeft + popupWidth > mapWidth) {
-      popup.style.left = `${mapWidth - popupWidth}px`;
+        if (!window.popupOverlay) {
+            window.popupOverlay = new window.CustomInfoWindow(
+                popupContent.innerHTML,
+                markerPosition
+            );
+            window.popupOverlay.setMap(map);
+        } else {
+            window.popupOverlay.setPosition(markerPosition);
+            window.popupOverlay.setContent(popupContent.innerHTML);
+        }
+    } catch (error) {
+        console.error('Error updating popup position:', error);
     }
-    if (popupTop < 0) {
-      popup.style.top = '0px';
-    } else if (popupTop + popupHeight > mapHeight) {
-      popup.style.top = `${mapHeight - popupHeight}px`;
-    }
-  } catch (error) {
-    console.error('Error updating popup position:', error);
-  }finally {
-    isPopupUpdating = false; // Reset the flag
-  }
 }
+
 
 function debounce(func, delay) {
   let timer;
@@ -1291,14 +1331,12 @@ function debounce(func, delay) {
 const debouncedUpdatePopupPosition = debounce(updatePopupPosition, 100);
 
 function hidePopup(manuallyClosed = false) {
-    popup.style.display = "none";
-    isPopupOpen = false;
-    currentPopupDid = null;
-    
-    // If manually closed, we want to prevent auto-showing
-    if (manuallyClosed) {
-        isPopupOpen = false;
-    }
+  if (customInfoWindow) {
+    customInfoWindow.setMap(null);
+    customInfoWindow = null;
+  }
+  isPopupOpen = false;
+  currentPopupDid = null;
 }
 
 function updateVehicleInfo(data) {
