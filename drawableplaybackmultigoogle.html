@@ -1550,81 +1550,99 @@
 
     // Function to add polyline
     function addPolyline(deviceId, color) {
-      if (!deviceId) {
-        console.error('Device ID is required for adding polyline');
-        return;
-      }
-
-      const data = deviceDataMap.get(deviceId);
-      if (!data || data.length === 0) return;
-
-      // Clean up existing polylines and markers
-      if (devicePolylines.has(deviceId)) {
-        const existingPolyline = devicePolylines.get(deviceId);
-        if (existingPolyline) {
-          // Remove the polyline from the map
-          existingPolyline.setMap(null);
-
-          // Remove event listeners to prevent memory leaks
-          google.maps.event.clearListeners(existingPolyline, 'mouseover');
-          google.maps.event.clearListeners(existingPolyline, 'mouseout');
+        if (!deviceId) {
+            console.error('Device ID is required for adding polyline');
+            return;
         }
-        devicePolylines.delete(deviceId);
-      }
 
-      // Clean up existing markers
-      if (deviceMarkers.has(deviceId)) {
-        deviceMarkers.get(deviceId).setMap(null);
-        deviceMarkers.delete(deviceId);
-      }
+        const data = deviceDataMap.get(deviceId);
+        if (!data || data.length === 0) return;
 
-      // Clean up start/end markers
-      const startMarkerId = `start-${deviceId}`;
-      const endMarkerId = `end-${deviceId}`;
-      if (deviceMarkers.has(startMarkerId)) {
-        deviceMarkers.get(startMarkerId).setMap(null);
-        deviceMarkers.delete(startMarkerId);
-      }
-      if (deviceMarkers.has(endMarkerId)) {
-        deviceMarkers.get(endMarkerId).setMap(null);
-        deviceMarkers.delete(endMarkerId);
-      }
+        // Clean up existing polylines and markers
+        if (devicePolylines.has(deviceId)) {
+            const existingPolyline = devicePolylines.get(deviceId);
+            if (existingPolyline) {
+            existingPolyline.setMap(null);
+            google.maps.event.clearListeners(existingPolyline, 'mouseover');
+            google.maps.event.clearListeners(existingPolyline, 'mouseout');
+            }
+            devicePolylines.delete(deviceId);
+        }
 
-      const path = data.map(item => ({
-        lat: item.coordinates[1],
-        lng: item.coordinates[0]
-      }));
+        // Convert data points to path
+        const path = data.map(item => ({
+            lat: item.coordinates[1],
+            lng: item.coordinates[0]
+        }));
 
-      const polyline = new google.maps.Polyline({
-        path: path,
-        geodesic: true,
-        strokeColor: color,
-        strokeOpacity: 1.0,
-        strokeWeight: 4
-      });
+        // Create the polyline
+        const polyline = new google.maps.Polyline({
+            path: path,
+            geodesic: true,
+            strokeColor: color,
+            strokeOpacity: 1.0,
+            strokeWeight: 3,
+            icons: [{
+            icon: {
+                path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                scale: 3,
+                fillColor: color,
+                fillOpacity: 1,
+                strokeWeight: 2,
+                strokeColor: "#ffff"
+            },
+            repeat: '100px'
+            }]
+        });
 
-      polyline.setMap(map);
-      devicePolylines.set(deviceId, polyline);
+        // Add the polyline to the map
+        polyline.setMap(map);
+        devicePolylines.set(deviceId, polyline);
 
-      // Add hover effect
-      google.maps.event.addListener(polyline, 'mouseover', function (e) {
-        this.setOptions({ strokeWeight: 6 });
-        // Show info window with device details
-        showPolylineInfo(e.latLng, deviceId, data);
-      });
+        // Add hover effects
+        google.maps.event.addListener(polyline, 'mouseover', function(e) {
+            this.setOptions({
+            strokeWeight: 5,
+            icons: [{
+                icon: {
+                path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                scale: 4,
+                fillColor: color,
+                fillOpacity: 1,
+                strokeWeight: 3,
+                strokeColor: "#ffffff"
+                },
+                repeat: '100px'
+            }]
+            });
+            showPolylineInfo(e.latLng, deviceId, data);
+        });
 
-      google.maps.event.addListener(polyline, 'mouseout', function () {
-        this.setOptions({ strokeWeight: 4 });
-        hidePolylineInfo();
-      });
+        google.maps.event.addListener(polyline, 'mouseout', function() {
+            this.setOptions({
+            strokeWeight: 3,
+            icons: [{
+                icon: {
+                path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                scale: 3,
+                fillColor: color,
+                fillOpacity: 1,
+                strokeWeight: 2,
+                strokeColor: "#ffff"
+                },
+                repeat: '100px'
+            }]
+            });
+            hidePolylineInfo();
+        });
 
-      // Add start/end markers
-      addStartEndMarkersForDevice(deviceId, path, color, data);
+        // Add start/end markers
+        addStartEndMarkersForDevice(deviceId, path, color, data);
 
-      // Fit bounds to show all points
-      const bounds = new google.maps.LatLngBounds();
-      path.forEach(point => bounds.extend(point));
-      map.fitBounds(bounds);
+        // Fit bounds to show all points
+        const bounds = new google.maps.LatLngBounds();
+        path.forEach(point => bounds.extend(point));
+        map.fitBounds(bounds);
     }
 
     function showPolylineInfo(latLng, deviceId, data) {
@@ -1844,112 +1862,7 @@
       }
     }
 
-    function addDirectionArrowsForDevice(coordinates, color, deviceId) {
-      // Debounce function to limit the frequency of arrow updates
-      const debounce = (func, delay) => {
-        let timeoutId;
-        return function () {
-          const context = this;
-          const args = arguments;
-          clearTimeout(timeoutId);
-          timeoutId = setTimeout(() => func.apply(context, args), delay);
-        };
-      };
-
-      // Create the debounced arrow creation function
-      const createArrows = () => {
-        // Create container if it doesn't exist
-        let arrowsContainer = document.querySelector(`.direction-arrows-${deviceId}`);
-        if (!arrowsContainer) {
-          arrowsContainer = document.createElement('div');
-          arrowsContainer.className = `direction-arrows-${deviceId} direction-arrows-container`;
-          document.getElementById('map').appendChild(arrowsContainer);
-        }
-
-        // Clear existing arrows for this device
-        const existingArrows = document.querySelectorAll(`.device-${deviceId}`);
-        existingArrows.forEach(arrow => arrow.remove());
-
-        // Arrow creation logic (rest of your existing arrow creation code)
-        const ARROW_SPACING = 300;
-
-        // Calculate segments and their lengths
-        const segments = [];
-        for (let i = 0; i < coordinates.length - 1; i++) {
-          const start = map.project(coordinates[i]);
-          const end = map.project(coordinates[i + 1]);
-          const length = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
-          segments.push({ start, end, length });
-        }
-
-        // Calculate total path length
-        const totalLength = segments.reduce((sum, seg) => sum + seg.length, 0);
-        const numArrows = Math.max(Math.floor(totalLength / ARROW_SPACING), 1);
-        const spacing = totalLength / numArrows;
-
-        let distanceCovered = spacing / 2;
-        let segmentIndex = 0;
-        let segmentDistance = 0;
-
-        for (let i = 0; i < numArrows; i++) {
-          // Safety check to prevent infinite loop
-          if (segments.length === 0) break;
-
-          while (segmentIndex < segments.length &&
-            segmentDistance + segments[segmentIndex].length < distanceCovered) {
-            segmentDistance += segments[segmentIndex].length;
-            segmentIndex++;
-          }
-
-          if (segmentIndex >= segments.length) break;
-
-          const segment = segments[segmentIndex];
-          const segmentPosition = (distanceCovered - segmentDistance) / segment.length;
-
-          const x = segment.start.x + (segment.end.x - segment.start.x) * segmentPosition;
-          const y = segment.start.y + (segment.end.y - segment.start.y) * segmentPosition;
-          const angle = Math.atan2(segment.end.y - segment.start.y, segment.end.x - segment.start.x);
-
-          // Create arrow element
-          const arrow = document.createElement('div');
-          arrow.className = `direction-arrow device-${deviceId}`;
-          arrow.style.left = `${x}px`;
-          arrow.style.top = `${y}px`;
-          arrow.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
-
-          // Create SVG with enhanced styling
-          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-          svg.setAttribute('viewBox', '0 0 24 24');
-          svg.style.width = '20px';
-          svg.style.height = '20px';
-
-          // Create path with enhanced arrow design
-          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-          path.setAttribute('d', 'M2,12 L18,12 M13,6 L19,12 L13,18');
-          path.setAttribute('stroke', color);
-          path.setAttribute('stroke-width', '3');
-          path.setAttribute('fill', 'none');
-          svg.appendChild(path);
-          arrow.appendChild(svg);
-          arrowsContainer.appendChild(arrow);
-
-          distanceCovered += spacing;
-        }
-      };
-
-      // Create a debounced version of createArrows
-      const debouncedCreateArrows = debounce(createArrows, 100);
-
-      // Store the listener for later removal
-      deviceEventListeners.set(deviceId, debouncedCreateArrows);
-
-      // Add the event listener
-      map.on('move', debouncedCreateArrows);
-
-      // Initial creation of arrows
-      createArrows();
-    }
-
+    
     function updateMapBounds() {
       let allCoordinates = [];
       deviceDataMap.forEach(data => {
