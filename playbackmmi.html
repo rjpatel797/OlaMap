@@ -1341,6 +1341,7 @@ function initMap1() {
         });
 
         map.on("move", updatePopupPosition);
+        map.on('zoom', logCurrentZoom);
         
         console.log('map initialized:', map);
     } catch (error) {
@@ -1636,7 +1637,6 @@ function updatePolyline() {
     if (!dynamicPlaybackData || dynamicPlaybackData.length < 2) return;
 
     try {
-        // Calculate new polyline data
         let lineFeatures = [];
         let cumulativeDistance = 0;
 
@@ -1644,7 +1644,6 @@ function updatePolyline() {
             const currentPoint = dynamicPlaybackData[i];
             const nextPoint = dynamicPlaybackData[i + 1];
 
-            // Calculate segment distance
             const segmentDistance = calculateDistance(
                 currentPoint.coordinates[1],
                 currentPoint.coordinates[0],
@@ -1653,9 +1652,8 @@ function updatePolyline() {
             );
             cumulativeDistance += segmentDistance;
 
-            // Determine speed and color
             const speed = parseFloat(currentPoint.speed);
-            const color = speed < speedThreshold ? '#00FF00' : '#FF0000'; // Green for < threshold, Red for >= threshold
+            const color = speed < speedThreshold ? '#00FF00' : '#FF0000';
 
             const segmentFeature = {
                 type: "Feature",
@@ -1668,7 +1666,7 @@ function updatePolyline() {
                 geometry: {
                     type: "LineString",
                     coordinates: [
-                        currentPoint.coordinates, 
+                        currentPoint.coordinates,
                         nextPoint.coordinates
                     ]
                 }
@@ -1677,23 +1675,110 @@ function updatePolyline() {
             lineFeatures.push(segmentFeature);
         }
 
-        // Update polyline source if it exists
         if (map.getSource(polylineId)) {
             map.getSource(polylineId).setData({
                 type: "FeatureCollection",
                 features: lineFeatures
             });
+            
+            updateArrows(lineFeatures);
         } else {
-            // First-time initialization of polyline
             initializeMultiColoredPolyline(lineFeatures);
         }
 
-        // Store segments for potential later use
         polylineSegments = lineFeatures;
 
     } catch (error) {
         console.error("Error updating polyline:", error);
     }
+}
+
+function addArrowLayer() {
+    if (map.getLayer('arrow-layer')) {
+        map.removeLayer('arrow-layer');
+    }
+    if (map.getSource('arrow-source')) {
+        map.removeSource('arrow-source');
+    }
+
+    // Add a source and layer for arrows
+    map.addSource('arrow-source', {
+        type: 'geojson',
+        data: {
+            type: 'FeatureCollection',
+            features: []
+        }
+    });
+
+    map.addLayer({
+        'id': 'arrow-layer',
+        'type': 'symbol',
+        'source': 'arrow-source',
+        'layout': {
+            'symbol-placement': 'line',
+            'symbol-spacing': ['interpolate', ['linear'], ['zoom'],
+                10, 100,   // At zoom level 10, space arrows 100 pixels apart
+                13, 200,   // At zoom level 15, space arrows 200 pixels apart
+                15, 300 ,   // At zoom level 20, space arrows 300 pixels apart
+            ],
+            'icon-image': 'arrow',
+            'icon-size': ['interpolate', ['linear'], ['zoom'],
+                10, 0.2,    // At zoom level 10, normal size
+                13, 0.3,  // At zoom level 15, 1.5x size
+                15, 0.4     // At zoom level 20, 2x size
+            ],
+            'icon-allow-overlap': true,
+            'icon-ignore-placement': true,
+            'icon-rotate': ['+', ['get', 'bearing'], 20],
+            'icon-rotation-alignment': 'map',
+            'visibility': 'visible'
+        },
+        'minzoom': 1  // Make layer visible from zoom level 1
+    });
+}
+
+function logCurrentZoom() {
+    const currentZoom = Math.round(map.getZoom() * 100) / 100; // Round to 2 decimal places
+    console.log(`Current Zoom Level: ${currentZoom}`);
+}
+
+// Function to create arrow symbol
+function createArrowImage() {
+    const size = 40; // Increased canvas size
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // Center coordinates
+    const centerX = size / 2;
+    const centerY = size / 2;
+
+    // Arrow dimensions
+    const arrowLength = size * 0.8;
+    const arrowWidth = size * 0.5;
+
+    // Create arrow path
+    ctx.beginPath();
+    
+    // Move to tip of arrow
+    ctx.moveTo(size * 0.1, centerY); // Arrow tip (pointing left)
+    
+    // Draw to right side
+    ctx.lineTo(size * 0.9, centerY - arrowWidth/2); // Top right corner
+    ctx.lineTo(size * 0.9, centerY + arrowWidth/2); // Bottom right corner
+    ctx.closePath();
+
+    // Fill arrow
+    ctx.fillStyle = '#000000'; // Black fill
+    ctx.fill();
+
+    // Add white stroke
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    return canvas.toDataURL();
 }
 
 // New function to initialize multi-colored polyline
@@ -1725,14 +1810,71 @@ function initializeMultiColoredPolyline(initialFeatures) {
             "line-cap": "round"
         },
         paint: {
-            "line-color": ["get", "color"], // Use color from feature properties
+            "line-color": ["get", "color"],
             "line-width": 4,
             "line-opacity": 0.8
         }
     });
 
+    // Create and add arrow image
+    const arrowImage = createArrowImage();
+    map.loadImage(arrowImage, function(error, image) {
+        if (error) throw error;
+        map.addImage('arrow', image);
+        
+        // Add arrow layer
+        addArrowLayer();
+        updateArrows(initialFeatures);
+    });
+
     // Add hover interactions
     setupPolylineHoverInteractions();
+}
+
+function updateArrows(features) {
+    if (!map.getSource('arrow-source')) return;
+
+    const arrowFeatures = features.map(feature => {
+        const coordinates = feature.geometry.coordinates;
+        if (coordinates.length < 2) return null;
+
+        // Calculate bearing between points
+        const start = coordinates[0];
+        const end = coordinates[1];
+        const bearing = calculateBearing(start[1], start[0], end[1], end[0]);
+
+        return {
+            type: 'Feature',
+            geometry: {
+                type: 'LineString',
+                coordinates: coordinates
+            },
+            properties: {
+                bearing: bearing
+            }
+        };
+    }).filter(f => f !== null);
+
+    map.getSource('arrow-source').setData({
+        type: 'FeatureCollection',
+        features: arrowFeatures
+    });
+}
+
+function calculateBearing(lat1, lon1, lat2, lon2) {
+    const toRad = (degree) => degree * Math.PI / 180;
+    const toDeg = (rad) => rad * 180 / Math.PI;
+
+    const φ1 = toRad(lat1);
+    const φ2 = toRad(lat2);
+    const Δλ = toRad(lon2 - lon1);
+
+    const y = Math.sin(Δλ) * Math.cos(φ2);
+    const x = Math.cos(φ1) * Math.sin(φ2) -
+             Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+
+    const θ = Math.atan2(y, x);
+    return (toDeg(θ) + 360) % 360;
 }
 
 // Setup hover interactions for polyline segments
