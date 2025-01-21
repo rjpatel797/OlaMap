@@ -1128,7 +1128,7 @@
 
     // Calculate optimal number of arrows
     const totalDistance = calculateTotalDistance(path);
-    const arrowCount = Math.min(Math.floor(totalDistance / 0.3), 40);
+    const arrowCount = Math.min(Math.floor(totalDistance / 0.3), 20);
     const interval = Math.max(Math.floor(path.length / arrowCount), 2);
 
     for (let i = 0; i < path.length - 1; i += interval) {
@@ -1216,52 +1216,42 @@ function createArrowIcon(bearing) {
         
     // Marker and polyline functions
 function addPolyline() {
-            if (!playbackData || playbackData.length === 0) {
-                console.warn("No playback data available for polyline");
-                return;
-            }
+    if (!playbackData || playbackData.length === 0) {
+        console.warn("No playback data available for polyline");
+        return;
+    }
 
-            try {
-                // Remove existing polyline and arrows
-                if (polyline) {
-                    polyline.setMap(null);
-                    polyline = null;
-                }
-                cleanupDirectionalArrows();
+    try {
+        // Remove existing polyline and arrows
+        if (polyline) {
+            polyline.setMap(null);
+            polyline = null;
+        }
+        cleanupDirectionalArrows();
 
-                const path = playbackData.map(point => ({
-                    lat: point.coordinates[0],
-                    lng: point.coordinates[1]
-                }));
+        const path = playbackData.map(point => ({
+            lat: point.coordinates[0],
+            lng: point.coordinates[1]
+        }));
 
-                // Create polyline
-                polyline = new mappls.Polyline({
-                    map: map,
-                    path: path,
-                    strokeColor: '#FF0000',
-                    strokeOpacity: 0.8,
-                    strokeWeight: 3
-                });
+        // Create polyline
+        polyline = new mappls.Polyline({
+            map: map,
+            path: path,
+            strokeColor: '#FF0000',
+            strokeOpacity: 0.8,
+            strokeWeight: 3
+        });
 
-                // Add direction arrows
-                addDirectionalArrows(path);
+        // Add direction arrows
+        addDirectionalArrows(path);
 
-                // Fit bounds to show the entire path
-                const bounds = [
-                    [Math.min(...path.map(p => p.lng)), Math.min(...path.map(p => p.lat))],
-                    [Math.max(...path.map(p => p.lng)), Math.max(...path.map(p => p.lat))]
-                ];
-
-                map.fitBounds(bounds, {
-                    padding: 50,
-                    duration: 1
-                });
-
-            } catch (error) {
-                console.error("Error with polyline management:", error);
-                polyline = null;
-            }
+    } catch (error) {
+        console.error("Error with polyline management:", error);
+        polyline = null;
+    }
 }
+
 
 function setMapBounds(path) {
     if (!path || path.length === 0) return;
@@ -1314,7 +1304,6 @@ function addStartEndMarkers() {
                 lat: startPoint.coordinates[0],
                 lng: startPoint.coordinates[1]
             },
-            fitbounds: true,
             icon: createStartEndIcon('S', '#2ecc71')
         });
 
@@ -1325,13 +1314,23 @@ function addStartEndMarkers() {
                 lat: endPoint.coordinates[0],
                 lng: endPoint.coordinates[1]
             },
-            fitbounds: true,
             icon: createStartEndIcon('E', '#e74c3c')
         });
 
         // Add permanent timestamp labels without prefixes
         addPermanentLabel(startMarker, startPoint.date);
         addPermanentLabel(endMarker, endPoint.date);
+
+        // Calculate bounds to include both start and end markers
+        const bounds = new mappls.LatLngBounds();
+        bounds.extend([startPoint.coordinates[1], startPoint.coordinates[0]]);
+        bounds.extend([endPoint.coordinates[1], endPoint.coordinates[0]]);
+
+        // Fit the map to the calculated bounds with some padding
+        map.fitBounds(bounds, {
+            padding: { top: 50, bottom: 50, left: 50, right: 50 },
+            duration: 1000  // 1 second animation
+        });
 
     } catch (error) {
         console.error("Error creating markers:", error);
@@ -1571,8 +1570,13 @@ function updateVehicleRotation(angle) {
     }
 
     function cleanupDirectionalArrows() {
-      const arrows = document.querySelectorAll('.direction-arrow');
-      arrows.forEach(arrow => arrow.remove());
+
+            if (arrowMarkers && arrowMarkers.length > 0) {
+                arrowMarkers.forEach(marker => {
+                    if (marker) marker.remove();
+                });
+                arrowMarkers = [];
+            }
   }
     
     function stopPlayback() {
@@ -1697,3 +1701,4 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     
 </body>
 </html>
+
