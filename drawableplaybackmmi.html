@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>MapMyIndia Map</title>
+    <title>mappls Map</title>
     <meta name="viewport" content="initial-scale=1.0">
     <meta charset="utf-8">
     <style>
@@ -907,6 +907,7 @@
     let polyline = null;
     let startMarker = null;
     let endMarker = null;
+    let arrowMarkers = [];
     
     // Initialize when document is ready
     $(document).ready(function() {
@@ -925,7 +926,7 @@
             loadMapScript();
         });
     
-    // Load MapMyIndia SDK
+    // Load mappls SDK
     function loadMapScript() {
         const key = localStorage.getItem("key");
         if (!key) {
@@ -934,18 +935,18 @@
         }
 
         const script = document.createElement('script');
-        script.src = `https://apis.mapmyindia.com/advancedmaps/api/${key}/map_sdk?layer=vector&v=2.0&callback=initMap1`;
+        script.src = `https://apis.mappls.com/advancedmaps/api/${key}/map_sdk?layer=vector&v=3.0&callback=initMap1`;
         script.defer = true;
         script.async = true;
 
         script.onload = function() {
-            console.log("MapmyIndia SDK loaded successfully.");
+            console.log("mappls SDK loaded successfully.");
             // No need to call initMap1 here as it's invoked by the callback
             fetchDeviceData();
         };
 
         script.onerror = function() {
-            console.error("Error loading MapmyIndia SDK.");
+            console.error("Error loading mappls SDK.");
         };
 
         document.head.appendChild(script);
@@ -954,7 +955,7 @@
     
     // Initialize map
     function initMap1() {
-        map = new MapmyIndia.Map('map', { 
+        map = new mappls.Map('map', { 
                 center: [28.638698386592438, 77.27604556863412],
                 zoomControl: true,
                 hybrid: true,
@@ -1102,50 +1103,164 @@
                 throw error;
             });
     }
-    
-    // Marker and polyline functions
-    function addPolyline() {
-    if (!playbackData || playbackData.length === 0) {
-        console.warn("No playback data available for polyline");
-        return;
-    }
 
-    // Debug log to check polyline state
-    console.log("Current polyline object:", polyline);
+    function calculateBearing(lat1, lon1, lat2, lon2) {
+      const toRad = (degree) => degree * Math.PI / 180;
+      const toDeg = (rad) => rad * 180 / Math.PI;
 
-    try {
-        // If a polyline exists, attempt to remove it
-        if (polyline) {
-            polyline.setMap(null);  // Try to remove polyline from map
-            polyline = null;        // Clear the reference
-        }
+      const φ1 = toRad(lat1);
+      const φ2 = toRad(lat2);
+      const Δλ = toRad(lon2 - lon1);
 
-        // Format coordinates to the required format
-        const path = playbackData.map(point => ({
-            lat: point.coordinates[0],
-            lng: point.coordinates[1]
-        }));
+      const y = Math.sin(Δλ) * Math.cos(φ2);
+      const x = Math.cos(φ1) * Math.sin(φ2) -
+              Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
 
-        // Create new polyline
-        polyline = new MapmyIndia.Polyline({
+      const θ = Math.atan2(y, x);
+      return (toDeg(θ) + 360) % 360;
+  }
+
+  function addDirectionalArrows(path) {
+    if (!path || path.length < 2) return;
+
+    // Remove existing arrows
+    cleanupDirectionalArrows();
+
+    // Calculate optimal number of arrows
+    const totalDistance = calculateTotalDistance(path);
+    const arrowCount = Math.min(Math.floor(totalDistance / 0.3), 40);
+    const interval = Math.max(Math.floor(path.length / arrowCount), 2);
+
+    for (let i = 0; i < path.length - 1; i += interval) {
+        const start = path[i];
+        const end = path[i + 1];
+        if (!start || !end) continue;
+
+        // Calculate midpoint
+        const midLat = (start.lat + end.lat) / 2;
+        const midLng = (start.lng + end.lng) / 2;
+
+        // Calculate bearing between points
+        let bearing = calculateBearing(start.lat, start.lng, end.lat, end.lng);
+        
+        // Create arrow marker with calculated bearing
+        const arrowMarker = new mappls.Marker({
             map: map,
-            path: path,
-            strokeColor: '#FF0000',
-            strokeOpacity: 0.8,
-            strokeWeight: 3
+            position: [midLat, midLng],
+            icon: createArrowIcon(bearing),
+            clickable: false,
+            zIndex: 999,
+            anchor: 'center'
         });
 
-        // Debug log for new polyline
-        console.log("New polyline created:", polyline);
-
-        // Calculate and set bounds to fit the polyline
-        setMapBounds(path);
-
-    } catch (error) {
-        console.error("Error with polyline management:", error);
-        // Attempt recovery
-        polyline = null;
+        // Store reference
+        arrowMarkers.push(arrowMarker);
     }
+}
+
+        function calculateTotalDistance(path) {
+            let total = 0;
+            for (let i = 0; i < path.length - 1; i++) {
+                total += calculateDistance(
+                    path[i].lat,
+                    path[i].lng,
+                    path[i + 1].lat,
+                    path[i + 1].lng
+                );
+            }
+            return total;
+        }
+
+
+// Function to create arrow icon
+function createArrowIcon(bearing) {
+    const size = 20; // Canvas size
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // Clear the canvas and set up rotation
+    ctx.clearRect(0, 0, size, size);
+    ctx.save();  // Save the current state
+    
+    // Translate to center and rotate
+    ctx.translate(size/2, size/2);
+    ctx.rotate((bearing + 90) * Math.PI / 180);  // Convert degrees to radians and adjust for arrow direction
+    
+    // Arrow dimensions
+    const arrowLength = size * 0.3;
+    const arrowWidth = size * 0.2;
+
+    // Create arrow path (now centered at origin due to translation)
+    ctx.beginPath();
+    ctx.moveTo(-arrowLength/2, 0);  // Arrow tip (starts at left of center)
+    ctx.lineTo(arrowLength/2, -arrowWidth/2);  // Top right
+    ctx.lineTo(arrowLength/2, arrowWidth/2);   // Bottom right
+    ctx.closePath();
+
+    // Fill arrow
+    ctx.fillStyle = '#000000'; // Black fill
+    ctx.fill();
+
+    // Add white stroke
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    // Restore the canvas state
+    ctx.restore();
+
+    return canvas.toDataURL();
+}    
+        
+    // Marker and polyline functions
+function addPolyline() {
+            if (!playbackData || playbackData.length === 0) {
+                console.warn("No playback data available for polyline");
+                return;
+            }
+
+            try {
+                // Remove existing polyline and arrows
+                if (polyline) {
+                    polyline.setMap(null);
+                    polyline = null;
+                }
+                cleanupDirectionalArrows();
+
+                const path = playbackData.map(point => ({
+                    lat: point.coordinates[0],
+                    lng: point.coordinates[1]
+                }));
+
+                // Create polyline
+                polyline = new mappls.Polyline({
+                    map: map,
+                    path: path,
+                    strokeColor: '#FF0000',
+                    strokeOpacity: 0.8,
+                    strokeWeight: 3
+                });
+
+                // Add direction arrows
+                addDirectionalArrows(path);
+
+                // Fit bounds to show the entire path
+                const bounds = [
+                    [Math.min(...path.map(p => p.lng)), Math.min(...path.map(p => p.lat))],
+                    [Math.max(...path.map(p => p.lng)), Math.max(...path.map(p => p.lat))]
+                ];
+
+                map.fitBounds(bounds, {
+                    padding: 50,
+                    duration: 1
+                });
+
+            } catch (error) {
+                console.error("Error with polyline management:", error);
+                polyline = null;
+            }
 }
 
 function setMapBounds(path) {
@@ -1162,36 +1277,17 @@ function setMapBounds(path) {
         if (lng > maxLng) maxLng = lng;
     });
 
-    // Calculate center of the bounds
-    const centerLat = (minLat + maxLat) / 2;
-    const centerLng = (minLng + maxLng) / 2;
-    const center = [centerLng, centerLat]; // [longitude, latitude]
-
-    // Optional: Define padding in pixels
-    const padding = [50, 50]; // [topBottom, leftRight]
-
-    // Use flyTo to center the map on the calculated center point
-    // map.flyTo({
-    //     center: center,
-    //     zoom: 15, // Adjust zoom level as needed
-    //     essential: true
-    // });
-
-    console.log("map", map.fitBounds)
-
-    // Alternatively, if you prefer to ensure the entire polyline is visible,
-    // you can use flyToBounds instead of calculating the center.
-    
     const bounds = [
-    [minLng, minLat], // [lng, lat] for southwest corner
-    [maxLng, maxLat] 
+        [minLng, minLat], // Southwest corner
+        [maxLng, maxLat]  // Northeast corner
     ];
+
     map.fitBounds(bounds, {
-        padding: 50, // Optional padding in pixels
-        duration: 5   // Optional animation duration in seconds
+        padding: 50,
+        duration: 1
     });
-    
 }
+
 
 function addStartEndMarkers() {
     if (!playbackData || playbackData.length < 2) {
@@ -1212,7 +1308,7 @@ function addStartEndMarkers() {
 
     try {
         // Create start marker
-        startMarker = new MapmyIndia.Marker({
+        startMarker = new mappls.Marker({
             map: map,
             position: {
                 lat: startPoint.coordinates[0],
@@ -1223,7 +1319,7 @@ function addStartEndMarkers() {
         });
 
         // Create end marker
-        endMarker = new MapmyIndia.Marker({
+        endMarker = new mappls.Marker({
             map: map,
             position: {
                 lat: endPoint.coordinates[0],
@@ -1398,7 +1494,7 @@ function createVehicleMarker() {
     try {
         // Create or update vehicle marker
         if (!vehicleMarker) {
-            vehicleMarker = new MapmyIndia.Marker({
+            vehicleMarker = new mappls.Marker({
                 map: map,
                 position: [
                     playbackData[0].coordinates[1],
@@ -1473,6 +1569,11 @@ function updateVehicleRotation(angle) {
             isPaused = true;
         }
     }
+
+    function cleanupDirectionalArrows() {
+      const arrows = document.querySelectorAll('.direction-arrow');
+      arrows.forEach(arrow => arrow.remove());
+  }
     
     function stopPlayback() {
     // Clear interval
@@ -1500,6 +1601,8 @@ function updateVehicleRotation(angle) {
         polyline.setMap(null);  // Polylines use setMap(null)
         polyline = null;
     }
+
+    cleanupDirectionalArrows();
 
     // Reset device selection
     document.getElementById('selectedVehicle').textContent = 'Select Vehicle';
