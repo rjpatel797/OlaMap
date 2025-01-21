@@ -246,25 +246,25 @@ const script = document.createElement('script');
 
             // Initialize map controls and layers
             map.on('load', function() {
-                //fetchPOIs();
+                fetchPOIs();
             });
         }
 
-//Fetch POIs from API
-// async function fetchPOIs() {
-//     const mid = localStorage.getItem("mid");
-//     const url = `${API}opr=getpois&mid=${mid}`;
-//     console.log('Fetching POIs from URL:', url);
-//     try {
-//         const response = await fetch(url);
-//         console.log('Response status:', response.status);
-//         const data = await response.json();
-//         updatePOITable(data);
-//         updateMapMarkers(data);
-//     } catch (error) {
-//         console.error('Error fetching POIs:', error);
-//     }
-// }
+        //Fetch POIs from API
+        async function fetchPOIs() {
+            const mid = localStorage.getItem("mid");
+            const url = `${API}opr=getpois&mid=${mid}`;
+            console.log('Fetching POIs from URL:', url);
+            try {
+                const response = await fetch(url);
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                updatePOITable(data);
+                updateMapMarkers(data);
+            } catch (error) {
+                console.error('Error fetching POIs:', error);
+            }
+        }
 
 // Add new POI
 async function addPOI() {
@@ -279,7 +279,7 @@ async function addPOI() {
     try {
         const response = await fetch(url);
         if (response.ok) {
-            //fetchPOIs();
+            fetchPOIs();
             clearInputs();
         }
     } catch (error) {
@@ -337,7 +337,7 @@ async function updateStatus(id, status) {
     try {
         const response = await fetch(`${API}opr=updatepoi&id=${id}&status=${status}&mid=${mid}`);
         if (response.ok) {
-           // fetchPOIs();
+            fetchPOIs();
         }
     } catch (error) {
         console.error('Error updating POI status:', error);
@@ -349,7 +349,7 @@ async function deletePOI(id) {
         try {
             const response = await fetch(`${API}opr=deletepoi&id=${id}&mid=${mid}`);
             if (response.ok) {
-                //fetchPOIs();
+                fetchPOIs();
             }
         } catch (error) {
             console.error('Error deleting POI:', error);
@@ -565,7 +565,7 @@ document.addEventListener('click', function(e) {
 });
 
 // Initial load
-//fetchPOIs();
+fetchPOIs();
     </script>
 </body>
 </html>

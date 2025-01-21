@@ -813,31 +813,33 @@
 
         /* Add these styles to your existing CSS */
         .polyline-popup {
+            position: fixed;
             display: none;
-            position: absolute;
             background: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            font-size: 12px;
+            padding: 0;
+            border: 1px solid rgba(0,0,0,0.15);
+            border-radius: 6px;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.15);
+            z-index: 10000;
             pointer-events: none;
-            z-index: 1000;
+            min-width: 180px;
+            font-size: 12px;
             color: #333;
-            max-width: 200px;
-            border: 1px solid rgba(0, 0, 0, 0.1);
+            transform: translate(-50%, -100%);
+            margin-top: -10px;
         }
 
         .polyline-popup::after {
             content: "";
             position: absolute;
-            bottom: -5px;
+            bottom: -6px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
-            border-left: 5px solid transparent;
-            border-right: 5px solid transparent;
-            border-top: 5px solid white;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid white;
         }
 
         /* pop-up display righ-side*/
@@ -1283,8 +1285,9 @@
     </div>
 
     <script src="js/api.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap&libraries=geometry"
+        async defer></script>
     <script>
-
         // Initialize when document is ready
         $(document).ready(function () {
             if (!localStorage.getItem('mid')) {
@@ -1298,78 +1301,64 @@
             const mid = localStorage.getItem("mid");
             //console.log("mid:::" + mid);
 
-            loadMapScript();
         });
 
-        // Load mappls SDK
-        function loadMapScript() {
-            const key = localStorage.getItem("key");
-            if (!key) {
-                console.error("No API key found in localStorage.");
-                return;
-            }
-
-            const script = document.createElement('script');
-            script.src = `https://apis.mappls.com/advancedmaps/api/${localStorage.getItem("key")}/map_sdk?layer=vector&v=3.0&callback=initMap1`;
-            script.defer = true;
-            script.async = true;
-
-            script.onload = function () {
-                //console.log("mappls SDK loaded successfully.");
-                // No need to call initMap1 here as it's invoked by the callback
-                fetchDeviceData();
-            };
-
-            script.onerror = function () {
-                //console.error("Error loading mappls SDK.");
-            };
-
-            document.head.appendChild(script);
-        }
-
         // Initialize map
-        function initMap1() {
-            try {
-                map = new mappls.Map('map', {
-                    center: [28.638698386592438, 77.27604556863412],
-                    zoomControl: true,
-                    hybrid: true,
-                    location: true,
-                    zoom: 15,
-                    scrollWheelZoom: true,
-                    continuousWorld: true
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 23.0225, lng: 72.5714 },
+                zoom: 15,
+                styles: [
+                    {
+                        "featureType": "all",
+                        "elementType": "geometry",
+                        "stylers": [{ "visibility": "simplified" }]
+                    }
+                ]
+            });
+
+            infoWindow = new google.maps.InfoWindow();
+
+            // Initialize other features after map loads
+            google.maps.event.addListenerOnce(map, 'idle', () => {
+                fetchDeviceData().catch((error) => {
+                    console.error("Error fetching device data:", error);
                 });
+            });
 
-                map.on("move", updatePopupPosition);
-                map.on('zoom', logCurrentZoom);
-
-                console.log('map initialized:', map);
-            } catch (error) {
-                console.error('Error initializing map:', error);
+            // Initialize speed slider
+            const speedSlider = document.getElementById("speedSlider");
+            if (speedSlider) {
+                speedSlider.value = playbackSpeed;
+                document.getElementById("speedLabel").textContent = playbackSpeed + "x";
             }
         }
 
         // Global variables
-        let map;
-        let vehicleMarker = null;
-        let startingMarker = null;
-        let playbackData = [];
-        let index = 0;
-        let playbackInterval = null;
-        let isPaused = false;
-        const polylineId = "dynamicPolyline";
-        let dynamicPlaybackData = [];
-        let isPopupClosedManually = false;
-        let deviceData = [];
-        let speedThreshold = 30;
-        let fetching = false;
-        const MINIMUM_DISTANCE = 0.01;
-        let startMarker = null;
-        let endMarker = null;
         let stopMarkers = [];
-
-
+        let pathPolylines = []; // Array to store all polyline segments instead of pathPolyline
+        let fetching = false;
+        let map;
+        let vehicleMarker;
+        let playbackData = [];
+        let pathPolyline;
+        let index = 0;
+        let playbackInterval;
+        let isPaused = false;
+        let infoWindow;
+        let startMarker;
+        let endMarker;
+        let totalDistance = 0;
+        let devices = [];
+        let selectedDeviceId = null;
+        let speedThreshold = 50; // Default speed threshold
+        let playbackSpeed = 1; // Default playback speed
+        const MIN_SPEED = 0.25;
+        const MAX_SPEED = 8;
+        const SPEED_STEP = 0.25;
         const ANGLE_OFFSET = 90;
+
+
         const popup = document.getElementById("customPopup");
         const popupContent = document.getElementById("popupContent");
 
@@ -1407,17 +1396,29 @@
 
         function fetchDeviceData() {
             const mid = localStorage.getItem("mid");
-            fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
-                .then((response) => response.json())
-                .then((data) => {
-                    devices = data.map((item) => ({
+            if (!mid) {
+                console.error("No mid found in localStorage");
+                return Promise.reject("No mid found");
+            }
+
+            return fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    if (!Array.isArray(data)) throw new Error("Invalid data format received");
+
+                    devices = data.map(item => ({
                         name: item.dname,
-                        did: item.did,
+                        did: item.did
                     }));
                     populateVehicleList(devices);
-                    deviceData = devices;
                 })
-                .catch((error) => console.error("Error fetching vehicle:", error));
+                .catch(error => {
+                    console.error("Error fetching vehicles:", error);
+                    alert("Error loading vehicle list. Please try again.");
+                });
         }
 
         document.addEventListener("click", function (event) {
@@ -1428,41 +1429,17 @@
         });
 
         // Then update your JavaScript
-        function createDeviceList() {
-            const deviceSelect = $("#deviceSelect");
-            deviceSelect.empty().append('<option value="">Select Vehicle</option>');
-
-            devices.forEach((device) => {
-                deviceSelect.append(`
-        <option value="${device.did}">
-            ${device.name}
-        </option>
-    `);
-            });
-
-            // Add change event handler
-            deviceSelect.on("change", function () {
-                const selectedDid = $(this).val();
-                const selectedDevice = devices.find((d) => d.did == selectedDid);
-
-                if (selectedDevice) {
-                    $("#deviceNameDisplay").text(selectedDevice.did);
-                    fetchPlaybackData(selectedDid);
-                }
-            });
-        } // Fetch playback data from API
-
         function updateStartButtonState() {
             const startButton = document.getElementById("startPlayback");
             startButton.disabled = fetching;
 
             // Optionally update button appearance when disabled
             if (fetching) {
-                startButton.style.opacity = "0.6";
-                startButton.style.cursor = "not-allowed";
+            startButton.style.opacity = "0.6";
+            startButton.style.cursor = "not-allowed";
             } else {
-                startButton.style.opacity = "1";
-                startButton.style.cursor = "pointer";
+            startButton.style.opacity = "1";
+            startButton.style.cursor = "pointer";
             }
         }
 
@@ -1533,7 +1510,6 @@
                         fetching = false;
                         updateStartButtonState();
                         // addStartEndMarkers();
-                        console.log("Playback Data Loaded:", playbackData);
                     } else {
                         fetching = false;
                         updateStartButtonState();
@@ -1579,7 +1555,7 @@
 
         // Update this function to show distance
         function createPopupContent(data, totalDistance) {
-            const devicename = deviceData.find((d) => d.did == data.deviceId)?.name;
+            const devicename = devices.find((d) => d.did == data.deviceId)?.name;
             return `
         <div style="border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 5px;">
             <b>Vehicle:</b> ${devicename} 
@@ -1598,14 +1574,6 @@
             <b>Distance:</b> ${totalDistance.toFixed(2)} km
         </div>
     `;
-        }
-
-        // Show custom popup at the marker position
-        function showPopup(content) {
-            if (isPopupClosedManually) return; // Do not show if manually closed
-            popupContent.innerHTML = content;
-            popup.style.display = "block";
-            updatePopupPosition(); // Ensure popup is positioned correctly initially
         }
 
         // Update popup position to keep it above the vehicle
@@ -1637,6 +1605,7 @@
             if (!dynamicPlaybackData || dynamicPlaybackData.length < 2) return;
 
             try {
+                // Calculate new polyline data
                 let lineFeatures = [];
                 let cumulativeDistance = 0;
 
@@ -1644,6 +1613,7 @@
                     const currentPoint = dynamicPlaybackData[i];
                     const nextPoint = dynamicPlaybackData[i + 1];
 
+                    // Calculate segment distance
                     const segmentDistance = calculateDistance(
                         currentPoint.coordinates[1],
                         currentPoint.coordinates[0],
@@ -1652,8 +1622,9 @@
                     );
                     cumulativeDistance += segmentDistance;
 
+                    // Determine speed and color
                     const speed = parseFloat(currentPoint.speed);
-                    const color = speed < speedThreshold ? '#00FF00' : '#FF0000';
+                    const color = speed < speedThreshold ? '#00FF00' : '#FF0000'; // Green for < threshold, Red for >= threshold
 
                     const segmentFeature = {
                         type: "Feature",
@@ -1675,110 +1646,23 @@
                     lineFeatures.push(segmentFeature);
                 }
 
+                // Update polyline source if it exists
                 if (map.getSource(polylineId)) {
                     map.getSource(polylineId).setData({
                         type: "FeatureCollection",
                         features: lineFeatures
                     });
-
-                    updateArrows(lineFeatures);
                 } else {
+                    // First-time initialization of polyline
                     initializeMultiColoredPolyline(lineFeatures);
                 }
 
+                // Store segments for potential later use
                 polylineSegments = lineFeatures;
 
             } catch (error) {
                 console.error("Error updating polyline:", error);
             }
-        }
-
-        function addArrowLayer() {
-            if (map.getLayer('arrow-layer')) {
-                map.removeLayer('arrow-layer');
-            }
-            if (map.getSource('arrow-source')) {
-                map.removeSource('arrow-source');
-            }
-
-            // Add a source and layer for arrows
-            map.addSource('arrow-source', {
-                type: 'geojson',
-                data: {
-                    type: 'FeatureCollection',
-                    features: []
-                }
-            });
-
-            map.addLayer({
-                'id': 'arrow-layer',
-                'type': 'symbol',
-                'source': 'arrow-source',
-                'layout': {
-                    'symbol-placement': 'line',
-                    'symbol-spacing': ['interpolate', ['linear'], ['zoom'],
-                        10, 100,   // At zoom level 10, space arrows 100 pixels apart
-                        13, 200,   // At zoom level 15, space arrows 200 pixels apart
-                        15, 300,   // At zoom level 20, space arrows 300 pixels apart
-                    ],
-                    'icon-image': 'arrow',
-                    'icon-size': ['interpolate', ['linear'], ['zoom'],
-                        10, 0.2,    // At zoom level 10, normal size
-                        13, 0.3,  // At zoom level 15, 1.5x size
-                        15, 0.4     // At zoom level 20, 2x size
-                    ],
-                    'icon-allow-overlap': true,
-                    'icon-ignore-placement': true,
-                    'icon-rotate': ['+', ['get', 'bearing'], 20],
-                    'icon-rotation-alignment': 'map',
-                    'visibility': 'visible'
-                },
-                'minzoom': 1  // Make layer visible from zoom level 1
-            });
-        }
-
-        function logCurrentZoom() {
-            const currentZoom = Math.round(map.getZoom() * 100) / 100; // Round to 2 decimal places
-            console.log(`Current Zoom Level: ${currentZoom}`);
-        }
-
-        // Function to create arrow symbol
-        function createArrowImage() {
-            const size = 40; // Increased canvas size
-            const canvas = document.createElement('canvas');
-            canvas.width = size;
-            canvas.height = size;
-            const ctx = canvas.getContext('2d');
-
-            // Center coordinates
-            const centerX = size / 2;
-            const centerY = size / 2;
-
-            // Arrow dimensions
-            const arrowLength = size * 0.8;
-            const arrowWidth = size * 0.5;
-
-            // Create arrow path
-            ctx.beginPath();
-
-            // Move to tip of arrow
-            ctx.moveTo(size * 0.1, centerY); // Arrow tip (pointing left)
-
-            // Draw to right side
-            ctx.lineTo(size * 0.9, centerY - arrowWidth / 2); // Top right corner
-            ctx.lineTo(size * 0.9, centerY + arrowWidth / 2); // Bottom right corner
-            ctx.closePath();
-
-            // Fill arrow
-            ctx.fillStyle = '#000000'; // Black fill
-            ctx.fill();
-
-            // Add white stroke
-            ctx.strokeStyle = '#FFFFFF';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-
-            return canvas.toDataURL();
         }
 
         // New function to initialize multi-colored polyline
@@ -1810,71 +1694,14 @@
                     "line-cap": "round"
                 },
                 paint: {
-                    "line-color": ["get", "color"],
+                    "line-color": ["get", "color"], // Use color from feature properties
                     "line-width": 4,
                     "line-opacity": 0.8
                 }
             });
 
-            // Create and add arrow image
-            const arrowImage = createArrowImage();
-            map.loadImage(arrowImage, function (error, image) {
-                if (error) throw error;
-                map.addImage('arrow', image);
-
-                // Add arrow layer
-                addArrowLayer();
-                updateArrows(initialFeatures);
-            });
-
             // Add hover interactions
             setupPolylineHoverInteractions();
-        }
-
-        function updateArrows(features) {
-            if (!map.getSource('arrow-source')) return;
-
-            const arrowFeatures = features.map(feature => {
-                const coordinates = feature.geometry.coordinates;
-                if (coordinates.length < 2) return null;
-
-                // Calculate bearing between points
-                const start = coordinates[0];
-                const end = coordinates[1];
-                const bearing = calculateBearing(start[1], start[0], end[1], end[0]);
-
-                return {
-                    type: 'Feature',
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: coordinates
-                    },
-                    properties: {
-                        bearing: bearing
-                    }
-                };
-            }).filter(f => f !== null);
-
-            map.getSource('arrow-source').setData({
-                type: 'FeatureCollection',
-                features: arrowFeatures
-            });
-        }
-
-        function calculateBearing(lat1, lon1, lat2, lon2) {
-            const toRad = (degree) => degree * Math.PI / 180;
-            const toDeg = (rad) => rad * 180 / Math.PI;
-
-            const φ1 = toRad(lat1);
-            const φ2 = toRad(lat2);
-            const Δλ = toRad(lon2 - lon1);
-
-            const y = Math.sin(Δλ) * Math.cos(φ2);
-            const x = Math.cos(φ1) * Math.sin(φ2) -
-                Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-
-            const θ = Math.atan2(y, x);
-            return (toDeg(θ) + 360) % 360;
         }
 
         // Setup hover interactions for polyline segments
@@ -1904,42 +1731,6 @@
             });
         }
 
-        function setupHoverInteractions() {
-            const popup = document.getElementById("polylinePopup");
-            const popupContent = document.getElementById("polylinePopupContent");
-
-            // Remove existing listeners if any
-            map.off("mousemove", polylineId);
-            map.off("mouseleave", polylineId);
-
-            // Mouse enter event
-            map.on("mousemove", polylineId, (e) => {
-                map.getCanvas().style.cursor = "pointer";
-
-                if (e.features.length > 0) {
-                    const feature = e.features[0];
-                    popupContent.innerHTML = `
-    <div style="font-weight: 500; margin-bottom: 4px">
-        ${feature.properties.date}
-    </div>
-    <div>
-        Distance: ${feature.properties.distance} km<br>
-        Speed: ${feature.properties.speed} km/h
-    </div>
-    `;
-
-                    popup.style.display = "block";
-                    updatePolylinePopupPosition(e);
-                }
-            });
-
-            // Mouse leave event
-            map.on("mouseleave", polylineId, () => {
-                map.getCanvas().style.cursor = "";
-                popup.style.display = "none";
-            });
-        }
-
         // Function to clean up polyline
         function cleanupPolyline() {
             try {
@@ -1956,15 +1747,65 @@
             }
         }
         // Add event listener for speed threshold changes
-        document.getElementById('overSpeedingThreshold').addEventListener('change', function () {
-            // Update speed threshold
-            speedThreshold = parseInt(this.value);
+        document.getElementById('overSpeedingThreshold').addEventListener('change', function() {
+    const newThreshold = parseInt(this.value);
+    updatePolylineColors(newThreshold);
+});
 
-            // Redraw the polyline if playback is active
-            if (playbackInterval) {
-                updatePolyline();
+// Function to update polyline colors based on new threshold
+function updatePolylineColors(threshold) {
+    // Only update if playback is active or paused
+    if (!playbackInterval && !isPaused) return;
+
+    pathPolylines.forEach((polyline, i) => {
+        // Skip arrow polylines (every second element)
+        if (i % 2 === 1) return;
+        
+        // Get the point index for this segment
+        const pointIndex = Math.floor(i / 2) + 1;
+        if (pointIndex < playbackData.length) {
+            const speed = parseFloat(playbackData[pointIndex].speed);
+            const color = speed >= threshold ? '#FF0000' : '#00FF00';
+            polyline.setOptions({ strokeColor: color });
+        }
+    });
+}
+
+        function redrawEntirePolyline() {
+            clearAllPolylines();
+
+            for (let i = 0; i < playbackData.length - 1; i++) {
+                const currentPoint = playbackData[i];
+                const nextPoint = playbackData[i + 1];
+
+                const path = [
+                    { lat: parseFloat(currentPoint.coordinates[1]), lng: parseFloat(currentPoint.coordinates[0]) },
+                    { lat: parseFloat(nextPoint.coordinates[1]), lng: parseFloat(nextPoint.coordinates[0]) }
+                ];
+
+                const color = currentPoint.speed >= speedThreshold ? '#FF0000' : '#00FF00';
+
+                const segment = new google.maps.Polyline({
+                    path: path,
+                    geodesic: true,
+                    strokeColor: color,
+                    strokeOpacity: 0.9,
+                    strokeWeight: 3,
+                    map: map
+                });
+
+                pathPolylines.push(segment);
             }
-        });
+        }
+
+        function clearAllPolylines() {
+            pathPolylines.forEach(polyline => {
+                if (polyline) {
+                    polyline.setMap(null);
+                }
+            });
+            pathPolylines = [];
+        }
 
         // Function to calculate distance between two coordinates using Haversine formula (in kilometers)
         function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -1982,12 +1823,6 @@
 
             return R * c; // Distance in kilometers
         }
-
-        // Add these variables at the top with your other variables
-        let playbackSpeed = 1;
-        const MIN_SPEED = 0.25;
-        const MAX_SPEED = 8;
-        const SPEED_STEP = 0.25;
 
         // Add these functions for speed control
         function updateSpeed(speed) {
@@ -2028,7 +1863,6 @@
         // Playback control functions
         let startLat = null; // To store the starting position latitude
         let startLon = null; // To store the starting position longitude
-        let totalDistance = 0; // To accumulate the distance
 
         function getTimeDifferenceInMinutes(prevTimeStr, currentTimeStr) {
             // Parse the datetime strings
@@ -2070,37 +1904,6 @@
             return diffInMinutes;
         }
 
-        async function updateLocationPopup(latlang) {
-            const locationCell = document.getElementById(`location-popup`);
-            if (!locationCell) return;
-
-            locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
-
-            try {
-                const location = await fetchLocation(latlang);
-                locationCell.innerHTML = `<span style="font-size: 10px; line-height: 5px">${location}</span>`;
-            } catch (error) {
-                console.error("Error updating location:", error);
-                locationCell.innerHTML = "Error fetching location";
-            }
-        }
-
-        async function updateDistance(deviceId, prevTime, currentTime) {
-            const distanceSpan = document.getElementById("distance-value");
-            if (!distanceSpan) return; // Guard clause in case element isn't found
-
-            // Show loading state
-            distanceSpan.innerHTML = '<span style="color: #666;">Loading...</span>';
-
-            try {
-                const distance = await fetchDistance(deviceId, prevTime, currentTime);
-                distanceSpan.innerHTML = `${distance} km`;
-            } catch (error) {
-                console.error("Error updating distance:", error);
-                distanceSpan.innerHTML = "0 km";
-            }
-        }
-
         function updateDateFormat(date) {
             const dateParts = date.split(" ");
             const datePart = dateParts[0].split("-");
@@ -2129,185 +1932,222 @@
                 return "0";
             }
         }
-
+        let potentialStops = [];
 
         // **Detect Stop During Playback** (this is the main change)
-        function detectStopDuringPlayback(currentIndex) {
-            if (currentIndex === 0) return; // Skip the first point, no previous point to compare
+        function detectStopDuringPlayback() {
+            // Clear existing markers and arrays
+            stopMarkers.forEach(marker => {
+                if (marker && marker.marker) {
+                    marker.marker.setMap(null);
+                }
+            });
+            stopMarkers = [];
+            potentialStops = [];
 
-            const holdTime = parseInt(document.getElementById("holdTime").value); // Get hold time from dropdown
-            const currentPoint = playbackData[currentIndex];
-            const prevPoint = playbackData[currentIndex - 1];
-            console.log(JSON.stringify(prevPoint))
-            const prevTime = prevPoint.date;
-            const currentTime = currentPoint.date;
+            const holdTime = parseInt(document.getElementById("holdTime").value);
+            let currentStopStart = null;
+            let stopDuration = 0;
 
-            const timeDiff = getTimeDifferenceInMinutes(prevTime, currentTime) // Time difference in minutes
+            // Iterate through playback data to find stops
+            for (let i = 1; i < playbackData.length; i++) {
+                const prevPoint = playbackData[i - 1];
+                const currentPoint = playbackData[i];
 
-            // console.log(timeDiff)
-            // Check if the vehicle has been stationary for the hold time and the distance is less than the threshold
-            if (timeDiff >= holdTime) {
-                console.log("detected")
-                // Create a stop marker at the location
-                const stopMarker = new mappls.Marker({
-                    map: map,
-                    position: {
-                        lat: prevPoint.coordinates[1],
-                        lng: prevPoint.coordinates[0]
-                    },
-                    icon: createStopMarkerIcon(timeDiff),
-                    popupHtml: "<div style=\"max-height:150px;min-width:200px;\">" +
-                        "<p style=\"font: bold 14px/20px times\">Stop time:</p><p> " + timeDiff.toFixed(0) + " min</p>" +
-                        "<p style=\"font: bold 14px/20px times\">Hold time:</p><p> " + prevTime + " To: " + currentTime + "</p>" +
-                        `<div style="display: flex; align-items: center; gap: 5px;">
-            <b>Distance:</b> <span id="distance-value">
-                <button onclick="updateDistance('${prevPoint.deviceId}', '${playbackData[0].date}', '${currentTime}')" 
-                    style="background: none; border: none; padding: 0; color: #3498db; text-decoration: underline; cursor: pointer; font-size: 11px;">
-                    Get Distance
-                </button>
-            </span>
-        </div>`+
-                        `<div style="display: flex; align-items: center; gap: 5px;">
-            <b>Location:</b> <span id="location-popup">
-                <button onclick="updateLocationPopup('${prevPoint.coordinates}')" 
-                    style="background: none; border: none; padding: 0; color: #3498db; text-decoration: underline; cursor: pointer; font-size: 11px;">
-                    Get Location
-                </button>
-            </span>
-        </div>`,
-                });
+                // Calculate time difference
+                const prevDate = new Date(parseDateString(prevPoint.date));
+                const currentDate = new Date(parseDateString(currentPoint.date));
+                const timeDiff = (currentDate - prevDate) / (1000 * 60);
 
-                // Add marker to array for tracking and potential removal later
-                stopMarkers.push(stopMarker);
+                // Start of a potential stop
+                if (!currentStopStart && timeDiff >= holdTime) {
+                    currentStopStart = i - 1;
+                    stopDuration = timeDiff;
+                } 
+                // Continuation of current stop
+                else if (currentStopStart !== null && timeDiff >= holdTime) {
+                    stopDuration += timeDiff;
+                }
+                // End of stop
+                else if (currentStopStart !== null) {
+                    if (stopDuration >= holdTime) {
+                        potentialStops.push({
+                            index: currentStopStart,
+                            position: {
+                                lat: parseFloat(playbackData[currentStopStart].coordinates[1]),
+                                lng: parseFloat(playbackData[currentStopStart].coordinates[0])
+                            },
+                            startTime: playbackData[currentStopStart].date,
+                            endTime: prevPoint.date,
+                            duration: stopDuration,
+                            marker: null,
+                            isPlaced: false
+                        });
+                    }
+                    currentStopStart = null;
+                    stopDuration = 0;
+                }
+            }
+        } 
 
-                // Add click event to show stop details
-                stopMarker.addListener('click', () => {
-                    showStopPopup(prevPoint, currentPoint, timeDiff);
-                });
+        function parseDateString(dateString) {
+            // Handle different potential date formats
+            const parts = dateString.split(/[-\s:]/);
 
-                console.log(
-                    `Stop dynamically set at ${prevPoint.coordinates[1]}, ${prevPoint.coordinates[0]}.\n` +
-                    `Stop Duration: ${timeDiff.toFixed(2)} minutes.\n` +
-                    `Stop Time: ${prevTime.toLocaleString()} to ${currentTime.toLocaleString()}`
+            // Assume format is either DD-MM-YYYY or YYYY-MM-DD
+            if (parts[0].length === 4) {
+                // YYYY-MM-DD format
+                return new Date(
+                    parseInt(parts[0]),
+                    parseInt(parts[1]) - 1,
+                    parseInt(parts[2]),
+                    parseInt(parts[3] || 0),
+                    parseInt(parts[4] || 0),
+                    parseInt(parts[5] || 0)
+                );
+            } else {
+                // DD-MM-YYYY format
+                return new Date(
+                    parseInt(parts[2]),
+                    parseInt(parts[1]) - 1,
+                    parseInt(parts[0]),
+                    parseInt(parts[3] || 0),
+                    parseInt(parts[4] || 0),
+                    parseInt(parts[5] || 0)
                 );
             }
         }
 
         function createStopMarkerIcon(duration) {
             const canvas = document.createElement('canvas');
-            canvas.width = 120; // Canvas size for the bigger triangle
-            canvas.height = 140;
+            canvas.width = 40;
+            canvas.height = 48;
             const ctx = canvas.getContext('2d');
 
-            // Draw bigger triangular shape
+            // Set the center coordinates
+            const centerX = 20;
+            const centerY = 20;
+
+            // Draw outer teardrop shape
             ctx.beginPath();
-            ctx.moveTo(60, 0); // Top-center of the triangle
-            ctx.lineTo(120, 120); // Bottom-right corner
-            ctx.lineTo(0, 120); // Bottom-left corner
-            ctx.closePath(); // Connect back to the starting point
+            ctx.moveTo(centerX, 48); // Bottom point
+            ctx.quadraticCurveTo(0, 28, 0, 20); // Left curve
+            ctx.arc(centerX, centerY, 20, Math.PI, 0, false); // Top semi-circle
+            ctx.quadraticCurveTo(40, 28, centerX, 48); // Right curve
+            ctx.fillStyle = '#FF0000';
+            ctx.fill();
 
-            ctx.fillStyle = '#FF0000'; // Set the fill color to red
-            ctx.fill(); // Fill the triangle with red
+            // Draw darker inner circle
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 10, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(180, 0, 0, 0.5)'; // Darker red with some transparency
+            ctx.fill();
 
-            // Add duration text
+            // Add STOP text
             ctx.fillStyle = 'white';
-            ctx.font = '20px Arial'; // Larger font for duration
+            ctx.font = 'bold 9px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(`${duration.toFixed(1)}m`, 60, 70); // Position the duration above the "STOP" text
+            ctx.fillText('STOP', centerX, centerY - 4);
 
-            // Add 'STOP' text
-            ctx.font = 'bold 24px Arial'; // Larger font for "STOP"
-            ctx.fillText('STOP', 60, 100); // Adjusted to center the text properly
+            // Show duration in minutes
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText(`${Math.floor(duration)}m`, centerX, centerY + 4);
 
             return canvas.toDataURL();
         }
 
+        function addStopMarkersDuringPlayback(currentIndex) {
+            potentialStops.forEach(stopData => {
+                // Only place marker if we've reached its index and it's not placed yet
+                if (currentIndex >= stopData.index && !stopData.isPlaced) {
+                    const stopMarker = new google.maps.Marker({
+                        position: new google.maps.LatLng(
+                            stopData.position.lat,
+                            stopData.position.lng
+                        ),
+                        map: map,
+                        icon: {
+                            url: createStopMarkerIcon(stopData.duration),
+                            scaledSize: new google.maps.Size(40, 40)
+                        }
+                    });
 
-        // Helper to create the stop marker element
-        // function createStopMarkerElement(duration) {
-        //   const stopElement = document.createElement("div");
-        //   stopElement.classList.add('stop-marker');
-        //   stopElement.style.position = "relative";
-        //   stopElement.style.width = "30px"; // Made smaller for better proportion
-        //   stopElement.style.height = "40px"; // Adjusted height for proper teardrop shape
-        //   stopElement.style.display = "flex";
-        //   stopElement.style.alignItems = "center";
-        //   stopElement.style.justifyContent = "center";
-        //   stopElement.style.zIndex = "10"; // Ensure it stays above the polyline
-        //   stopElement.style.marginLeft = "18px"
+                    // Calculate distance covered up to this stop
+                    const distanceCovered = calculateCumulativeDistance(stopData.index);
 
-        //   // Create main teardrop shape
-        //   const marker = document.createElement("div");
-        //   marker.style.position = "absolute";
-        //   marker.style.width = "30px";
-        //   marker.style.height = "30px"; // Make the circle part perfectly round
-        //   marker.style.backgroundColor = "#ff0000"; // Pure red color
-        //   marker.style.borderRadius = "50% 50% 50% 0"; // Modified border radius
-        //   marker.style.transform = "rotate(-45deg)"; // Changed rotation
-        //   marker.style.border = "1.5px solid white"; // Slightly thinner border
-        //   marker.style.boxShadow = "0 2px 4px rgba(0,0,0,0.25)";
-        //   marker.style.top = "0";
+                    // Add click event for stop details
+                    stopMarker.addListener('click', () => {
+                        const content = `
+                            <div style="padding: 10px;">
+                                <h3>Stop Details</h3>
+                                <p><strong>Duration:</strong> ${formatDuration(stopData.duration)}</p>
+                                <p><strong>Start Time:</strong> ${stopData.startTime}</p>
+                                <p><strong>End Time:</strong> ${stopData.endTime}</p>
+                                <p><strong>Distance Covered:</strong> ${distanceCovered.toFixed(2)} km</p>
+                                <p><strong>Location:</strong> 
+                                    <div id="stopLocationDetails" style="color: #666;">
+                                        <a href="#" onclick="fetchStopLocation('${stopData.position.lat},${stopData.position.lng}'); return false;">
+                                            View Location
+                                        </a>
+                                    </div>
+                                </p>
+                            </div>
+                        `;
 
-        //   // Container for text
-        //   const textContainer = document.createElement("div");
-        //   textContainer.style.position = "absolute";
-        //   textContainer.style.width = "100%";
-        //   textContainer.style.height = "100%";
-        //   textContainer.style.display = "flex";
-        //   textContainer.style.alignItems = "center";
-        //   textContainer.style.justifyContent = "center";
-        //   textContainer.style.transform = "rotate(45deg)"; // Counter-rotate to make text straight
-        //   textContainer.style.color = "white";
-        //   textContainer.style.fontSize = "8px"; // Slightly smaller text
-        //   textContainer.style.fontWeight = "bold";
-        //   textContainer.style.fontFamily = "Arial, sans-serif";
-        //   textContainer.textContent = "STOP";
+                        infoWindow.setContent(content);
+                        infoWindow.open(map, stopMarker);
+                    });
 
-        //   marker.appendChild(textContainer);
-        //   stopElement.appendChild(marker);
-
-        //   return stopElement;
-        // }
-
-        let popupMarker;
-
-        // Function to show the popup when a stop marker is clicked
-        function showStopPopup(startPoint, endPoint, duration) {
-            const startTime = new Date(startPoint.date).toLocaleString();
-            const endTime = new Date(endPoint.date).toLocaleString();
-            const stopDuration = formatDuration(duration);
-            const coordinates = `${startPoint.coordinates[1]},${startPoint.coordinates[0]}`;
-
-            const popupContent = `
-        <div style="font-family: Arial, sans-serif;">
-            <h3 style="color: #e74c3c; margin-bottom: 10px;">Stop Details</h3>
-            
-            <div><strong>Duration:</strong> ${stopDuration}</div>
-            <div><strong>Start Time:</strong> ${startTime}</div>
-            <div><strong>End Time:</strong> ${endTime}</div>
-            
-            <div style="margin-top: 10px;">
-                <a href="#" onclick="fetchStopLocation('${coordinates}'); return false;">
-                    Get Location Details
-                </a>
-            </div>
-            
-            <div id="stopLocationDetails" style="margin-top: 10px; color: #666;"></div>
-        </div>
-    `;
-
-            // Create and show popup
-            const popup = new mappls.Popup({
-                content: popupContent,
-                position: {
-                    lat: startPoint.coordinates[1],
-                    lng: startPoint.coordinates[0]
+                    stopData.marker = stopMarker;
+                    stopData.isPlaced = true;
+                    stopMarkers.push({
+                        position: stopData.position,
+                        marker: stopMarker,
+                        startTime: stopData.startTime,
+                        endTime: stopData.endTime,
+                        duration: stopData.duration,
+                        distanceCovered: distanceCovered
+                    });
                 }
             });
-
-            popup.addTo(map);
         }
+
+        // Add this near your other event listeners at the bottom
+        document.getElementById("holdTime").addEventListener('change', function() {
+            // Reset stop tracking
+            stopMarkers.forEach(marker => {
+                if (marker && marker.marker) {
+                    marker.marker.setMap(null);
+                }
+            });
+            stopMarkers = [];
+            potentialStops = [];
+
+            // If playback is active or paused, redetect stops
+            if (playbackInterval || isPaused) {
+                detectStopDuringPlayback();
+                if (typeof index !== 'undefined' && index > 0) {
+                    // Recheck all points up to current index
+                    for (let i = 0; i <= index; i++) {
+                        addStopMarkersDuringPlayback(i);
+                    }
+                }
+            }
+        });
+        
+        function findMarkerAtLocation(position) {
+            // This function assumes you're keeping track of markers manually
+            // You might need to modify this based on how you manage markers
+            const existingMarkers = stopMarkers.filter(marker =>
+                marker.getPosition &&
+                marker.getPosition().lat() === position.lat &&
+                marker.getPosition().lng() === position.lng
+            );
+
+            return existingMarkers.length > 0 ? existingMarkers[0] : null;
+        }
+        let popupMarker;
 
         function fetchStopLocation(coordinates) {
             const [lat, lng] = coordinates.split(',');
@@ -2319,7 +2159,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data && data.length > 0) {
-                        locationDetailsEl.innerHTML = `<strong>Location:</strong> ${data[0].location}`;
+                        locationDetailsEl.innerHTML = ` ${data[0].location}`;
                     } else {
                         locationDetailsEl.innerHTML = 'Location details not available.';
                     }
@@ -2330,11 +2170,6 @@
                 });
         }
 
-        function isValidCoordinates(lat, lng) {
-            return !isNaN(lat) && !isNaN(lng) &&
-                lat >= -90 && lat <= 90 &&
-                lng >= -180 && lng <= 180;
-        }
 
         // Function to fetch location from coordinates
         async function fetchLocation(latlang) {
@@ -2367,16 +2202,6 @@
             return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
         }
 
-        // Function to position the popup above the stop marker
-        //     function updateStopPopupPosition(coordinates) {
-        //     const mapPos = map.project(coordinates);
-        //     const popup = document.getElementById("stopMarkerPopup");
-        //     const popupHeight = popup.offsetHeight;
-
-        //     // Position popup above the stop marker with a small gap
-        //     popup.style.left = `${mapPos.x}px`;
-        //     popup.style.top = `${mapPos.y - popupHeight - 10}px`; // 10px gap between marker and popup
-        // }
 
         function hideStopPopup(manuallyClosed = false) {
             const popup = document.getElementById("stopMarkerPopup");
@@ -2392,245 +2217,473 @@
         }
 
         // Update start time display function
-        function updateStartTimeDisplay(startDateTime) {
-            // Remove or clean any existing start time display
-            const existingDisplay = document.querySelector('.start-time-display');
-            if (existingDisplay) {
-                existingDisplay.remove();
-            }
+        // Add these variables at the top with your other global variables
+            let activeInfoWindow = null;
+            let isInfoWindowOpen = false;
 
-            if (!startDateTime) return;
+            function findClosestPoint(mouseEvent, polyline) {
+  const bounds = map.getBounds();
+  const path = polyline.getPath();
+  let closestPoint = null;
+  let minDistance = Infinity;
+  let closestIndex = -1;
 
-            // Create start time display container
-            const timeDisplayDiv = document.createElement('div');
-            timeDisplayDiv.className = 'start-time-display';
-            timeDisplayDiv.style.cssText = `
-        background-color: white;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 10px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        white-space: nowrap;
-        color: #333;
-        font-family: Arial, sans-serif;
-        margin-bottom: 5px;
-        border: 1px solid rgba(0,0,0,0.1);
-        text-align: center;
-        position: absolute;
-        transform: translateY(-25px);
-        width: max-content;
-    `;
+  for (let i = 0; i < path.getLength(); i++) {
+    const point = path.getAt(i);
+    if (bounds.contains(point)) {
+      const distance = google.maps.geometry.spherical.computeDistanceBetween(
+        point,
+        mouseEvent.latLng
+      );
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestPoint = point;
+        closestIndex = i;
+      }
+    }
+  }
 
-            // Format and set the date-time
-            const formattedDateTime = formatStartDateTime(startDateTime.split('.')[0]);
-            timeDisplayDiv.textContent = formattedDateTime;
+  return {
+    point: closestPoint,
+    index: closestIndex,
+    distance: minDistance
+  };
+}
 
-            // Add the time display to the start marker if it exists
-            if (startingMarker) {
-                const markerElement = startingMarker.getElement();
-                if (markerElement) {
-                    // Insert time display before the marker symbol
-                    markerElement.insertBefore(timeDisplayDiv, markerElement.firstChild);
-                }
-            }
+function createPolylinePopup() {
+    // Remove existing popup if it exists
+    let existingPopup = document.getElementById('polylinePopup');
+    if (existingPopup) {
+        existingPopup.remove();
+    }
+
+    // Create new popup
+    const popup = document.createElement('div');
+    popup.id = 'polylinePopup';
+    popup.className = 'polyline-popup';
+    
+    const content = document.createElement('div');
+    content.id = 'polylinePopupContent';
+    popup.appendChild(content);
+    
+    document.body.appendChild(popup);
+}
+// Update the addPolylineHoverListeners function
+function addPolylineHoverListeners(segment, index) {
+
+    createPolylinePopup();
+
+    const polylinePopup = document.getElementById('polylinePopup');
+    const popupContent = document.getElementById('polylinePopupContent');
+
+    // Add mouseover event listener
+    segment.addListener('mouseover', (event) => {
+        if (index < 0 || index >= playbackData.length) {
+            polylinePopup.style.display = 'none';
+            return;
         }
 
-        function startPlayback(isSpeedUpdate = false) {
-            const selectedVehicle = document.getElementById('selectedVehicle');
-            if (selectedVehicle.textContent === 'Select Vehicle') {
-                alert('Please select a vehicle before starting playback');
-                return;
-            }
+        const currentPoint = playbackData[index];
+        const cumulativeDistance = calculateCumulativeDistance(index);
+        
+        const content = `
+            <div style="padding: 8px;">
+                <div style="margin-bottom: 4px;"><strong>Date-Time:</strong> ${currentPoint.date.split('.')[0]}</div>
+                <div style="margin-bottom: 4px;"><strong>Speed:</strong> ${Math.round(currentPoint.speed)} km/h</div>
+                <div><strong>Distance:</strong> ${cumulativeDistance.toFixed(2)} km</div>
+            </div>
+        `;
+        
+        popupContent.innerHTML = content;
+        polylinePopup.style.display = 'block';
 
-            document.getElementById("startPlayback").disabled = true;
-            document.getElementById("pausePlayback").disabled = false;
-            document.getElementById("stopPlayback").disabled = false;
+        // Position the popup near the mouse cursor
+        const x = event.domEvent.clientX;
+        const y = event.domEvent.clientY;
+        
+        // Add offset to prevent popup from appearing directly under cursor
+        polylinePopup.style.left = `${x + 15}px`;
+        polylinePopup.style.top = `${y - 60}px`;
+    });
 
-            cleanupPolylineEvents();
+    // Add mousemove event listener to update popup position
+    segment.addListener('mousemove', (event) => {
+        if (polylinePopup.style.display === 'block') {
+            const x = event.domEvent.clientX;
+            const y = event.domEvent.clientY;
+            
+            polylinePopup.style.left = `${x + 15}px`;
+            polylinePopup.style.top = `${y - 60}px`;
+        }
+    });
 
-            if (fetching) {
-                console.log("Data is still being fetched...");
-                return;
-            }
+    // Add mouseout event listener
+    segment.addListener('mouseout', () => {
+        polylinePopup.style.display = 'none';
+    });
+}
 
-            if (playbackData.length === 0) {
-                console.error("Playback data is empty.");
-                alert("Playback data is empty");
-                return;
-            }
+// Update the polyline popup CSS
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+    .polyline-popup {
+        position: fixed;
+        display: none;
+        background: white;
+        padding: 0;
+        border: 1px solid rgba(0,0,0,0.1);
+        border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        z-index: 1000;
+        pointer-events: none;
+        min-width: 200px;
+        font-size: 13px;
+        color: #333;
+    }
 
-            // Remove existing marker if not paused and not a speed update
-            if (vehicleMarker && !isPaused && !isSpeedUpdate) {
-                vehicleMarker.remove();
-                vehicleMarker = null;
-                dynamicPlaybackData = [];
-                index = 0;
-                totalDistance = 0;
-            }
-
-            if (playbackData && playbackData.length > 0) {
-                updateStartTimeDisplay(playbackData[0].date);
-            }
-
-            // Create new marker if it doesn't exist
-            if (!vehicleMarker) {
-                // Create marker div
-                let markerDiv = document.createElement('div');
-                markerDiv.style.cssText = 'position: absolute; transform-origin: center;';
-
-                // Create image element
-                let markerImg = document.createElement('img');
-                markerImg.src = '/images/truck1.png';
-                markerImg.style.cssText = 'width: 40px; height: 20px; transform-origin: center;';
-                markerDiv.appendChild(markerImg);
-
-                // Create vehicle marker
-                vehicleMarker = new mappls.Marker({
-                    map: map,
-                    position: {
-                        lat: playbackData[index].coordinates[1],
-                        lng: playbackData[index].coordinates[0]
-                    },
-
-                    html: `<img src="/images/truck1.png" style="width: 40px; height: 20px; margin-top:25px; transform: rotate(${playbackData[index].angle}deg);" />`,
-                    width: 35,
-                    height: 35,
-
-                    draggable: false,
-                    rotateWithMap: true
-                });
+    .polyline-popup::after {
+        content: "";
+        position: absolute;
+        bottom: -6px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 6px solid white;
+    }
+`;
+document.head.appendChild(styleSheet);
 
 
-
-                // Create starting marker
-                if (!startingMarker) {
-                    const startCoords = playbackData[0].coordinates;
-                    const startDateTime = playbackData[0].date;
-
-                    // Create the starting marker
-                    // startingMarker = createStartMarker(startCoords, startDateTime);
-                    addStartEndMarkers();
-
-                    // Update the time display
-                    updateStartTimeDisplay(startDateTime);
-
-                    // Center map on starting position
-                    map.setCenter([startCoords[1], startCoords[0]]);
+            function startPlayback(isSpeedUpdate = false) {
+                const selectedVehicle = document.getElementById('selectedVehicle');
+                if (selectedVehicle.textContent === 'Select Vehicle') {
+                    alert('Please select a vehicle before starting playback');
+                    return;
                 }
 
-                // Add click event for vehicle marker
-                vehicleMarker.addListener('click', function () {
-                    isPopupClosedManually = false;
-                    const cumulativeDistance = calculateCumulativeDistance(index);
-                    const content = createPopupContent(playbackData[index], cumulativeDistance);
-                    updateVehicleInfo(playbackData[index], cumulativeDistance);
-                    showPopup(content);
-                });
+                document.getElementById("startPlayback").disabled = true;
+                document.getElementById("pausePlayback").disabled = false;
+                document.getElementById("stopPlayback").disabled = false;
 
-                // Initial map center and zoom
-                map.setCenter([playbackData[index].coordinates[1], playbackData[index].coordinates[0]]);
-            }
+                if (fetching) {
+                    console.log("Data is still being fetched...");
+                    return;
+                }
 
-            // Start playback interval with speed control
-            isPaused = false;
-            clearInterval(playbackInterval);
-            playbackInterval = setInterval(() => {
-                if (index < playbackData.length) {
-                    const currentPoint = playbackData[index];
-                    const { coordinates, angle } = currentPoint;
+                if (playbackData.length === 0) {
+                    console.error("Playback data is empty.");
+                    alert("Playback data is empty");
+                    return;
+                }
 
-                    // Update marker position
-                    vehicleMarker.setPosition({
-                        lat: coordinates[1],
-                        lng: coordinates[0]
+                // Clear existing polylines only if not paused and not updating speed
+                if (!isPaused && !isSpeedUpdate) {
+                    clearAllPolylines();
+                    index = 0;
+                }
+
+                // Create or update vehicle marker
+                if (!vehicleMarker) {
+                    const startPoint = playbackData[0];
+                    vehicleMarker = new google.maps.Marker({
+                        position: {
+                            lat: parseFloat(startPoint.coordinates[1]),
+                            lng: parseFloat(startPoint.coordinates[0])
+                        },
+                        map: map,
+                        icon: {
+                            url: '/images/truck1.png#vehicleMarker',
+                            scaledSize: new google.maps.Size(30, 30),
+                            anchor: new google.maps.Point(15, 15)
+                        }
                     });
 
-                    const markerElement = vehicleMarker.getElement();
-                    if (markerElement) {
-                        const imgElement = markerElement.querySelector('img');
-                        if (imgElement) {
-                            // Adjust angle if needed (similar to the previous code with ANGLE_OFFSET)
-                            const adjustedAngle = angle + ANGLE_OFFSET;
-                            imgElement.style.transform = `rotate(${adjustedAngle}deg)`;
+                    const initialAngle = startPoint.angle + ANGLE_OFFSET;
+                    rotateMarker(vehicleMarker, initialAngle);
+                    
+                    // Modified click event listener for vehicle marker
+                    vehicleMarker.addListener('click', () => {
+                        if (activeInfoWindow) {
+                            activeInfoWindow.close();
                         }
-                    }
+                        
+                        activeInfoWindow = new google.maps.InfoWindow();
+                        isInfoWindowOpen = true;
+                        
+                        const content = createPopupContent(playbackData[index], calculateCumulativeDistance(index));
+                        activeInfoWindow.setContent(content);
+                        activeInfoWindow.open(map, vehicleMarker);
 
-                    // Update map center
-                    map.setCenter(coordinates);
-
-                    // Add to polyline data
-                    dynamicPlaybackData.push(currentPoint);
-                    updatePolyline();
-
-                    // Check for stops
-                    detectStopDuringPlayback(index);
-
-                    // Update vehicle information
-                    const cumulativeDistance = calculateCumulativeDistance(index);
-                    updateVehicleInfo(currentPoint, cumulativeDistance);
-
-                    if (!isPopupClosedManually) {
-                        const content = createPopupContent(currentPoint, cumulativeDistance);
-                        showPopup(content);
-                    }
-
-                    index++;
-                } else {
-                    clearInterval(playbackInterval);
-                    hidePopup();
+                        // Add close listener to reset state when popup is closed
+                        google.maps.event.addListener(activeInfoWindow, 'closeclick', () => {
+                            isInfoWindowOpen = false;
+                            activeInfoWindow = null;
+                        });
+                    });
+                    
+                    map.setCenter(vehicleMarker.getPosition());
+                    addStartEndMarkers();
+                    detectStopDuringPlayback();
                 }
-            }, 1000 / playbackSpeed);
+
+                // Start playback with speed control
+                isPaused = false;
+                clearInterval(playbackInterval);
+                playbackInterval = setInterval(() => {
+                    if (index < playbackData.length) {
+                        const currentPoint = playbackData[index];
+                        const position = {
+                            lat: parseFloat(currentPoint.coordinates[1]),
+                            lng: parseFloat(currentPoint.coordinates[0])
+                        };
+
+                        // Update vehicle marker position
+                        vehicleMarker.setPosition(position);
+                        rotateMarker(vehicleMarker, currentPoint.angle + ANGLE_OFFSET);
+                        map.setCenter(position);
+
+                        // Update popup content if it's open
+                        if (isInfoWindowOpen && activeInfoWindow) {
+                            const updatedContent = createPopupContent(currentPoint, calculateCumulativeDistance(index));
+                            activeInfoWindow.setContent(updatedContent);
+                        }
+
+                        // Get current speed threshold
+                        const currentSpeedThreshold = parseInt(document.getElementById('overSpeedingThreshold').value);
+
+                                                // Add polyline segment for current movement
+                                                // Update the part inside your startPlayback function where polylines are created
+                        if (index > 0) {
+                            const prevPoint = playbackData[index - 1];
+                            const path = [
+                                { 
+                                    lat: parseFloat(prevPoint.coordinates[1]), 
+                                    lng: parseFloat(prevPoint.coordinates[0]) 
+                                },
+                                {
+                                    lat: parseFloat(currentPoint.coordinates[1]),
+                                    lng: parseFloat(currentPoint.coordinates[0])
+                                }
+                            ];
+
+                            const speed = parseFloat(currentPoint.speed);
+                            const currentSpeedThreshold = parseInt(document.getElementById('overSpeedingThreshold').value);
+                            const color = speed >= currentSpeedThreshold ? '#FF0000' : '#00FF00';
+
+                            // Create segment with hover capabilities
+                            const iconSettings = {
+        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+        scale: 2,
+        strokeColor: '#FFFFFF',
+        strokeWeight: 1,
+        fillColor: '#000000',
+        fillOpacity: 1
+    };
+
+    // Define polyline options with icons
+    const polylineOptions = {
+        path: [
+            new google.maps.LatLng(path[0].lat, path[0].lng),
+            new google.maps.LatLng(path[1].lat, path[1].lng)
+        ],
+        strokeColor: color,
+        strokeOpacity: 0.9,
+        strokeWeight: 3,
+        map: map,
+        clickable: true,
+        zIndex: 1,
+        icons: [{
+            icon: iconSettings,
+            offset: '100%'
+        }]
+    };
+
+    // Create segment with combined line and arrow
+    const segment = new google.maps.Polyline(polylineOptions);
+
+                            // Store segment data for hover
+                            const segmentData = {
+                                startPoint: prevPoint,
+                                endPoint: currentPoint,
+                                startIndex: index - 1,
+                                endIndex: index
+                            };
+
+                            // Add hover listeners for this segment
+                            segment.addListener('mousemove', function(event) {
+                                const polylinePopup = document.getElementById('polylinePopup');
+                                
+                                // Get mouse position in LatLng
+                                const mouseLatLng = event.latLng;
+                                
+                                // Get segment endpoints
+                                const startLatLng = new google.maps.LatLng(path[0].lat, path[0].lng);
+                                const endLatLng = new google.maps.LatLng(path[1].lat, path[1].lng);
+                                
+                                // Calculate distances
+                                const distToStart = google.maps.geometry.spherical.computeDistanceBetween(mouseLatLng, startLatLng);
+                                const distToEnd = google.maps.geometry.spherical.computeDistanceBetween(mouseLatLng, endLatLng);
+                                
+                                // Choose closest point data
+                                const pointData = distToStart < distToEnd ? segmentData.startPoint : segmentData.endPoint;
+                                const pointIndex = distToStart < distToEnd ? segmentData.startIndex : segmentData.endIndex;
+                                
+                                // Calculate total distance up to this segment's start
+                                let distanceTraveled = 0;
+                                for (let i = 0; i < pointIndex; i++) {
+                                    if (i + 1 < playbackData.length) {
+                                        const curr = playbackData[i];
+                                        const next = playbackData[i + 1];
+                                        const d = google.maps.geometry.spherical.computeDistanceBetween(
+                                            new google.maps.LatLng(
+                                                parseFloat(curr.coordinates[1]), 
+                                                parseFloat(curr.coordinates[0])
+                                            ),
+                                            new google.maps.LatLng(
+                                                parseFloat(next.coordinates[1]), 
+                                                parseFloat(next.coordinates[0])
+                                            )
+                                        ) / 1000; // Convert to kilometers
+                                        distanceTraveled += d;
+                                    }
+                                }
+
+                                // Add partial distance for current segment if mouse is closer to end point
+                                if (distToEnd < distToStart) {
+                                    const partialDist = google.maps.geometry.spherical.computeDistanceBetween(
+                                        startLatLng,
+                                        endLatLng
+                                    ) / 1000;
+                                    distanceTraveled += partialDist;
+                                }
+
+                                // Update popup content
+                                polylinePopup.innerHTML = `
+                                    <div style="padding: 8px;">
+                                        <div><strong>Time:</strong> ${pointData.date.split('.')[0]}</div>
+                                        <div><strong>Speed:</strong> ${Math.round(pointData.speed)} km/h</div>
+                                        <div><strong>Distance:</strong> ${distanceTraveled.toFixed(2)} km</div>
+                                    </div>
+                                `;
+                                
+                                const mapContainer = map.getDiv();
+                                const mapBounds = mapContainer.getBoundingClientRect();
+                                
+                                // Get mouse coordinates relative to the map container
+                                const mouseX = event.domEvent.pageX - mapBounds.left;
+                                const mouseY = event.domEvent.pageY - mapBounds.top;
+
+                                // Consider scroll position
+                                const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+                                const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+                                // Position popup with offset
+                                polylinePopup.style.position = 'fixed';
+                                polylinePopup.style.display = 'block';
+                                polylinePopup.style.left = `${mouseX + mapBounds.left + 15}px`;
+                                polylinePopup.style.top = `${mouseY + mapBounds.top - 20}px`;
+                                polylinePopup.style.zIndex = '99999';
+
+                                // Highlight segment
+                                // segment.setOptions({
+                                //     strokeWeight: 5,
+                                //     strokeOpacity: 1.0
+                                // });
+                            });
+
+                            segment.addListener('mouseout', function() {
+                                const polylinePopup = document.getElementById('polylinePopup');
+                                polylinePopup.style.display = 'none';
+                                
+                                // Reset segment appearance
+                                segment.setOptions({
+                                    strokeWeight: 3,
+                                    strokeOpacity: 0.9
+                                });
+                            });
+
+                            // Add directional arrow
+                            // const arrow = addDirectionArrow(path);
+
+                            // Store segments
+                            pathPolylines.push(segment);
+                            // pathPolylines.push(arrow);
+                        }
+
+                                                function calculateDistance(lat1, lng1, lat2, lng2) {
+                            return google.maps.geometry.spherical.computeDistanceBetween(
+                                new google.maps.LatLng(lat1, lng1),
+                                new google.maps.LatLng(lat2, lng2)
+                            ) / 1000; // Convert to kilometers
+                        }
+
+                        // Update vehicle info display
+                        const cumulativeDistance = calculateCumulativeDistance(index);
+                        updateVehicleInfo(currentPoint, cumulativeDistance);
+
+                        // Add stop markers if needed
+                        addStopMarkersDuringPlayback(index);
+
+                        index++;
+                    } else {
+                        clearInterval(playbackInterval);
+                        document.getElementById("startPlayback").disabled = false;
+                    }
+                }, 1000 / playbackSpeed);
+            }
+
+        // Update clearAllPolylines function to handle arrows
+        function clearAllPolylines() {
+            pathPolylines.forEach(item => {
+                if (item) {
+                    item.setMap(null);
+                }
+            });
+            pathPolylines = [];
+        }
+
+        function updatePolylineColor(currentIndex) {
+            if (currentIndex === 0) return;
+
+            // Get all coordinates up to current index
+            const coordinates = [];
+            const speedColors = [];
+
+            for (let i = 0; i <= currentIndex; i++) {
+                const point = playbackData[i];
+                coordinates.push({
+                    lat: parseFloat(point.coordinates[1]),
+                    lng: parseFloat(point.coordinates[0])
+                });
+
+                // Determine color based on speed threshold
+                const color = point.speed >= speedThreshold ? '#FF0000' : '#00FF00';
+                speedColors.push(color);
+            }
+
+            // Remove existing polyline segments
+            if (pathPolyline) {
+                pathPolyline.setMap(null);
+            }
+
+            // Create new colored segments
+            for (let i = 0; i < coordinates.length - 1; i++) {
+                new google.maps.Polyline({
+                    path: [coordinates[i], coordinates[i + 1]],
+                    geodesic: true,
+                    strokeColor: speedColors[i],
+                    strokeOpacity: 1.0,
+                    strokeWeight: 2,
+                    map: map
+                });
+            }
         }
 
 
         // Modify the creation of the starting marker to include both symbol and time display
-        function createStartMarker(coordinates, startDateTime) {
-            const startDiv = document.createElement('div');
-            startDiv.className = 'start-marker';
-            startDiv.style.cssText = `
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        z-index: 100;
-    `;
-
-            // Create marker symbol
-            const symbolDiv = document.createElement('div');
-            symbolDiv.innerHTML = 'S';
-            symbolDiv.style.cssText = `
-        background-color: green;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        border: 2px solid white;
-        box-shadow: 0 0 3px rgba(0,0,0,0.3);
-        color: white;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        z-index: 1;
-    `;
-
-            startDiv.appendChild(symbolDiv);
-
-            // Create marker
-            return new mappls.Marker({
-                map: map,
-                position: {
-                    lat: coordinates[1],
-                    lng: coordinates[0]
-                },
-                icon: {
-                    html: startDiv,
-                    anchor: [10, 10]
-                },
-                draggable: false
-            });
-        }
-
         // Add this helper function to calculate cumulative distance
         function calculateCumulativeDistance(currentIndex) {
             let cumulativeDistance = 0;
@@ -2650,6 +2703,22 @@
             return cumulativeDistance;
         }
 
+        function rotateMarker(marker, angle) {
+            // Get marker's icon
+            const icon = marker.getIcon();
+
+            // Add CSS transform for smooth rotation
+            $('img[src="' + icon.url + '"]').css({
+                'transform': `rotate(${angle}deg)`,
+                'transform-origin': 'center',
+                'transition': 'transform 0.3s ease-out',
+                'width': '30px',
+                'height': '32px',
+                'max-width': '100%',
+                'object-fit': 'scale-down'
+            });
+        }
+
 
         function stopPlayback() {
             // Disable stop/pause buttons and enable start button
@@ -2665,34 +2734,58 @@
             hideStopPopup();
 
             if (vehicleMarker) {
-                vehicleMarker.remove(); // Remove the marker
-                vehicleMarker = null; // Set to null for clean restart
+                vehicleMarker.setMap(null);
+                vehicleMarker = null;
             }
 
             // Remove starting marker
-            if (startingMarker) {
-                startingMarker.remove();
-                startingMarker = null;
-            }
+            //   if (startingMarker) {
+            //     startingMarker.remove();
+            //     startingMarker = null;
+            //   }
+
+            clearAllPolylines();
 
             // Remove all stop markers
-            stopMarkers.forEach(marker => {
-                if (marker) marker.remove();
-            });
-            stopMarkers = [];
+            //   stopMarkers.forEach(stopData => {
+            //     const marker = map.getMarkers().find(m => 
+            //         m.getPosition().lat() === stopData.position.lat && 
+            //         m.getPosition().lng() === stopData.position.lng
+            //     );
+            //     if (marker) {
+            //         marker.setMap(null);
+            //     }
+            // });
 
             // Clear the polyline
             dynamicPlaybackData = [];
-            if (map.getSource(polylineId)) {
-                map.getSource(polylineId).setData({
-                    type: "Feature",
-                    properties: {},
-                    geometry: {
-                        type: "LineString",
-                        coordinates: [],
-                    },
-                });
+            //   if (map.getSource(polylineId)) {
+            //     map.getSource(polylineId).setData({
+            //       type: "Feature",
+            //       properties: {},
+            //       geometry: {
+            //         type: "LineString",
+            //         coordinates: [],
+            //       },
+            //     });
+            //   }
+            if (startMarker) {
+                startMarker.setMap(null);
+                startMarker = null;
             }
+            if (endMarker) {
+                endMarker.setMap(null);
+                endMarker = null;
+            }
+
+            // Clear polyline
+            if (pathPolyline) {
+                pathPolyline.setMap(null);
+                pathPolyline = null;
+            }
+            stopMarkers.forEach(stopMarker => {
+                stopMarker.marker.setMap(null);
+            })
 
             // Reset map to initial position if there's data
             if (playbackData.length > 0) {
@@ -2708,10 +2801,6 @@
                 2
             )} km`;
 
-            stopMarkers.forEach(marker => {
-                if (marker) marker.remove();
-            });
-            stopMarkers = [];
         }
 
         // Add this when page loads to set initial state
@@ -2734,41 +2823,17 @@
         }
 
         // Function to update hover popup position
-        function updatePolylinePopupPosition(e) {
-            const popup = document.getElementById("polylinePopup");
-            popup.style.left = `${e.point.x - 70}px`;
-            popup.style.top = `${e.point.y + 20}px`; // Position above the cursor
-        }
-
-        function cleanupPolylineEvents() {
-            if (map.getLayer(polylineId)) {
-                map.off("mousemove", polylineId);
-                map.off("mouseleave", polylineId);
-            }
-        }
+        function updatePolylinePopupPosition(event) {
+        const polylinePopup = document.getElementById('polylinePopup');
+        polylinePopup.style.left = `${event.clientX + 10}px`;
+        polylinePopup.style.top = `${event.clientY - 40}px`;
+    }
 
         const originalStopPlayback = stopPlayback;
         stopPlayback = function () {
-            cleanupPolylineEvents();
+            //   cleanupPolylineEvents();
             originalStopPlayback();
         };
-
-        // function stopPlayback() {
-        //   clearInterval(playbackInterval);
-        //   playbackInterval = null;
-        //   index = 0;
-        //   isPaused = false;
-        //   hidePopup();
-
-        //   if (vehicleMarker && playbackData.length > 0) {
-        //     vehicleMarker.setLngLat(playbackData[0].coordinates);
-        //     map.setCenter(playbackData[0].coordinates);
-        //     const markerElement = vehicleMarker.getElement().querySelector("img");
-        //     markerElement.style.transform = `rotate(${
-        //       playbackData[0].angle + ANGLE_OFFSET
-        //     }deg)`;
-        //   }
-        // }
 
         function setupDateValidation() {
             const fromDateInput = document.getElementById("fromDate");
@@ -2888,105 +2953,70 @@
         });
 
         function addStartEndMarkers() {
-            console.log("startmarker is adding....")
-            if (!playbackData || playbackData.length < 2) {
-                console.warn("Insufficient playback data for markers");
-                return;
-            }
+            if (!playbackData || playbackData.length < 2) return;
 
             // Remove existing markers
-            if (startMarker) {
-                startMarker.remove();
-            }
-            if (endMarker) {
-                endMarker.remove();
-            }
+            if (startMarker) startMarker.setMap(null);
+            if (endMarker) endMarker.setMap(null);
 
             const startPoint = playbackData[0];
             const endPoint = playbackData[playbackData.length - 1];
 
-            try {
-                // Create start marker
-                startMarker = new mappls.Marker({
-                    map: map,
-                    position: {
-                        lat: startPoint.coordinates[1],
-                        lng: startPoint.coordinates[0]
-                    },
-                    fitbounds: true,
-                    icon: createStartEndIcon('S', '#2ecc71')
-                });
+            // Create start marker
+            startMarker = new google.maps.Marker({
+                position: {
+                    lat: parseFloat(startPoint.coordinates[1]),
+                    lng: parseFloat(startPoint.coordinates[0])
+                },
+                map: map,
+                label: {
+                    text: 'S',
+                    color: 'white'
+                },
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 12,
+                    fillColor: '#2ecc71',
+                    fillOpacity: 1,
+                    strokeWeight: 2,
+                    strokeColor: '#ffffff'
+                }
+            });
 
-                // Create end marker
-                // endMarker = new mappls.Marker({
-                //     map: map,
-                //     position: {
-                //         lat: endPoint.coordinates[1],
-                //         lng: endPoint.coordinates[0]
-                //     },
-                //     fitbounds: true,
-                //     icon: createStartEndIcon('E', '#e74c3c')
-                // });
+            // Create end marker
+            endMarker = new google.maps.Marker({
+                position: {
+                    lat: parseFloat(endPoint.coordinates[1]),
+                    lng: parseFloat(endPoint.coordinates[0])
+                },
+                map: map,
+                label: {
+                    text: 'E',
+                    color: 'white'
+                },
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 12,
+                    fillColor: '#e74c3c',
+                    fillOpacity: 1,
+                    strokeWeight: 2,
+                    strokeColor: '#ffffff'
+                }
+            });
 
-                // Add permanent timestamp labels without prefixes
-                addPermanentLabel(startMarker, startPoint.date);
-                // addPermanentLabel(endMarker, endPoint.date);
+            // Add hover information
+            const startInfo = new google.maps.InfoWindow({
+                content: `<div style="padding: 5px;">Start: ${startPoint.date}</div>`
+            });
 
-            } catch (error) {
-                console.error("Error creating markers:", error);
-            }
-        }
+            const endInfo = new google.maps.InfoWindow({
+                content: `<div style="padding: 5px;">End: ${endPoint.date}</div>`
+            });
 
-        function createStartEndIcon(label, color) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 40;
-            canvas.height = 40;
-            const ctx = canvas.getContext('2d');
-
-            // Draw circle
-            ctx.beginPath();
-            ctx.arc(20, 20, 15, 0, 2 * Math.PI);
-            ctx.fillStyle = color;
-            ctx.fill();
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Add label
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 14px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(label, 20, 20);
-
-            return canvas.toDataURL();
-        }
-
-        function addPermanentLabel(marker, timestamp) {
-            const markerElement = marker.getElement();
-            if (!markerElement) return;
-
-            // Create label container
-            const labelContainer = document.createElement('div');
-            labelContainer.style.position = 'absolute';
-            labelContainer.style.top = '-35px';  // Position above marker
-            labelContainer.style.left = '50%';
-            labelContainer.style.transform = 'translateX(-50%)';
-            labelContainer.style.backgroundColor = 'white';
-            labelContainer.style.padding = '4px 8px';
-            labelContainer.style.borderRadius = '4px';
-            labelContainer.style.fontSize = '12px';
-            labelContainer.style.fontWeight = '600';  // Made font bolder
-            labelContainer.style.whiteSpace = 'nowrap';
-            labelContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-            labelContainer.style.zIndex = '1000';
-            labelContainer.style.pointerEvents = 'none';
-
-            // Set the timestamp without prefix
-            labelContainer.textContent = timestamp.split('.')[0];
-
-            // Append label to marker
-            markerElement.appendChild(labelContainer);
+            startMarker.addListener('mouseover', () => startInfo.open(map, startMarker));
+            startMarker.addListener('mouseout', () => startInfo.close());
+            endMarker.addListener('mouseover', () => endInfo.open(map, endMarker));
+            endMarker.addListener('mouseout', () => endInfo.close());
         }
 
         // Make sure to call setupDateValidation when the page loads
@@ -3068,7 +3098,7 @@
         $("#increaseSpeed").on("click", increaseSpeed);
         $("#decreaseSpeed").on("click", decreaseSpeed);
 
-
+        document.getElementById('map').addEventListener('mousemove', updatePolylinePopupPosition);
     </script>
 </body>
 
