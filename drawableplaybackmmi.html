@@ -926,6 +926,10 @@
     let startMarker = null;
     let endMarker = null;
     let arrowMarkers = [];
+    let deviceData = [];
+    const popup = document.getElementById("customPopup");
+    const popupContent = document.getElementById("popupContent");
+
     
     // Initialize when document is ready
     $(document).ready(function() {
@@ -1074,6 +1078,7 @@
                     did: item.did
                 }));
                 populateVehicleList(devices);
+                deviceData = devices;
             })
             .catch(error => {
                 console.error("Error fetching devices:", error);
@@ -1110,7 +1115,6 @@
                     speed: Number(item.speed) || 0,
                     deviceId: String(item.deviceId || ''),
                     date: item.DeviceDate,
-                    digital_2: item.digital_2 || false
                 }));
     
                 pathCoordinates = playbackData.map(item => item.coordinates);
@@ -1557,7 +1561,7 @@ function createVehicleMarker() {
     markerElement.className = 'customMarkerClass';
     
     const carImage = document.createElement('img');
-    carImage.src = 'images/truck1.png';
+    carImage.src = '/images/truck1.png';
     carImage.className = 'carImage';
     carImage.alt = 'Vehicle';
     
@@ -1580,6 +1584,42 @@ function createVehicleMarker() {
     return markerElement;
 }
 
+function createPopupContent(data, totalDistance) {
+    const devicename = deviceData.find((d) => d.did == data.deviceId)?.name;
+    return `
+        <div style="border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 5px;">
+            <b>Vehicle:</b> ${devicename} 
+        </div>
+        <div>
+          <b>Date-Time:</b> ${data.date.split(".")[0]} <br/>
+          <b>Speed:</b> ${Math.round(data.speed)} km/h <br/>
+          <b>Distance:</b> ${totalDistance.toFixed(2)} km
+        </div>
+    `;
+}
+
+function showPopup(content) {
+    if (isPopupClosedManually) return; // Do not show if manually closed
+    popupContent.innerHTML = content;
+    popup.style.display = "block";
+    updatePopupPosition(); // Ensure popup is positioned correctly initially
+}
+
+function updatePopupPosition() {
+    if (vehicleMarker && popup.style.display === "block") {
+    const coordinates = vehicleMarker.getLngLat();
+    const mapPos = map.project(coordinates);
+
+    // Increase the vertical offset to move popup higher above the marker
+    popup.style.left = `${mapPos.x}px`;
+    popup.style.top = `${mapPos.y + 80}px`; // Changed from -60 to -120 to move it higher
+    }
+}
+
+function hidePopup(manuallyClosed = false) {
+    popup.style.display = "none";
+    if (manuallyClosed) isPopupClosedManually = true;
+}
     
     // Playback control functions
     function startPlayback() {
@@ -1612,11 +1652,24 @@ function createVehicleMarker() {
                     playbackData[0].coordinates[1],
                     playbackData[0].coordinates[0]
                 ],
-                icon: createVehicleMarker(),
-                draggable: false,
-                size: { width: 40, height: 40 }
+                html: `<img src="/images/truck1.png" style="width: 40px; height: 20px; margin-top:25px; transform: rotate(${playbackData[index].angle}deg);" />`,
+                width: 35,
+                height: 35,
+        
+            draggable: false,
+            rotateWithMap: true
             });
+
+            vehicleMarker.addListener('click', function() {
+            isPopupClosedManually = false;
+            const cumulativeDistance = calculateCumulativeDistance(index);
+            const content = createPopupContent(playbackData[index], cumulativeDistance);
+            updateVehicleInfo(playbackData[index], cumulativeDistance);
+            showPopup(content);
+        });
         }
+
+
 
         playbackInterval = setInterval(() => {
             if (index >= playbackData.length) {
@@ -1640,6 +1693,21 @@ function createVehicleMarker() {
 
             // Update rotation
             updateVehicleRotation(currentPoint.angle);
+
+            if (index < playbackData.length) {
+              const currentPoint = playbackData[index];
+              const { coordinates, angle } = currentPoint;
+
+              const markerElement = vehicleMarker.getElement();
+            if (markerElement) {
+                const imgElement = markerElement.querySelector('img');
+                if (imgElement) {
+                    // Adjust angle if needed (similar to the previous code with ANGLE_OFFSET)
+                    const adjustedAngle = angle + 90;
+                    imgElement.style.transform = `rotate(${adjustedAngle}deg)`;
+                }
+            }
+            }
 
             // Calculate distance
             if (index > 0) {
