@@ -262,6 +262,33 @@
             flex: 1;
             min-height: 0; /* Important for proper flexbox scrolling */
         }
+
+        /* Address column scrolling */
+        .poi-table td:nth-child(5) {
+            max-width: 200px;  /* Set maximum width for address column */
+            white-space: nowrap;  /* Prevent text wrapping */
+            overflow-x: auto;  /* Enable horizontal scrolling */
+            text-align: left;  /* Left align text */
+        }
+
+        /* Custom scrollbar styling for address column */
+        .poi-table td:nth-child(5)::-webkit-scrollbar {
+            height: 4px;  /* Scrollbar height */
+        }
+
+        .poi-table td:nth-child(5)::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 2px;
+        }
+
+        .poi-table td:nth-child(5)::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 2px;
+        }
+
+        .poi-table td:nth-child(5)::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
     </style>
 </head>
 
@@ -404,7 +431,7 @@ function initializeMap() {
                         <td>${poi.plocation || ''}</td>
                         <td>${poi.latitude || ''}</td>
                         <td>${poi.langitude || ''}</td>
-                        <td>${poi.plocation || ''}</td>
+                        <td>${poi.address || ''}</td>
                         <td>${poi.status || 'Enable'}</td>
                         <td>
                             <span class="action-btn enable-btn" onclick="updateStatus(${poi.id}, 'Enable')">Enable</span>
