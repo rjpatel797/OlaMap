@@ -1,12 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nearby Vehicles</title>
+    <title>Vehicle Tracking</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
+        body,
+    html {
+      height: 100%;
+      font-family: Arial, sans-serif;
+      margin: 0;
+    }
         .container {
             display: flex;
             flex-direction: column;
@@ -14,11 +19,15 @@
         }
 
         #navbar-container {
-            width: 100%;
-            background-color: #333;
-            color: white;
-        }
+      width: 100%;
+      background-color: #333;
+      color: white;
+      padding: 0;
+    }
 
+        #map {
+            flex: 1;
+        }
         .controls {
             padding: 10px;
             background: #2c3e50;
@@ -26,133 +35,59 @@
             align-items: center;
             gap: 15px;
         }
-
         .radius-control {
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-
-        .radius-control label {
             color: white;
-            font-size: 13px;
         }
-
-        .radius-control input {
-            width: 200px;
-        }
-
-        .radius-value {
-            color: white;
-            min-width: 50px;
-        }
-
-        #map {
-            flex: 1;
-        }
-
-        .customMarkerClass {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
         .popup {
-            position: fixed;
             background: white;
             padding: 15px;
             border-radius: 8px;
-            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
-            min-width: 120px;
-            transform: translate(-50%, -100%);
-            pointer-events: auto;
-        }
-
-        .popup-close {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            background: #f1f1f1;
-            border-radius: 50%;
-            font-size: 14px;
-            line-height: 1;
-            color: #666;
-            transition: all 0.2s ease;
-        }
-
-        .popup-close:hover {
-            background: #e1e1e1;
-            color: #333;
-        }
-
-        .popup h3 {
-            margin-right: 20px;
-            margin-top: 5px;
-        }
-
-        .popup:hover {
-            transform: translate(-50%, -100%) scale(1.05);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .popup p {
-            margin: 5px 0;
-            color: #34495e;
-            font-size: 13px;
-        }
-
-        .view-trip-btn {
-            margin-top: 10px;
-            padding: 6px 12px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: background-color 0.3s;
-        }
-
-        .view-trip-btn:hover {
-            background-color: #45a049;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.15);
         }
     </style>
 </head>
-
 <body>
     <div class="container">
         <div id="navbar-container"></div>
         <div class="controls">
             <div class="radius-control">
-                <label>Radius:</label>
+                <label>Search Radius:</label>
                 <input type="range" id="radiusSlider" min="1" max="50" value="12">
-                <span class="radius-value" id="radiusValue">12 km</span>
+                <span id="radiusValue">12 km</span>
             </div>
         </div>
         <div id="map"></div>
     </div>
     <script src="js/api.js"></script>
     <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const deviceId = urlParams.get('deviceId');  // 16448
+        const centerLat = parseFloat(urlParams.get('lat'));  // 21.074731111111113
+        const centerLng = parseFloat(urlParams.get('lng'));  // 72.64308777777778
+        let radius = parseFloat(urlParams.get('radius')) || 12;
+
         let map;
         let radiusCircle;
         let markers = [];
-        const urlParams = new URLSearchParams(window.location.search);
-        const deviceId = urlParams.get('deviceId');
-        const centerLat = parseFloat(urlParams.get('lat'));
-        const centerLng = parseFloat(urlParams.get('lng'));
-        let radius = parseFloat(urlParams.get('radius')) || 12;
 
-        // Create and append Mappls script tag dynamically
+        $(document).ready(function () {
+          // Load navbar from external file
+          $("#navbar-container").load("navbarola.html", function () {
+            console.log("Navbar loaded successfully!");
+          });
+
+          // Check if 'mid' is available in localStorage otherwise ri-direct login page
+          if (!localStorage.getItem('mid')) {
+            // Redirect to login page if 'mid' is not found
+            window.location.href = '/index.html';
+          }
+
+        });
+
+        // Load MapmyIndia SDK
         const script = document.createElement('script');
         script.src = `https://apis.mappls.com/advancedmaps/api/${localStorage.getItem("key")}/map_sdk?layer=vector&v=3.0&callback=initMap`;
         script.defer = true;
@@ -160,293 +95,272 @@
         document.head.appendChild(script);
 
         function initMap() {
-    const mid = localStorage.getItem("mid");
-    if (!mid) {
-        console.error("No mid found in localStorage");
+    if (!localStorage.getItem("mid")) {
         window.location.href = "index.html";
         return;
     }
 
-    // Default center coordinates (Delhi)
-    const mapCenter = [77.2090, 28.6139]; // [lng, lat] for Mappls
-
+    // Initialize map with the center from URL parameters
     map = new mappls.Map('map', {
-        center: mapCenter,
-        zoom: 10
-    });
+    center: [centerLat, centerLng], // Using [lat, lng]
+    zoom: 12
+});
 
-    // Initialize radius controls
-    initializeRadiusControls();
-
-    // First fetch vehicles by mid
-    fetch(`${API}opr=getVehileByMid&mid=${mid}`)
-        .then(response => response.json())
-        .then(data => {
-            console.log("Received data:", data); // Debug log
-            
-            if (!Array.isArray(data)) {
-                console.warn("Received non-array data:", data);
-                return;
-            }
-
-            // Check first vehicle's latlang format
-            if (data.length > 0) {
-                console.log("Sample vehicle latlang:", data[0].latlang);
-            }
-
-            displayNearbyVehicles(data);
-        })
-        .catch(error => {
-            console.error("Error fetching vehicles:", error);
-        });
+    initializeControls();
+    fetchAndDisplayVehicles();
 }
 
-        function initializeRadiusControls() {
-            const radiusSlider = document.getElementById('radiusSlider');
-            const radiusValue = document.getElementById('radiusValue');
+        function initializeControls() {
+            const slider = document.getElementById('radiusSlider');
+            const value = document.getElementById('radiusValue');
+            
+            slider.value = radius;
+            value.textContent = `${radius} km`;
 
-            radiusSlider.value = radius;
-            radiusValue.textContent = `${radius} km`;
-
-            radiusSlider.addEventListener('input', function () {
+            slider.addEventListener('input', function() {
                 radius = parseInt(this.value);
-                radiusValue.textContent = `${radius} km`;
-
-                if (this.timeoutId) {
-                    clearTimeout(this.timeoutId);
-                }
-                this.timeoutId = setTimeout(() => {
-                    updateNearbyVehicles();
-                }, 300);
+                value.textContent = `${radius} km`;
+                if (this.timeoutId) clearTimeout(this.timeoutId);
+                this.timeoutId = setTimeout(fetchAndDisplayVehicles, 300);
             });
         }
 
-        let throttleTimer;
-        function updateNearbyVehicles() {
-            const mid = localStorage.getItem("mid");
-            if (!mid) {
-                console.error("No mid found in localStorage");
+        function fetchAndDisplayVehicles() {
+    const mid = localStorage.getItem("mid");
+    
+    fetch(`${API}opr=getVehileByMid&mid=${mid}`)
+        .then(response => response.json())
+        .then(vehicles => {
+            if (!Array.isArray(vehicles)) {
+                console.warn("Invalid response format");
                 return;
             }
 
-            if (throttleTimer) return;
-            throttleTimer = setTimeout(() => {
-                throttleTimer = null;
-            }, 2000);
+            // Find selected vehicle
+            const selectedVehicle = vehicles.find(v => v.did == deviceId);
+            if (!selectedVehicle) {
+                console.error("Selected vehicle not found");
+                return;
+            }
 
-            fetch(`${API}opr=getVehileByMid&mid=${mid}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (!Array.isArray(data)) {
-                        console.warn("Received non-array data:", data);
-                        return;
-                    }
+            // Get selected vehicle coordinates
+            const [selectedLat, selectedLng] = selectedVehicle.latlang.split(',').map(Number);
 
-                    const nearbyVehicles = data.filter(vehicle => {
-                        if (!vehicle.latlang) return false;
-                        const [lat, lng] = vehicle.latlang.split(',').map(Number);
-                        if (isNaN(lat) || isNaN(lng)) return false;
-                        const distance = calculateDistance(centerLat, centerLng, lat, lng);
-                        return distance <= radius;
-                    });
+            // Find all vehicles within radius
+            const nearbyVehicles = vehicles
+                .filter(vehicle => {
+                    if (vehicle.did == deviceId) return false;
+                    if (!vehicle.latlang) return false;
 
-                    displayNearbyVehicles(nearbyVehicles);
+                    const [vLat, vLng] = vehicle.latlang.split(',').map(Number);
+                    const distance = calculateDistance(
+                        selectedLat, selectedLng,
+                        vLat, vLng
+                    );
+                    vehicle.distance = distance;
+                    return distance <= radius;
                 })
-                .catch(error => {
-                    console.error("Error fetching nearby vehicles:", error);
-                });
-        }
+                .sort((a, b) => a.distance - b.distance);
 
-        // Replace the displayNearbyVehicles function with this updated version
-function displayNearbyVehicles(vehicles) {
+            // Display all vehicles
+            displayVehicles(selectedVehicle, nearbyVehicles);
+        })
+        .catch(error => console.error("Error fetching vehicles:", error));
+}
+
+function displayVehicles(selectedVehicle, nearbyVehicles) {
     // Clear existing markers
-    if (markers && markers.length) {
-        markers.forEach(marker => marker.remove());
-        markers = [];
+    markers.forEach(marker => marker.remove());
+    markers = [];
+
+    let selectedMarker = null;
+    let nearestMarker = null;
+
+    // Add selected vehicle marker first
+    if (selectedVehicle && selectedVehicle.latlang) {
+        const [lat, lng] = selectedVehicle.latlang.split(',').map(Number);
+        selectedMarker = addMarker(selectedVehicle, [lat, lng], 'selected', false);
+        drawRadiusCircle([lng, lat]);
     }
 
-    console.log("Displaying vehicles:", vehicles.length); // Debug log
-
-    vehicles.forEach((vehicle, index) => {
-        if (!vehicle.latlang) {
-            console.log(`Vehicle ${index} missing latlang:`, vehicle);
-            return;
-        }
-
-        let coordinates = vehicle.latlang.split(',');
-        if (coordinates.length !== 2) {
-            console.log(`Invalid coordinates format for vehicle ${index}:`, vehicle.latlang);
-            return;
-        }
-
-        // Parse coordinates and handle potential issues
-        let lat = parseFloat(coordinates[0]);
-        let lng = parseFloat(coordinates[1]);
-
-        if (isNaN(lat) || isNaN(lng)) {
-            console.log(`Invalid coordinate values for vehicle ${index}:`, coordinates);
-            return;
-        }
-
-        // Debug log for coordinate values
-        console.log(`Creating marker for vehicle ${index}:`, {
-            lat: lat,
-            lng: lng,
-            latlang: vehicle.latlang
-        });
-
-        // Determine vehicle status and icon
-        const currentDate = new Date();
-        const deviceDate = new Date(vehicle.ddate);
-        const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-        const ignitionStatus = vehicle.ignition?.toLowerCase() === 'true';
-
-        let iconUrl;
-        if (hoursDifference > 2) {
-            iconUrl = './deviceTracking/images/blackcar1.png';
-        } else if (!ignitionStatus) {
-            iconUrl = './images/icon/red/car0.png';
-        } else if (ignitionStatus && parseFloat(vehicle.speed) > 0) {
-            iconUrl = './deviceTracking/images/green.png';
-        } else {
-            iconUrl = './deviceTracking/images/yellow.png';
-        }
-
-        try {
-            const marker = new mappls.Marker({
-                map: map,
-                position: [lng, lat], // Mappls expects [longitude, latitude]
-                icon: iconUrl,
-                iconSize: [30, 30],
-                draggable: false,
-                popupHtml: createPopupContent(vehicle)
-            });
-
-            console.log(`Marker created for vehicle ${index}`); // Debug log
-
-            marker.addListener('click', () => {
-                markers.forEach(m => m.closePopup());
-                marker.openPopup();
-            });
-
-            markers.push(marker);
-        } catch (error) {
-            console.error(`Error creating marker for vehicle ${index}:`, error);
+    // Add all nearby vehicles
+    nearbyVehicles.forEach((vehicle, index) => {
+        if (vehicle.latlang) {
+            const [lat, lng] = vehicle.latlang.split(',').map(Number);
+            const isNearest = index === 0;
+            const marker = addMarker(vehicle, [lat, lng], 'nearby', isNearest);
+            if (isNearest) {
+                nearestMarker = marker;
+            }
         }
     });
 
-    console.log(`Total markers created: ${markers.length}`); // Debug log
+    // Open popups for both selected and nearest vehicles
+    setTimeout(() => {
+        if (nearestMarker) nearestMarker.openPopup();
 
-    // If markers were created, fit bounds to show all markers
+        if (selectedMarker) selectedMarker.openPopup();
+    }, 100);
+
+    // Fit map bounds
     if (markers.length > 0) {
         const bounds = new mappls.LatLngBounds();
-        markers.forEach(marker => {
-            bounds.extend(marker.getLngLat());
-        });
+        markers.forEach(marker => bounds.extend(marker.getLngLat()));
         map.fitBounds(bounds, { padding: 50 });
     }
 }
-        function createPopupContent(vehicle, type = 'normal') {
-            let content = '';
-            switch (type) {
-                case 'selected':
-                    content = `
-                        <div style="border: 2px solid #FF4444; padding: 10px; border-radius: 5px;">
-                            <h3 style="margin: 0 0 5px 0;">${vehicle.dname}</h3>
-                            <p style="color: #FF4444; font-weight: bold; margin: 5px 0;">Selected Vehicle</p>
-                        </div>`;
-                    break;
-                case 'nearest':
-                    content = `
-                        <div style="border: 2px solid #4CAF50; padding: 10px; border-radius: 5px;">
-                            <h3 style="margin: 0 0 5px 0;">${vehicle.dname}</h3>
-                            <p style="color: #4CAF50; font-weight: bold; margin: 5px 0;">Nearest Vehicle</p>
-                            <p style="margin: 5px 0;">Distance: ${vehicle.distance?.toFixed(2)} km</p>
-                        </div>`;
-                    break;
-                default:
-                    content = `
-                        <div style="padding: 10px;">
-                            <h3 style="margin: 0;">${vehicle.dname}</h3>
-                        </div>`;
-            }
-            return content;
+
+function addMarker(vehicle, position, type, isNearest = false) {
+    const iconUrl = getVehicleIcon(vehicle);
+    let iconSize = [30, 30];
+    
+    // Make selected and nearest vehicles' icons slightly larger
+    if (type === 'selected' || isNearest) {
+        iconSize = [40, 40];
+    }
+    
+    const marker = new mappls.Marker({
+        map: map,
+        position: position,
+        icon: iconUrl,
+        iconSize: iconSize,
+        zIndexOffset: type === 'selected' ? 1000 : (isNearest ? 999 : 1),
+        popupHtml: createPopupContent(vehicle, type, isNearest)
+    });
+
+    // Add click handler to manage popups
+    marker.addListener('click', () => {
+        markers.forEach(m => m.closePopup());
+        marker.openPopup();
+    });
+
+    markers.push(marker);
+    return marker;
+}
+
+        function getVehicleIcon(vehicle) {
+            const currentDate = new Date();
+            const deviceDate = new Date(vehicle.ddate);
+            const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+            const ignitionStatus = vehicle.ignition?.toLowerCase() === 'true';
+            
+            if (hoursDifference > 2) return './deviceTracking/images/blackcar1.png';
+            if (!ignitionStatus) return './images/icon/red/car0.png';
+            return ignitionStatus && parseFloat(vehicle.speed) > 0 ? 
+                './deviceTracking/images/green.png' : 
+                './deviceTracking/images/yellow.png';
         }
 
-        function drawRadiusCircle(center, radiusKm) {
-            // Remove existing circle if it exists
-            if (radiusCircle) {
-                map.removeLayer(radiusCircle);
-            }
+        function createPopupContent(vehicle, type, isNearest = false) {
+    let headerText = 'Nearby Vehicle';
+    let borderStyle = 'border: 1px solid #ccc';
+    let headerStyle = '';
 
-            // Create new circle
-            radiusCircle = new mappls.Circle({
-                map: map,
-                center: center,
-                radius: radiusKm * 1000,
-                strokeColor: '#2980b9',
-                strokeOpacity: 0.8,
-                strokeWeight: 2,
-                fillColor: '#3498db',
-                fillOpacity: 0.1
-            });
-        }
+    if (type === 'selected') {
+        headerText = 'Selected Vehicle';
+        borderStyle = 'border: 3px solid #FF4444';
+        headerStyle = 'color: #FF4444; font-weight: bold;';
+    } else if (isNearest) {
+        headerText = 'Nearest Vehicle';
+        borderStyle = 'border: 3px solid #4CAF50';
+        headerStyle = 'color: #4CAF50; font-weight: bold;';
+    }
+    
+    return `
+        <div class="popup" style="${borderStyle}; padding: 15px; min-width: 200px;">
+            <h3 style="margin: 0 0 10px 0; ${headerStyle}">${headerText}</h3>
+            <p style="margin: 5px 0"><strong>Name:</strong> ${vehicle.dname}</p>
+            ${isNearest || type !== 'selected' ? 
+                `<p style="margin: 5px 0"><strong>Distance:</strong> ${vehicle.distance.toFixed(2)} km</p>` : 
+                ''}
+            <p style="margin: 5px 0"><strong>Speed:</strong> ${vehicle.speed} km/h</p>
+            <p style="margin: 5px 0">
+                <strong>Status:</strong> ${vehicle.ignition === 'true' ? 
+                    '<span style="color: #4CAF50">Running</span>' : 
+                    '<span style="color: #FF4444">Stopped</span>'}
+            </p>
+        </div>`;
+}
 
-        function findNearestToSelected(vehicles, selectedVehicle) {
-            let nearestVehicle = null;
-            let minDistance = Infinity;
 
-            if (!selectedVehicle || !selectedVehicle.latlang) return null;
-            const [selectedLat, selectedLng] = selectedVehicle.latlang.split(',').map(Number);
+function drawRadiusCircle(center) {
+    if (radiusCircle) {
+        map.removeLayer(radiusCircle);
+    }
 
-            vehicles.forEach(vehicle => {
-                if (!vehicle.latlang || vehicle.dname === selectedVehicle.dname) return;
-                const [vlat, vlng] = vehicle.latlang.split(',').map(Number);
-                if (isNaN(vlat) || isNaN(vlng)) return;
+    // Create circle with more prominent styling
+    radiusCircle = new mappls.Circle({
+    center: center,  // Using [lng, lat] format
+    map: map,
+    radius: radius * 1000,  // Correctly converting km to meters
+    strokeColor: "#2980b9",
+    strokeOpacity: 0.8,
+    strokeWeight: 2,
+    fillColor: "rgba(52, 152, 219, 0.2)",
+    fillOpacity: 0.2,
+    zIndex: -1
+});
 
-                const distance = calculateDistance(selectedLat, selectedLng, vlat, vlng);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    nearestVehicle = { ...vehicle, distance };
-                }
-            });
+    // Add label for the circle
+    const radiusLabel = new mappls.Marker({
+        map: map,
+        position: center,
+        icon: createRadiusLabel(),
+        iconSize: [80, 30],
+        offset: [0, -radius * 1000], // Position label at the top of circle
+        popupHtml: `<div style="padding: 10px;">
+            <strong>Search Area</strong><br>
+            Radius: ${radius} km
+        </div>`
+    });
+}
 
-            return nearestVehicle;
-        }
+function createRadiusLabel() {
+    // Create a canvas element
+    const canvas = document.createElement('canvas');
+    canvas.width = 80;
+    canvas.height = 30;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Draw label background
+    ctx.fillStyle = 'rgba(255, 68, 68, 0.9)';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, 80, 30, 5);
+    ctx.fill();
+    
+    // Add text
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${radius} km`, 40, 15);
+    
+    // Convert canvas to data URL
+    return canvas.toDataURL();
+}
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371;
+            const R = 6371; // Earth's radius in kilometers
             const dLat = deg2rad(lat2 - lat1);
             const dLon = deg2rad(lon2 - lon1);
-            const a =
-                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
         function deg2rad(deg) {
-            return deg * (Math.PI / 180);
+            return deg * (Math.PI/180);
         }
 
-        // Load navbar
-        $(document).ready(() => {
-            $("#navbar-container").load("navbarola.html");
+        // Check authentication on load
+        window.addEventListener('load', () => {
             if (!localStorage.getItem("mid")) {
                 window.location.href = "index.html";
-            }
-        });
-
-        window.addEventListener('load', function () {
-            if (!localStorage.getItem("mid")) {
-                window.location.href = "index.html";
-                return;
             }
         });
     </script>
 </body>
-
-
-
 </html>
