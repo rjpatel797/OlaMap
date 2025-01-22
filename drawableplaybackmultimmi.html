@@ -749,32 +749,45 @@
     }
 
     .polyline-popup {
-      display: none;
-      position: absolute;
-      background: white;
-      padding: 8px 12px;
-      border-radius: 4px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      font-size: 12px;
-      pointer-events: none;
-      z-index: 1000;
-      color: #333;
-      max-width: 200px;
-      border: 1px solid rgba(0, 0, 0, 0.1);
-    }
+    position: fixed; /* Changed from absolute to fixed */
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    font-size: 13px;
+    pointer-events: none;
+    z-index: 9999; /* Increased z-index */
+    max-width: 250px;
+    min-width: 200px;
+    border: 1px solid rgba(0,0,0,0.1);
+}
 
-    .polyline-popup::after {
-      content: '';
-      position: absolute;
-      bottom: -5px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 5px solid transparent;
-      border-right: 5px solid transparent;
-      border-top: 5px solid white;
-    }
+.point-details {
+    margin: 0;
+}
+
+.point-header {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.point-info div {
+    margin-bottom: 5px;
+    line-height: 1.4;
+}
+
+/* Add drop shadow effect */
+.polyline-popup::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    z-index: -1;
+}
 
     /* pop-up display righ-side*/
     .vehicle-info-popup {
@@ -1063,7 +1076,6 @@ function initMap() {
 
 $(document).ready(() => {
       $("#navbar-container").load("navbarola.html", () => {
-        console.log("Navbar loaded.");
       });
 
       //   map.on("load", () => {
@@ -1333,16 +1345,13 @@ function addPolyline(deviceId, color) {
   }
 
   const data = deviceDataMap.get(deviceId);
-  console.log("Data for polyline:", data); // Debug log
 
-  // Format coordinates correctly for MapMyIndia - reverse lat/lng order
-  const coordinates = data.map(item => {
-    console.log("Coordinates:", item.coordinates); // Debug log
-    return {
-      lat: item.coordinates[0],
-      lng: item.coordinates[1]
-    };
-  });
+  // Convert coordinates for MapMyIndia - swap to [lat, lng] order
+  const coordinates = data.map(item => ({
+    lat: item.coordinates[1],  // latitude
+    lng: item.coordinates[0]   // longitude
+  }));
+
 
   if (devicePolylines.has(deviceId)) {
     const existingPolyline = devicePolylines.get(deviceId);
@@ -1350,28 +1359,28 @@ function addPolyline(deviceId, color) {
   }
 
   try {
-    // Create polyline with properly formatted coordinates
+    // Create polyline with converted coordinates
     const polyline = new mappls.Polyline({
       map: map,
       path: coordinates,
       strokeColor: color,
-      strokeOpacity: 1.0,
-      strokeWeight: 3
+      strokeOpacity: 0.8,
+      strokeWeight: 4,
+      interactive: true
     });
 
-    console.log("Polyline created:", polyline); // Debug log
     devicePolylines.set(deviceId, polyline);
-
-    // Add start/end markers
+    // Add start/end markers with correct coordinate format
     addStartEndMarkersForDevice(deviceId, coordinates, color, data);
 
-    // Fit bounds
+    setupPolylineHover(polyline, deviceId, data);
+
+    // Fit bounds with correct coordinate format
     const bounds = new mappls.LatLngBounds();
     coordinates.forEach(coord => {
-      bounds.extend([coord.lat, coord.lng]);
+      bounds.extend([coord.lng, coord.lat]);
     });
     
-    // Add some padding to the bounds
     map.fitBounds(bounds, {
       padding: { top: 50, bottom: 50, left: 50, right: 50 }
     });
@@ -1380,6 +1389,9 @@ function addPolyline(deviceId, color) {
     console.error("Error creating polyline:", error);
   }
 }
+
+// Also update the marker position setting function
+
 
 function setupPolylineHover(polyline, deviceId, data) {
   let hoverPopup = document.getElementById('polyline-hover-popup');
@@ -1390,19 +1402,18 @@ function setupPolylineHover(polyline, deviceId, data) {
     document.body.appendChild(hoverPopup);
   }
 
-  // Add mousemove event on the map for polyline hover
-  map.addListener('mousemove', (e) => {
-    // MapMyIndia event coordinates are directly on the event object
+  polyline.addListener('mousemove', (e) => {
     const mousePoint = {
-      lat: e.lat,  // Changed from e.latlng.lat
-      lng: e.lng   // Changed from e.latlng.lng
+      lat: e.lngLat.lat,
+      lng: e.lngLat.lng
     };
     
-    // Find closest point on polyline
     let minDistance = Infinity;
     let closestPoint = null;
+    let pointIndex = -1;
     
-    data.forEach(point => {
+    // Find closest point and its index
+    data.forEach((point, index) => {
       const distance = calculateDistance(
         mousePoint.lat,
         mousePoint.lng,
@@ -1413,32 +1424,50 @@ function setupPolylineHover(polyline, deviceId, data) {
       if (distance < minDistance) {
         minDistance = distance;
         closestPoint = point;
+        pointIndex = index;
       }
     });
 
-    // Show popup if mouse is close enough to polyline (within 0.1 km)
-    if (minDistance < 0.1 && closestPoint) {
-      const popupContent = createPointInfoContent(closestPoint, deviceId);
-      hoverPopup.innerHTML = popupContent;
-      
-      // Get the container dimensions
-      const mapContainer = document.getElementById('map');
-      const rect = mapContainer.getBoundingClientRect();
-      
-      // Calculate position relative to the map container
-      const x = e.point.x - rect.left;
-      const y = e.point.y - rect.top;
-      
+    if (closestPoint) {
+      const device = selectedDevices.find(d => d.did === deviceId);
+      if (!device) return;
+
+      // Calculate cumulative distance up to this point
+      let cumulativeDistance = 0;
+      for (let i = 1; i <= pointIndex; i++) {
+        const prevPoint = data[i - 1];
+        const currentPoint = data[i];
+        cumulativeDistance += calculateDistance(
+          prevPoint.coordinates[1],
+          prevPoint.coordinates[0],
+          currentPoint.coordinates[1],
+          currentPoint.coordinates[0]
+        );
+      }
+
+      const content = `
+        <div class="point-details">
+          <div class="point-header" style="background-color: ${device.color}; color: white; padding: 5px; border-radius: 4px">
+            ${device.name}
+          </div>
+          <div class="point-info" style="padding-top: 5px">
+            <div><strong>Time:</strong> ${closestPoint.date.split('.')[0]}</div>
+            <div><strong>Speed:</strong> ${closestPoint.speed.toFixed(1)} km/h</div>
+            <div><strong>Distance:</strong> ${cumulativeDistance.toFixed(2)} km</div>
+          </div>
+        </div>
+      `;
+
+      hoverPopup.innerHTML = content;
+
+      // Use fixed offset values for positioning
       hoverPopup.style.display = 'block';
-      hoverPopup.style.left = `${x}px`;
-      hoverPopup.style.top = `${y - hoverPopup.offsetHeight - 10}px`;
-    } else {
-      hoverPopup.style.display = 'none';
+      hoverPopup.style.left = `${e.point.x - 85}px`;  // Fixed -80px offset from mouse X
+      hoverPopup.style.top = `${e.point.y - 40}px`;  // Fixed +110px offset from mouse Y
     }
   });
 
-  // Add mouseout event on the map
-  map.addListener('mouseout', () => {
+  polyline.addListener('mouseout', () => {
     hoverPopup.style.display = 'none';
   });
 }
@@ -1459,69 +1488,78 @@ function addStartEndMarkersForDevice(deviceId, coordinates, color, data) {
   const startPoint = data[0];
   const endPoint = data[data.length - 1];
 
-  // Create start marker
+  // Create start marker with correct coordinate order
   const startMarker = new mappls.Marker({
     map: map,
-    position: coordinates[0],
-    icon: {
-      html: createMarkerHTML('S', startPoint.date.split('.')[0], color),
-      anchor: new mappls.Point(15, 30)
-    }
+    position: [startPoint.coordinates[1], startPoint.coordinates[0]], // [lat, lng]
+    icon: createStartEndIcon('S',  color),
   });
 
-  // Create end marker
+  // Create end marker with correct coordinate order
   const endMarker = new mappls.Marker({
     map: map,
-    position: coordinates[coordinates.length - 1],
-    icon: {
-      html: createMarkerHTML('E', endPoint.date.split('.')[0], color),
-      anchor: new mappls.Point(15, 30)
-    }
+    position: [endPoint.coordinates[1], endPoint.coordinates[0]], // [lat, lng]
+    icon: createStartEndIcon('E', color),
   });
+
+  addPermanentLabel(startMarker, startPoint.date.split('.')[0])
+  addPermanentLabel(endMarker, endPoint.date.split('.')[0])
 
   deviceMarkers.set(startMarkerId, startMarker);
   deviceMarkers.set(endMarkerId, endMarker);
 }
 
-function createMarkerHTML(label, timestamp, color) {
-  return `
-    <div class="custom-marker" style="position: relative; text-align: center;">
-      <div style="
-        background-color: ${color};
-        color: white;
-        padding: 5px;
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        border: 2px solid white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      ">
-        ${label}
-      </div>
-      <div style="
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        white-space: nowrap;
-        font-size: 12px;
-        background: white;
-        padding: 2px 4px;
-        border-radius: 2px;
-        margin-top: 4px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-      ">
-        ${timestamp}
-      </div>
-    </div>
-  `;
-}
+function createStartEndIcon(label, color) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 40;
+      canvas.height = 40;
+      const ctx = canvas.getContext('2d');
 
+      // Draw circle
+      ctx.beginPath();
+      ctx.arc(20, 20, 15, 0, 2 * Math.PI);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
+      // Add label
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, 20, 20);
+
+      return canvas.toDataURL();
+    }
+
+    function addPermanentLabel(marker, timestamp) {
+      const markerElement = marker.getElement();
+      if (!markerElement) return;
+
+      // Create label container
+      const labelContainer = document.createElement('div');
+      labelContainer.style.position = 'absolute';
+      labelContainer.style.top = '-35px';  // Position above marker
+      labelContainer.style.left = '50%';
+      labelContainer.style.transform = 'translateX(-50%)';
+      labelContainer.style.backgroundColor = 'white';
+      labelContainer.style.padding = '4px 8px';
+      labelContainer.style.borderRadius = '4px';
+      labelContainer.style.fontSize = '12px';
+      labelContainer.style.fontWeight = '600';  // Made font bolder
+      labelContainer.style.whiteSpace = 'nowrap';
+      labelContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+      labelContainer.style.zIndex = '1000';
+      labelContainer.style.pointerEvents = 'none';
+
+      // Set the timestamp without prefix
+      labelContainer.textContent = timestamp.split('.')[0];
+
+      // Append label to marker
+      markerElement.appendChild(labelContainer);
+    }
 
 function startPlayback() {
   if (selectedDevices.length === 0) {
