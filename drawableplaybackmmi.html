@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>MapMyIndia Map</title>
-    <meta name="viewport" content="initial-scale=1.0">
-    <meta charset="utf-8">
-    <style>
-         * {
+  <title>mappls Map</title>
+  <meta name="viewport" content="initial-scale=1.0">
+  <meta charset="utf-8">
+  <style>
+    * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
@@ -344,14 +345,17 @@
     }
 
     .customMarkerClass {
-  display: block !important;
-  height: 20px;
-  width: 40px;
-  position: relative;
-  transform-origin: center center;
-  transform: translate(-50%, -50%); /* Add this to center the marker */
-  top: -105px; /* Adjust this value to fine-tune vertical position */
-}
+      display: block !important;
+      height: 20px;
+      width: 40px;
+      position: relative;
+      transform-origin: center center;
+      transform: translate(-50%, -50%);
+      /* Add this to center the marker */
+      top: -105px;
+      /* Adjust this value to fine-tune vertical position */
+    }
+
     .carImage {
       width: 40px;
       height: 20px;
@@ -665,29 +669,47 @@
     .polyline-popup {
       display: none;
       position: absolute;
-      background: white;
-      padding: 8px 12px;
-      border-radius: 4px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      font-size: 12px;
+      background: #ffffff;
+      padding: 10px 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      font-size: 13px;
       pointer-events: none;
       z-index: 1000;
-      color: #333;
-      max-width: 200px;
-      border: 1px solid rgba(0, 0, 0, 0.1);
+      color: #2c3e50;
+      max-width: 250px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      line-height: 1.6;
+    }
+
+    .polyline-popup b {
+      color: #34495e;
+      display: inline-block;
+      width: 100px;
+      font-weight: 600;
+    }
+
+    .polyline-popup .status-indicator {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 500;
+      margin-left: 5px;
     }
 
     .polyline-popup::after {
       content: '';
       position: absolute;
-      bottom: -5px;
+      bottom: -8px;
       left: 50%;
       transform: translateX(-50%);
       width: 0;
       height: 0;
-      border-left: 5px solid transparent;
-      border-right: 5px solid transparent;
-      border-top: 5px solid white;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid #ffffff;
+      filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.05));
     }
 
     /* pop-up display righ-side*/
@@ -696,11 +718,13 @@
       top: 160px;
       right: 20px;
       background: rgba(255, 255, 255, 0.95);
-      padding: 8px;  /* Reduced from 15px */
+      padding: 8px;
+      /* Reduced from 15px */
       border-radius: 12px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
       backdrop-filter: blur(10px);
-      width: 180px;  /* Reduced from 280px */
+      width: 180px;
+      /* Reduced from 280px */
       z-index: 9999;
       transition: all 0.3s ease;
     }
@@ -708,13 +732,15 @@
     .info-container {
       display: flex;
       flex-direction: column;
-      gap: 3px;  /* Reduced from 12px */
+      gap: 3px;
+      /* Reduced from 12px */
     }
 
     .info-card {
       display: flex;
       align-items: center;
-      padding: 3px;  /* Reduced from 10px */
+      padding: 3px;
+      /* Reduced from 10px */
       background: white;
       border-radius: 10px;
       transition: transform 0.2s ease;
@@ -727,26 +753,32 @@
     }
 
     .info-icon {
-      font-size: 16px;  /* Reduced from 20px */
-      width: 30px;  /* Reduced from 40px */
-      height: 30px;  /* Reduced from 40px */
+      font-size: 16px;
+      /* Reduced from 20px */
+      width: 30px;
+      /* Reduced from 40px */
+      height: 30px;
+      /* Reduced from 40px */
       display: flex;
       align-items: center;
       justify-content: center;
       background: #f8f9fa;
       border-radius: 8px;
-      margin-right: 8px;  /* Reduced from 12px */
+      margin-right: 8px;
+      /* Reduced from 12px */
     }
 
     .info-details {
       display: flex;
       flex-direction: column;
-      gap: 2px;  /* Reduced from 4px */
+      gap: 2px;
+      /* Reduced from 4px */
     }
 
     .info-label {
       color: #64748b;
-      font-size: 11px;  /* Reduced from 12px */
+      font-size: 11px;
+      /* Reduced from 12px */
       font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -754,7 +786,8 @@
 
     .info-value {
       color: #1e293b;
-      font-size: 13px;  /* Reduced from 16px */
+      font-size: 13px;
+      /* Reduced from 16px */
       font-weight: 600;
     }
 
@@ -763,7 +796,7 @@
     }
 
     #dateTimeDisplay {
-      font-size: 12px;  
+      font-size: 12px;
       white-space: nowrap;
     }
 
@@ -779,120 +812,120 @@
         bottom: 20px;
         right: 20px;
       }
-      
+
       .info-container {
         flex-direction: row;
         justify-content: space-between;
       }
-      
+
       .info-card {
         flex: 1;
       }
     }
 
     .direction-arrow {
-  pointer-events: none;
-  z-index: 1;
-}
-
-</style>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+      pointer-events: none;
+      z-index: 1;
+    }
+  </style>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
+
 <body>
-    <div class="container">
-        <!-- Navbar -->
-        <div id="navbar-container"></div>
-        <div class="content">
-          <div class="controls">
-            <div class="datetime-selector">
-              <div class="device-selector">
-                <div class="dropdown-container">
-                  <!-- Dropdown Button (Selected Vehicle) -->
-                  <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
-                    Select Vehicle
-                  </div>
-      
-                  <!-- Dropdown List (Hidden by default) -->
-                  <div class="dropdown-list" id="deviceDropdown">
-                    <!-- Search input for filtering vehicles -->
-                    <div class="dropdown-search">
-                      <input type="text" placeholder="Search vehicle..." id="vehicleSearch"
-                        onclick="event.stopPropagation()" onkeyup="filterVehicles(this.value)" />
-                    </div>
-      
-                    <!-- List of filtered vehicles -->
-                    <div class="dropdown-items" id="vehicleList">
-                      <!-- Vehicles will be populated here dynamically -->
-                    </div>
-                  </div>
-                </div>
+  <div class="container">
+    <!-- Navbar -->
+    <div id="navbar-container"></div>
+    <div class="content">
+      <div class="controls">
+        <div class="datetime-selector">
+          <div class="device-selector">
+            <div class="dropdown-container">
+              <!-- Dropdown Button (Selected Vehicle) -->
+              <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
+                Select Vehicle
               </div>
-              <div class="date-input">
-                <label>From:</label>
-                <div class="datetime-wrapper">
-                  <input type="date" id="fromDate" placeholder="dd/mm/yyyy" />
-                  <input type="time" id="fromTime" value="00:00" />
+
+              <!-- Dropdown List (Hidden by default) -->
+              <div class="dropdown-list" id="deviceDropdown">
+                <!-- Search input for filtering vehicles -->
+                <div class="dropdown-search">
+                  <input type="text" placeholder="Search vehicle..." id="vehicleSearch"
+                    onclick="event.stopPropagation()" onkeyup="filterVehicles(this.value)" />
                 </div>
-              </div>
-              <div class="date-input">
-                <label>To:</label>
-                <div class="datetime-wrapper">
-                  <input type="date" id="toDate" placeholder="dd/mm/yyyy" />
-                  <input type="time" id="toTime" value="23:59" />
+
+                <!-- List of filtered vehicles -->
+                <div class="dropdown-items" id="vehicleList">
+                  <!-- Vehicles will be populated here dynamically -->
                 </div>
               </div>
             </div>
-      
-            <div class="buttonclass">
-              <button id="startPlayback">Start</button>
-              <button id="pausePlayback">Pause</button>
-              <button id="stopPlayback">Stop</button>
+          </div>
+          <div class="date-input">
+            <label>From:</label>
+            <div class="datetime-wrapper">
+              <input type="date" id="fromDate" placeholder="dd/mm/yyyy" />
+              <input type="time" id="fromTime" value="00:00" />
             </div>
           </div>
-          <div id="map"></div>
-          <div id="polylinePopup" class="polyline-popup">
-            <div id="polylinePopupContent"></div>
-          </div>
-      
-          <!-- Custom Popup Element -->
-          <div id="customPopup" class="popup">
-            <span class="close-btn" onclick="hidePopup(true)">✖</span>
-            <div id="popupContent"></div>
-          </div>
-        </div>
-      
-        <div id="vehicleInfoPopup" class="vehicle-info-popup">
-          <div class="info-container">
-            <div class="info-card">
-              <div class="info-icon">🚗</div>
-              <div class="info-details">
-                <span class="info-label">Speed</span>
-                <span class="info-value" id="speedDisplay">0 km/h</span>
-              </div>
-            </div>
-            
-            <div class="info-card">
-              <div class="info-icon">🕒</div>
-              <div class="info-details">
-                <span class="info-label">Time</span>
-                <span class="info-value" id="dateTimeDisplay">--</span>
-              </div>
-            </div>
-            
-            <div class="info-card">
-              <div class="info-icon">📍</div>
-              <div class="info-details">
-                <span class="info-label">Distance</span>
-                <span class="info-value" id="distanceDisplay">0 km</span>
-              </div>
+          <div class="date-input">
+            <label>To:</label>
+            <div class="datetime-wrapper">
+              <input type="date" id="toDate" placeholder="dd/mm/yyyy" />
+              <input type="time" id="toTime" value="23:59" />
             </div>
           </div>
         </div>
-      
+
+        <div class="buttonclass">
+          <button id="startPlayback">Start</button>
+          <button id="pausePlayback">Pause</button>
+          <button id="stopPlayback">Stop</button>
+        </div>
+      </div>
+      <div id="map"></div>
+      <div id="polylinePopup" class="polyline-popup">
+        <div id="polylinePopupContent"></div>
       </div>
 
-<script src="js/api.js"></script>
-<script>
+      <!-- Custom Popup Element -->
+      <div id="customPopup" class="popup">
+        <span class="close-btn" onclick="hidePopup(true)">✖</span>
+        <div id="popupContent"></div>
+      </div>
+    </div>
+
+    <div id="vehicleInfoPopup" class="vehicle-info-popup">
+      <div class="info-container">
+        <div class="info-card">
+          <div class="info-icon">🚗</div>
+          <div class="info-details">
+            <span class="info-label">Speed</span>
+            <span class="info-value" id="speedDisplay">0 km/h</span>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-icon">🕒</div>
+          <div class="info-details">
+            <span class="info-label">Time</span>
+            <span class="info-value" id="dateTimeDisplay">--</span>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-icon">📍</div>
+          <div class="info-details">
+            <span class="info-label">Distance</span>
+            <span class="info-value" id="distanceDisplay">0 km</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
     // Global variables
     var map;
     let selectedDeviceId = null;
@@ -907,457 +940,601 @@
     let polyline = null;
     let startMarker = null;
     let endMarker = null;
-    
+    let arrowMarkers = [];
+    let deviceData = [];
+    const popup = document.getElementById("customPopup");
+    const popupContent = document.getElementById("popupContent");
+
+
     // Initialize when document is ready
-    $(document).ready(function() {
-            if (!localStorage.getItem('mid')) {
-                window.location.href = '/index.html';
-            }
+    $(document).ready(function () {
+      if (!localStorage.getItem('mid')) {
+        window.location.href = '/index.html';
+      }
 
-            $("#navbar-container").load("navbarola.html", function() {
-                console.log("Navbar loaded successfully!");
-            });
+      $("#navbar-container").load("navbarola.html", function () {
+        console.log("Navbar loaded successfully!");
+      });
 
-            const mid = localStorage.getItem("mid");
-            console.log("mid:::" + mid);
+      const mid = localStorage.getItem("mid");
+      console.log("mid:::" + mid);
 
-            setDefaultDates();
-            loadMapScript();
-        });
-    
-    // Load MapMyIndia SDK
+      setDefaultDates();
+      loadMapScript();
+    });
+
+    // Load mappls SDK
     function loadMapScript() {
-        const key = localStorage.getItem("key");
-        if (!key) {
-            console.error("No API key found in localStorage.");
-            return;
-        }
+      const key = localStorage.getItem("key");
+      if (!key) {
+        console.error("No API key found in localStorage.");
+        return;
+      }
 
-        const script = document.createElement('script');
-        script.src = `https://apis.mapmyindia.com/advancedmaps/api/${key}/map_sdk?layer=vector&v=2.0&callback=initMap1`;
-        script.defer = true;
-        script.async = true;
+      const script = document.createElement('script');
+      script.src = `https://apis.mappls.com/advancedmaps/api/${key}/map_sdk?layer=vector&v=3.0&callback=initMap1`;
+      script.defer = true;
+      script.async = true;
 
-        script.onload = function() {
-            console.log("MapmyIndia SDK loaded successfully.");
-            // No need to call initMap1 here as it's invoked by the callback
-            fetchDeviceData();
-        };
+      script.onload = function () {
+        console.log("mappls SDK loaded successfully.");
+        // No need to call initMap1 here as it's invoked by the callback
+        fetchDeviceData();
+      };
 
-        script.onerror = function() {
-            console.error("Error loading MapmyIndia SDK.");
-        };
+      script.onerror = function () {
+        console.error("Error loading mappls SDK.");
+      };
 
-        document.head.appendChild(script);
+      document.head.appendChild(script);
     }
 
-    
+
     // Initialize map
     function initMap1() {
-        map = new MapmyIndia.Map('map', { 
-                center: [28.638698386592438, 77.27604556863412],
-                zoomControl: true,
-                hybrid: true,
-                location: true,
-                zoom: 15,
-                scrollWheelZoom: true,
-                continuousWorld: true
-            });
-        }
-    
-    
+      map = new mappls.Map('map', {
+        center: [28.638698386592438, 77.27604556863412],
+        zoomControl: true,
+        hybrid: true,
+        location: true,
+        zoom: 15,
+        scrollWheelZoom: true,
+        continuousWorld: true
+      });
+      setupPolylineHoverInteractions();
+    }
+
+
     // Date handling functions
     function setDefaultDates() {
-        const now = new Date();
-        const today = now.toISOString().split('T')[0];
-    
-        document.getElementById('fromDate').value = today;
-        document.getElementById('toDate').value = today;
-        document.getElementById('fromTime').value = '00:00';
-        document.getElementById('toTime').value = '23:59';
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+
+      document.getElementById('fromDate').value = today;
+      document.getElementById('toDate').value = today;
+      document.getElementById('fromTime').value = '00:00';
+      document.getElementById('toTime').value = '23:59';
     }
-    
+
     function formatDate(dateString) {
-        const date = new Date(dateString);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
     }
-    
+
     function formatTime(timeString) {
-        return timeString.replace(':', '') + '00';
+      return timeString.replace(':', '') + '00';
     }
-    
+
     // Vehicle list handling functions
     function toggleDropdown() {
-        const dropdown = document.getElementById('deviceDropdown');
-        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+      const dropdown = document.getElementById('deviceDropdown');
+      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
     }
-    
+
     function filterVehicles(searchText) {
-        const filteredDevices = devices.filter(device => 
-            device.name.toLowerCase().includes(searchText.toLowerCase())
-        );
-        populateVehicleList(filteredDevices);
+      const filteredDevices = devices.filter(device =>
+        device.name.toLowerCase().includes(searchText.toLowerCase())
+      );
+      populateVehicleList(filteredDevices);
     }
-    
+
     function selectVehicle(deviceId, deviceName) {
-        selectedDeviceId = deviceId;
-        document.getElementById('selectedVehicle').textContent = deviceName;
-        document.getElementById('deviceDropdown').style.display = 'none';
-    
-        const fromDate = document.getElementById("fromDate").value;
-        const toDate = document.getElementById("toDate").value;
-    
-        if (fromDate && toDate) {
-            fetchPlaybackData(deviceId).then(() => {
-                if (playbackData.length) {
-                    addPolyline();
-                    addStartEndMarkers();
-                }
-            }).catch(error => {
-                console.error("Error:", error);
-                alert("Error loading playback data");
-            });
-        } else {
-            alert("Please select dates");
-        }
-    }
-    
-    function populateVehicleList(devicesList) {
-        const vehicleList = document.getElementById('vehicleList');
-        vehicleList.innerHTML = '';
-    
-        devicesList.forEach(device => {
-            const item = document.createElement('div');
-            item.className = 'dropdown-item';
-            item.textContent = device.name;
-            item.onclick = () => selectVehicle(device.did, device.name);
-            vehicleList.appendChild(item);
+      selectedDeviceId = deviceId;
+      document.getElementById('selectedVehicle').textContent = deviceName;
+      document.getElementById('deviceDropdown').style.display = 'none';
+
+      const fromDate = document.getElementById("fromDate").value;
+      const toDate = document.getElementById("toDate").value;
+
+      if (fromDate && toDate) {
+        fetchPlaybackData(deviceId).then(() => {
+          if (playbackData.length) {
+            addPolyline();
+            addStartEndMarkers();
+          }
+        }).catch(error => {
+          console.error("Error:", error);
+          alert("Error loading playback data");
         });
+      } else {
+        alert("Please select dates");
+      }
     }
-    
+
+    function populateVehicleList(devicesList) {
+      const vehicleList = document.getElementById('vehicleList');
+      vehicleList.innerHTML = '';
+
+      devicesList.forEach(device => {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item';
+        item.textContent = device.name;
+        item.onclick = () => selectVehicle(device.did, device.name);
+        vehicleList.appendChild(item);
+      });
+    }
+
     // Data fetching functions
     function fetchDeviceData() {
-        const mid = localStorage.getItem("mid");
-        if (!mid) {
-            console.error("No mid found in localStorage");
-            return;
-        }
-    
-        fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
-            .then(response => response.json())
-            .then(data => {
-                devices = data.map(item => ({
-                    name: item.dname,
-                    did: item.did
-                }));
-                populateVehicleList(devices);
-            })
-            .catch(error => {
-                console.error("Error fetching devices:", error);
-            });
-    }
-    
-    function fetchPlaybackData(did) {
-        if (!did) return Promise.reject("No device ID provided");
-    
-        const fromDate = document.getElementById("fromDate").value;
-        const toDate = document.getElementById("toDate").value;
-        const fromTime = document.getElementById("fromTime").value;
-        const toTime = document.getElementById("toTime").value;
-    
-        const formattedFromDateTime = fromDate.split('-').join('') + fromTime.split(':').join('');
-        const formattedToDateTime = toDate.split('-').join('') + toTime.split(':').join('');
-    
-        console.log("Fetching data for:", {
-            did: did,
-            fromDateTime: formattedFromDateTime,
-            toDateTime: formattedToDateTime
+      const mid = localStorage.getItem("mid");
+      if (!mid) {
+        console.error("No mid found in localStorage");
+        return;
+      }
+
+      fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+        .then(response => response.json())
+        .then(data => {
+          devices = data.map(item => ({
+            name: item.dname,
+            did: item.did
+          }));
+          populateVehicleList(devices);
+          deviceData = devices;
+        })
+        .catch(error => {
+          console.error("Error fetching devices:", error);
         });
-    
-        return fetch(`${API}opr=getplaybacktest&sdate=${formattedFromDateTime}00&edate=${formattedToDateTime}59&did=${did}`)
-            .then(response => response.json())
-            .then(data => {
-                if (!Array.isArray(data) || data.length === 0) {
-                    throw new Error("No data available for the selected period");
-                }
-    
-                playbackData = data.map(item => ({
-                    coordinates: [Number(item.latitude), Number(item.langitude)],
-                    angle: Number(item.angle) || 0,
-                    speed: Number(item.speed) || 0,
-                    deviceId: String(item.deviceId || ''),
-                    date: item.DeviceDate,
-                    digital_2: item.digital_2 || false
-                }));
-    
-                pathCoordinates = playbackData.map(item => item.coordinates);
-                return playbackData;
-            })
-            .catch(error => {
-                console.error("Error fetching playback data:", error);
-                alert(error.message);
-                throw error;
-            });
     }
-    
+
+    function fetchPlaybackData(did) {
+      if (!did) return Promise.reject("No device ID provided");
+
+      const fromDate = document.getElementById("fromDate").value;
+      const toDate = document.getElementById("toDate").value;
+      const fromTime = document.getElementById("fromTime").value;
+      const toTime = document.getElementById("toTime").value;
+
+      const formattedFromDateTime = fromDate.split('-').join('') + fromTime.split(':').join('');
+      const formattedToDateTime = toDate.split('-').join('') + toTime.split(':').join('');
+
+      console.log("Fetching data for:", {
+        did: did,
+        fromDateTime: formattedFromDateTime,
+        toDateTime: formattedToDateTime
+      });
+
+      return fetch(`${API}opr=getplaybacktest&sdate=${formattedFromDateTime}00&edate=${formattedToDateTime}59&did=${did}`)
+        .then(response => response.json())
+        .then(data => {
+          if (!Array.isArray(data) || data.length === 0) {
+            throw new Error("No data available for the selected period");
+          }
+
+          playbackData = data.map(item => ({
+            coordinates: [Number(item.latitude), Number(item.langitude)],
+            angle: Number(item.angle) || 0,
+            speed: Number(item.speed) || 0,
+            deviceId: String(item.deviceId || ''),
+            date: item.DeviceDate,
+          }));
+
+          pathCoordinates = playbackData.map(item => item.coordinates);
+          return playbackData;
+        })
+        .catch(error => {
+          console.error("Error fetching playback data:", error);
+          alert(error.message);
+          throw error;
+        });
+    }
+
+    function calculateBearing(lat1, lon1, lat2, lon2) {
+      const toRad = (degree) => degree * Math.PI / 180;
+      const toDeg = (rad) => rad * 180 / Math.PI;
+
+      const φ1 = toRad(lat1);
+      const φ2 = toRad(lat2);
+      const Δλ = toRad(lon2 - lon1);
+
+      const y = Math.sin(Δλ) * Math.cos(φ2);
+      const x = Math.cos(φ1) * Math.sin(φ2) -
+        Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+
+      const θ = Math.atan2(y, x);
+      return (toDeg(θ) + 360) % 360;
+    }
+
+    function addDirectionalArrows(path) {
+      if (!path || path.length < 2) return;
+
+      // Remove existing arrows
+      cleanupDirectionalArrows();
+
+      // Calculate optimal number of arrows
+      const totalDistance = calculateTotalDistance(path);
+      const arrowCount = Math.min(Math.floor(totalDistance / 0.3), 20);
+      const interval = Math.max(Math.floor(path.length / arrowCount), 2);
+
+      for (let i = 0; i < path.length - 1; i += interval) {
+        const start = path[i];
+        const end = path[i + 1];
+        if (!start || !end) continue;
+
+        // Calculate midpoint
+        const midLat = (start.lat + end.lat) / 2;
+        const midLng = (start.lng + end.lng) / 2;
+
+        // Calculate bearing between points
+        let bearing = calculateBearing(start.lat, start.lng, end.lat, end.lng);
+
+        // Create arrow marker with calculated bearing
+        const arrowMarker = new mappls.Marker({
+          map: map,
+          position: [midLat, midLng],
+          icon: createArrowIcon(bearing),
+          clickable: false,
+          zIndex: 999,
+          anchor: 'center'
+        });
+
+        // Store reference
+        arrowMarkers.push(arrowMarker);
+      }
+    }
+
+    function calculateTotalDistance(path) {
+      let total = 0;
+      for (let i = 0; i < path.length - 1; i++) {
+        total += calculateDistance(
+          path[i].lat,
+          path[i].lng,
+          path[i + 1].lat,
+          path[i + 1].lng
+        );
+      }
+      return total;
+    }
+
+
+    // Function to create arrow icon
+    function createArrowIcon(bearing) {
+      const size = 20; // Canvas size
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // Clear the canvas and set up rotation
+      ctx.clearRect(0, 0, size, size);
+      ctx.save();  // Save the current state
+
+      // Translate to center and rotate
+      ctx.translate(size / 2, size / 2);
+      ctx.rotate((bearing + 90) * Math.PI / 180);  // Convert degrees to radians and adjust for arrow direction
+
+      // Arrow dimensions
+      const arrowLength = size * 0.3;
+      const arrowWidth = size * 0.2;
+
+      // Create arrow path (now centered at origin due to translation)
+      ctx.beginPath();
+      ctx.moveTo(-arrowLength / 2, 0);  // Arrow tip (starts at left of center)
+      ctx.lineTo(arrowLength / 2, -arrowWidth / 2);  // Top right
+      ctx.lineTo(arrowLength / 2, arrowWidth / 2);   // Bottom right
+      ctx.closePath();
+
+      // Fill arrow
+      ctx.fillStyle = '#000000'; // Black fill
+      ctx.fill();
+
+      // Add white stroke
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+
+      // Restore the canvas state
+      ctx.restore();
+
+      return canvas.toDataURL();
+    }
+
     // Marker and polyline functions
     function addPolyline() {
-    if (!playbackData || playbackData.length === 0) {
+      if (!playbackData || playbackData.length === 0) {
         console.warn("No playback data available for polyline");
         return;
-    }
+      }
 
-    // Debug log to check polyline state
-    console.log("Current polyline object:", polyline);
-
-    try {
-        // If a polyline exists, attempt to remove it
+      try {
+        // Remove existing polyline and arrows
         if (polyline) {
-            polyline.setMap(null);  // Try to remove polyline from map
-            polyline = null;        // Clear the reference
+          polyline.setMap(null);
+          polyline = null;
         }
+        cleanupDirectionalArrows();
 
-        // Format coordinates to the required format
         const path = playbackData.map(point => ({
-            lat: point.coordinates[0],
-            lng: point.coordinates[1]
+          lat: point.coordinates[0],
+          lng: point.coordinates[1]
         }));
 
-        // Create new polyline
-        polyline = new MapmyIndia.Polyline({
-            map: map,
-            path: path,
-            strokeColor: '#FF0000',
-            strokeOpacity: 0.8,
-            strokeWeight: 3
+        // Create polyline
+        polyline = new mappls.Polyline({
+          map: map,
+          path: path,
+          strokeColor: '#FF0000',
+          strokeOpacity: 0.8,
+          strokeWeight: 3
         });
 
-        // Debug log for new polyline
-        console.log("New polyline created:", polyline);
+        // Add direction arrows
+        addDirectionalArrows(path);
 
-        // Calculate and set bounds to fit the polyline
-        setMapBounds(path);
-
-    } catch (error) {
+      } catch (error) {
         console.error("Error with polyline management:", error);
-        // Attempt recovery
         polyline = null;
+      }
     }
-}
 
-function setMapBounds(path) {
-    if (!path || path.length === 0) return;
+    function setupPolylineHoverInteractions() {
+      const popup = document.getElementById("polylinePopup");
+      const popupContent = document.getElementById("polylinePopupContent");
 
-    let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+      // Ensure popup is in the correct initial state
+      popup.style.position = 'absolute';
+      popup.style.zIndex = '1000';
+      popup.style.display = 'none';
 
-    path.forEach(coord => {
+      // Add mousemove and mouseleave listeners to the map
+      map.on('mousemove', (event) => {
+        if (!polyline) return;
+
+        // Find closest point on polyline to mouse cursor
+        const mousePoint = [event.lngLat.lng, event.lngLat.lat];
+        const closestPointIndex = findClosestPointIndex(mousePoint);
+
+        if (closestPointIndex !== -1) {
+          const pointData = playbackData[closestPointIndex];
+
+          // Calculate approximate distance from start
+          const distance = calculateCumulativeDistance(closestPointIndex);
+
+          // Update popup content
+          popupContent.innerHTML = `
+            <div><b>Time:</b> ${pointData.date.split(" ")[1]}</div>
+                <div><b>Speed:</b> ${pointData.speed.toFixed(1)} km/h 
+                </div>
+                <div><b>Distance:</b> ${distance.toFixed(2)} km</div>
+            `;
+
+          // Position and show popup
+          popup.style.left = `${event.point.x - 95}px`;
+          popup.style.top = `${event.point.y - 0}px`;
+          popup.style.display = 'block';
+        } else {
+          popup.style.display = 'none';
+        }
+      });
+
+      // Hide popup when mouse leaves map
+      map.on('mouseleave', () => {
+        popup.style.display = 'none';
+      });
+    }
+
+    function findClosestPointIndex(mousePoint) {
+      if (!playbackData || playbackData.length === 0) return -1;
+
+      let minDistance = Infinity;
+      let closestIndex = -1;
+
+      playbackData.forEach((point, index) => {
+        const distance = calculatePointDistance(
+          mousePoint[0], mousePoint[1],
+          point.coordinates[1], point.coordinates[0]
+        );
+
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestIndex = index;
+        }
+      });
+
+      // Only return index if it's close enough (within ~0.1 km)
+      return minDistance < 0.1 ? closestIndex : -1;
+    }
+
+    function calculatePointDistance(lon1, lat1, lon2, lat2) {
+      const R = 6371; // Earth's radius in kilometers
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    // Calculate cumulative distance from the start of the route
+    function calculateCumulativeDistance(upToIndex) {
+      let totalDist = 0;
+      for (let i = 1; i <= upToIndex; i++) {
+        totalDist += calculateDistance(
+          playbackData[i - 1].coordinates[0],
+          playbackData[i - 1].coordinates[1],
+          playbackData[i].coordinates[0],
+          playbackData[i].coordinates[1]
+        );
+      }
+      return totalDist;
+    }
+
+
+    function setMapBounds(path) {
+      if (!path || path.length === 0) return;
+
+      let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+
+      path.forEach(coord => {
         const lat = coord.lat;
         const lng = coord.lng;
         if (lat < minLat) minLat = lat;
         if (lat > maxLat) maxLat = lat;
         if (lng < minLng) minLng = lng;
         if (lng > maxLng) maxLng = lng;
-    });
+      });
 
-    // Calculate center of the bounds
-    const centerLat = (minLat + maxLat) / 2;
-    const centerLng = (minLng + maxLng) / 2;
-    const center = [centerLng, centerLat]; // [longitude, latitude]
+      const bounds = [
+        [minLng, minLat], // Southwest corner
+        [maxLng, maxLat]  // Northeast corner
+      ];
 
-    // Optional: Define padding in pixels
-    const padding = [50, 50]; // [topBottom, leftRight]
+      map.fitBounds(bounds, {
+        padding: 50,
+        duration: 1
+      });
+    }
 
-    // Use flyTo to center the map on the calculated center point
-    // map.flyTo({
-    //     center: center,
-    //     zoom: 15, // Adjust zoom level as needed
-    //     essential: true
-    // });
 
-    console.log("map", map.fitBounds)
-
-    // Alternatively, if you prefer to ensure the entire polyline is visible,
-    // you can use flyToBounds instead of calculating the center.
-    
-    const bounds = [
-    [minLng, minLat], // [lng, lat] for southwest corner
-    [maxLng, maxLat] 
-    ];
-    map.fitBounds(bounds, {
-        padding: 50, // Optional padding in pixels
-        duration: 5   // Optional animation duration in seconds
-    });
-    
-}
-
-function addStartEndMarkers() {
-    if (!playbackData || playbackData.length < 2) {
+    function addStartEndMarkers() {
+      if (!playbackData || playbackData.length < 2) {
         console.warn("Insufficient playback data for markers");
         return;
-    }
+      }
 
-    // Remove existing markers
-    if (startMarker) {
+      // Remove existing markers
+      if (startMarker) {
         startMarker.remove();
-    }
-    if (endMarker) {
+      }
+      if (endMarker) {
         endMarker.remove();
-    }
+      }
 
-    const startPoint = playbackData[0];
-    const endPoint = playbackData[playbackData.length - 1];
+      const startPoint = playbackData[0];
+      const endPoint = playbackData[playbackData.length - 1];
 
-    try {
+      try {
         // Create start marker
-        startMarker = new MapmyIndia.Marker({
-            map: map,
-            position: {
-                lat: startPoint.coordinates[0],
-                lng: startPoint.coordinates[1]
-            },
-            fitbounds: true,
-            icon: createStartEndIcon('S', '#2ecc71')
+        startMarker = new mappls.Marker({
+          map: map,
+          position: {
+            lat: startPoint.coordinates[0],
+            lng: startPoint.coordinates[1]
+          },
+          icon: createStartEndIcon('S', '#2ecc71')
         });
 
         // Create end marker
-        endMarker = new MapmyIndia.Marker({
-            map: map,
-            position: {
-                lat: endPoint.coordinates[0],
-                lng: endPoint.coordinates[1]
-            },
-            fitbounds: true,
-            icon: createStartEndIcon('E', '#e74c3c')
+        endMarker = new mappls.Marker({
+          map: map,
+          position: {
+            lat: endPoint.coordinates[0],
+            lng: endPoint.coordinates[1]
+          },
+          icon: createStartEndIcon('E', '#e74c3c')
         });
 
         // Add permanent timestamp labels without prefixes
         addPermanentLabel(startMarker, startPoint.date);
         addPermanentLabel(endMarker, endPoint.date);
 
-    } catch (error) {
+        // Calculate bounds to include both start and end markers
+        const bounds = new mappls.LatLngBounds();
+        bounds.extend([startPoint.coordinates[1], startPoint.coordinates[0]]);
+        bounds.extend([endPoint.coordinates[1], endPoint.coordinates[0]]);
+
+        // Fit the map to the calculated bounds with some padding
+        map.fitBounds(bounds, {
+          padding: { top: 50, bottom: 50, left: 50, right: 50 },
+          duration: 1000  // 1 second animation
+        });
+
+      } catch (error) {
         console.error("Error creating markers:", error);
+      }
     }
-}
 
-function createStartEndIcon(label, color) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 40;
-    canvas.height = 40;
-    const ctx = canvas.getContext('2d');
+    function createStartEndIcon(label, color) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 40;
+      canvas.height = 40;
+      const ctx = canvas.getContext('2d');
 
-    // Draw circle
-    ctx.beginPath();
-    ctx.arc(20, 20, 15, 0, 2 * Math.PI);
-    ctx.fillStyle = color;
-    ctx.fill();
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+      // Draw circle
+      ctx.beginPath();
+      ctx.arc(20, 20, 15, 0, 2 * Math.PI);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
-    // Add label
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 14px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label, 20, 20);
+      // Add label
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, 20, 20);
 
-    return canvas.toDataURL();
-}
-
-function addPermanentLabel(marker, timestamp) {
-    const markerElement = marker.getElement();
-    if (!markerElement) return;
-
-    // Create label container
-    const labelContainer = document.createElement('div');
-    labelContainer.style.position = 'absolute';
-    labelContainer.style.top = '-35px';  // Position above marker
-    labelContainer.style.left = '50%';
-    labelContainer.style.transform = 'translateX(-50%)';
-    labelContainer.style.backgroundColor = 'white';
-    labelContainer.style.padding = '4px 8px';
-    labelContainer.style.borderRadius = '4px';
-    labelContainer.style.fontSize = '12px';
-    labelContainer.style.fontWeight = '600';  // Made font bolder
-    labelContainer.style.whiteSpace = 'nowrap';
-    labelContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-    labelContainer.style.zIndex = '1000';
-    labelContainer.style.pointerEvents = 'none';
-
-    // Set the timestamp without prefix
-    labelContainer.textContent = timestamp.split('.')[0];
-
-    // Append label to marker
-    markerElement.appendChild(labelContainer);
-}
-
-// Optional: Add this to your map event listener to ensure labels stay visible
-map.on('zoom', function() {
-    if (startMarker) {
-        const startLabel = startMarker.getElement().querySelector('div');
-        if (startLabel) startLabel.style.display = 'block';
+      return canvas.toDataURL();
     }
-    if (endMarker) {
-        const endLabel = endMarker.getElement().querySelector('div');
-        if (endLabel) endLabel.style.display = 'block';
+
+    function addPermanentLabel(marker, timestamp) {
+      const markerElement = marker.getElement();
+      if (!markerElement) return;
+
+      // Create label container
+      const labelContainer = document.createElement('div');
+      labelContainer.style.position = 'absolute';
+      labelContainer.style.top = '-35px';  // Position above marker
+      labelContainer.style.left = '50%';
+      labelContainer.style.transform = 'translateX(-50%)';
+      labelContainer.style.backgroundColor = 'white';
+      labelContainer.style.padding = '4px 8px';
+      labelContainer.style.borderRadius = '4px';
+      labelContainer.style.fontSize = '12px';
+      labelContainer.style.fontWeight = '600';  // Made font bolder
+      labelContainer.style.whiteSpace = 'nowrap';
+      labelContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+      labelContainer.style.zIndex = '1000';
+      labelContainer.style.pointerEvents = 'none';
+
+      // Set the timestamp without prefix
+      labelContainer.textContent = timestamp.split('.')[0];
+
+      // Append label to marker
+      markerElement.appendChild(labelContainer);
     }
-});
 
+    function createVehicleMarker() {
+      const markerElement = document.createElement('div');
+      markerElement.className = 'customMarkerClass';
 
-// function createCustomMarker(label, color, timestamp) {
-//     // Create marker container
-//     const markerElement = document.createElement('div');
-//     markerElement.style.position = 'relative';
-    
-//     // Add timestamp display
-//     const timeContainer = document.createElement('div');
-//     timeContainer.style.backgroundColor = 'white';
-//     timeContainer.style.padding = '4px 8px';
-//     timeContainer.style.borderRadius = '4px';
-//     timeContainer.style.fontSize = '12px';
-//     timeContainer.style.marginBottom = '5px';
-//     timeContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-//     timeContainer.style.whiteSpace = 'nowrap';
-//     timeContainer.textContent = timestamp.split('.')[0];
-    
-//     // Create marker circle
-//     const circle = document.createElement('div');
-//     circle.style.width = '24px';
-//     circle.style.height = '24px';
-//     circle.style.backgroundColor = color;
-//     circle.style.borderRadius = '50%';
-//     circle.style.color = 'white';
-//     circle.style.display = 'flex';
-//     circle.style.alignItems = 'center';
-//     circle.style.justifyContent = 'center';
-//     circle.style.fontWeight = 'bold';
-//     circle.style.border = '2px solid white';
-//     circle.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-//     circle.textContent = label;
+      const carImage = document.createElement('img');
+      carImage.src = '/images/truck1.png';
+      carImage.className = 'carImage';
+      carImage.alt = 'Vehicle';
 
-//     markerElement.appendChild(timeContainer);
-//     markerElement.appendChild(circle);
-    
-//     return markerElement;
-// }
-
-function createVehicleMarker() {
-    const markerElement = document.createElement('div');
-    markerElement.className = 'customMarkerClass';
-    
-    const carImage = document.createElement('img');
-    carImage.src = 'images/truck1.png';
-    carImage.className = 'carImage';
-    carImage.alt = 'Vehicle';
-    
-    carImage.onload = () => {
+      carImage.onload = () => {
         markerElement.style.display = 'block';
-    };
-    
-    carImage.onerror = () => {
+      };
+
+      carImage.onerror = () => {
         console.error('Error loading vehicle image');
         // Fallback to a simple circle if image fails to load
         const fallback = document.createElement('div');
@@ -1366,188 +1543,308 @@ function createVehicleMarker() {
         fallback.style.backgroundColor = 'red';
         fallback.style.borderRadius = '50%';
         markerElement.appendChild(fallback);
-    };
-    
-    markerElement.appendChild(carImage);
-    return markerElement;
-}
+      };
 
-    
+      markerElement.appendChild(carImage);
+      return markerElement;
+    }
+
+    function createPopupContent(data, totalDistance) {
+      const devicename = deviceData.find((d) => d.did == data.deviceId)?.name;
+      return `
+        <div style="border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 5px;">
+            <b>Vehicle:</b> ${devicename} 
+        </div>
+        <div>
+          <b>Date-Time:</b> ${data.date.split(".")[0]} <br/>
+          <b>Speed:</b> ${Math.round(data.speed)} km/h <br/>
+          <b>Distance:</b> ${totalDistance.toFixed(2)} km
+        </div>
+    `;
+    }
+
+    function showPopup(content) {
+      if (isPopupClosedManually) return; // Do not show if manually closed
+      popupContent.innerHTML = content;
+      popup.style.display = "block";
+      updatePopupPosition(); // Ensure popup is positioned correctly initially
+    }
+
+    function updatePopupPosition() {
+      if (vehicleMarker && popup.style.display === "block") {
+        const coordinates = vehicleMarker.getLngLat();
+        const mapPos = map.project(coordinates);
+
+        // Increase the vertical offset to move popup higher above the marker
+        popup.style.left = `${mapPos.x}px`;
+        popup.style.top = `${mapPos.y + 80}px`; // Changed from -60 to -120 to move it higher
+      }
+    }
+
+    function hidePopup(manuallyClosed = false) {
+      popup.style.display = "none";
+      if (manuallyClosed) isPopupClosedManually = true;
+    }
+
     // Playback control functions
     function startPlayback() {
-    if (!selectedDeviceId) {
+      if (!selectedDeviceId) {
         alert('Please select a vehicle first');
         return;
-    }
+      }
 
-    if (!playbackData || playbackData.length === 0) {
+      if (!playbackData || playbackData.length === 0) {
         alert('No playback data available');
         return;
-    }
+      }
 
-    if (playbackInterval) {
+      if (playbackInterval) {
         clearInterval(playbackInterval);
-    }
+      }
 
-    if (!isPaused) {
+      if (!isPaused) {
         index = 0;
         totalDistance = 0;
-    }
-    isPaused = false;
+      }
+      isPaused = false;
 
-    try {
+      try {
         // Create or update vehicle marker
         if (!vehicleMarker) {
-            vehicleMarker = new MapmyIndia.Marker({
-                map: map,
-                position: [
-                    playbackData[0].coordinates[1],
-                    playbackData[0].coordinates[0]
-                ],
-                icon: createVehicleMarker(),
-                draggable: false,
-                size: { width: 40, height: 40 }
-            });
+          vehicleMarker = new mappls.Marker({
+            map: map,
+            position: [
+              playbackData[0].coordinates[1],
+              playbackData[0].coordinates[0]
+            ],
+            html: `<img src="/images/truck1.png" style="width: 40px; height: 20px; margin-top:25px; transform: rotate(${playbackData[index].angle}deg);" />`,
+            width: 35,
+            height: 35,
+
+            draggable: false,
+            rotateWithMap: true
+          });
+
+          vehicleMarker.addListener('click', function () {
+            isPopupClosedManually = false;
+            const cumulativeDistance = calculateCumulativeDistance(index);
+            const content = createPopupContent(playbackData[index], cumulativeDistance);
+            updateVehicleInfo(playbackData[index], cumulativeDistance);
+            showPopup(content);
+          });
         }
+
+
 
         playbackInterval = setInterval(() => {
-            if (index >= playbackData.length) {
-                stopPlayback();
-                return;
-            }
+          if (index >= playbackData.length) {
+            stopPlayback();
+            return;
+          }
 
+          const currentPoint = playbackData[index];
+
+          // Update marker position
+          vehicleMarker.setPosition([
+            currentPoint.coordinates[1],
+            currentPoint.coordinates[0]
+          ]);
+
+          // Update map center
+          map.setCenter([
+            currentPoint.coordinates[1],
+            currentPoint.coordinates[0]
+          ]);
+
+          // Update rotation
+          updateVehicleRotation(currentPoint.angle);
+
+          if (index < playbackData.length) {
             const currentPoint = playbackData[index];
-            
-            // Update marker position
-            vehicleMarker.setPosition([
-                currentPoint.coordinates[1],
-                currentPoint.coordinates[0]
-            ]);
+            const { coordinates, angle } = currentPoint;
 
-            // Update map center
-            map.setCenter([
-                currentPoint.coordinates[1],
-                currentPoint.coordinates[0]
-            ]);
-
-            // Update rotation
-            updateVehicleRotation(currentPoint.angle);
-
-            // Calculate distance
-            if (index > 0) {
-                const prevPoint = playbackData[index - 1];
-                totalDistance += calculateDistance(
-                    prevPoint.coordinates[0],
-                    prevPoint.coordinates[1],
-                    currentPoint.coordinates[0],
-                    currentPoint.coordinates[1]
-                );
+            const markerElement = vehicleMarker.getElement();
+            if (markerElement) {
+              const imgElement = markerElement.querySelector('img');
+              if (imgElement) {
+                // Adjust angle if needed (similar to the previous code with ANGLE_OFFSET)
+                const adjustedAngle = angle + 90;
+                imgElement.style.transform = `rotate(${adjustedAngle}deg)`;
+              }
             }
+          }
 
-            // Update info displays
-            updateVehicleInfo(currentPoint, totalDistance);
+          // Calculate distance
+          if (index > 0) {
+            const prevPoint = playbackData[index - 1];
+            totalDistance += calculateDistance(
+              prevPoint.coordinates[0],
+              prevPoint.coordinates[1],
+              currentPoint.coordinates[0],
+              currentPoint.coordinates[1]
+            );
+          }
 
-            index++;
+          // Update info displays
+          updateVehicleInfo(currentPoint, totalDistance);
+
+          index++;
         }, 1000);
 
-    } catch (error) {
+      } catch (error) {
         console.error('Error in startPlayback:', error);
         alert('Error starting playback. Please try again.');
+      }
     }
-}
 
-function updateVehicleRotation(angle) {
-    const markerElement = vehicleMarker.getElement();
-    if (markerElement) {
+    function updateVehicleRotation(angle) {
+      const markerElement = vehicleMarker.getElement();
+      if (markerElement) {
         const imageElement = markerElement.querySelector('.carImage');
         if (imageElement) {
-            const rotationAngle = (angle + 90) % 360;
-            imageElement.style.transform = `translate(-50%, -50%) rotate(${rotationAngle}deg)`;
+          const rotationAngle = (angle + 90) % 360;
+          imageElement.style.transform = `translate(-50%, -50%) rotate(${rotationAngle}deg)`;
         }
+      }
     }
-}
 
     function pausePlayback() {
-        if (playbackInterval) {
-            clearInterval(playbackInterval);
-            isPaused = true;
-        }
+      if (playbackInterval) {
+        clearInterval(playbackInterval);
+        isPaused = true;
+      }
     }
-    
+
+    function cleanupDirectionalArrows() {
+
+      if (arrowMarkers && arrowMarkers.length > 0) {
+        arrowMarkers.forEach(marker => {
+          if (marker) marker.remove();
+        });
+        arrowMarkers = [];
+      }
+    }
+
     function stopPlayback() {
-    clearInterval(playbackInterval);
-    playbackInterval = null;
-    
-    if (vehicleMarker) {
-        vehicleMarker.setMap(null);
+      // Clear interval
+      clearInterval(playbackInterval);
+      playbackInterval = null;
+
+      // Remove vehicle marker
+      if (vehicleMarker) {
+        vehicleMarker.remove();  // Markers use remove()
         vehicleMarker = null;
+      }
+
+      // Remove start and end markers
+      if (startMarker) {
+        startMarker.remove();  // Markers use remove()
+        startMarker = null;
+      }
+      if (endMarker) {
+        endMarker.remove();  // Markers use remove()
+        endMarker = null;
+      }
+
+      // Remove polyline
+      if (polyline) {
+        polyline.setMap(null);  // Polylines use setMap(null)
+        polyline = null;
+      }
+
+      cleanupDirectionalArrows();
+
+      // Reset device selection
+      document.getElementById('selectedVehicle').textContent = 'Select Vehicle';
+      selectedDeviceId = null;
+
+      // Reset all counters and flags
+      index = 0;
+      isPaused = false;
+      totalDistance = 0;
+      playbackData = [];
+      pathCoordinates = [];
+
+      // Reset info displays
+      document.getElementById('speedDisplay').textContent = '0 km/h';
+      document.getElementById('dateTimeDisplay').textContent = '--';
+      document.getElementById('distanceDisplay').textContent = '0.00 km';
+
+      // Reset dropdown state
+      const dropdown = document.getElementById('deviceDropdown');
+      if (dropdown) {
+        dropdown.style.display = 'none';
+      }
+
+      // Hide any popups
+      const customPopup = document.getElementById('customPopup');
+      if (customPopup) {
+        customPopup.style.display = 'none';
+      }
+
+      // Remove any direction arrows
+      const arrows = document.querySelectorAll('.direction-arrow');
+      arrows.forEach(arrow => arrow.remove());
+
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('device');
+        url.searchParams.delete('from');
+        url.searchParams.delete('to');
+        window.history.replaceState({}, '', url);
+      } catch (error) {
+        console.error('Error resetting URL parameters:', error);
+      }
     }
-    
-    index = 0;
-    isPaused = false;
-    totalDistance = 0;
-    
-    // Reset info displays
-    document.getElementById('speedDisplay').textContent = '0 km/h';
-    document.getElementById('dateTimeDisplay').textContent = '--';
-    document.getElementById('distanceDisplay').textContent = '0.00 km';
-    
-    // Center map on first coordinate if available
-    if (playbackData && playbackData.length > 0) {
-        map.setCenter(new MapmyIndia.LatLng(
-            playbackData[0].coordinates[0],
-            playbackData[0].coordinates[1]
-        ));
-    }
-}
-    
+
     // Helper functions
     function isValidCoordinate(lng, lat) {
-        return (
-            !isNaN(lng) && 
-            !isNaN(lat) && 
-            lng >= -180 && 
-            lng <= 180 && 
-            lat >= -90 && 
-            lat <= 90 &&
-            lng !== 0 && 
-            lat !== 0
-        );
+      return (
+        !isNaN(lng) &&
+        !isNaN(lat) &&
+        lng >= -180 &&
+        lng <= 180 &&
+        lat >= -90 &&
+        lat <= 90 &&
+        lng !== 0 &&
+        lat !== 0
+      );
     }
-    
-    function updateVehicleInfo(data, distance) {
-    document.getElementById('speedDisplay').textContent = 
-        `${Math.round(data.speed)} km/h`;
-    document.getElementById('dateTimeDisplay').textContent = 
-        data.date.split('.')[0];
-    document.getElementById('distanceDisplay').textContent = 
-        `${distance.toFixed(2)} km`;
-}
 
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Earth's radius in kilometers
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-}
-    
+    function updateVehicleInfo(data, distance) {
+      document.getElementById('speedDisplay').textContent =
+        `${Math.round(data.speed)} km/h`;
+      document.getElementById('dateTimeDisplay').textContent =
+        data.date.split('.')[0];
+      document.getElementById('distanceDisplay').textContent =
+        `${distance.toFixed(2)} km`;
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Earth's radius in kilometers
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
     // Event listeners
-    document.addEventListener('click', function(event) {
-        const dropdown = document.getElementById('deviceDropdown');
-        if (!event.target.closest('.device-selector')) {
-            dropdown.style.display = 'none';
-        }
+    document.addEventListener('click', function (event) {
+      const dropdown = document.getElementById('deviceDropdown');
+      if (!event.target.closest('.device-selector')) {
+        dropdown.style.display = 'none';
+      }
     });
-    
+
     document.getElementById('startPlayback')?.addEventListener('click', startPlayback);
     document.getElementById('pausePlayback')?.addEventListener('click', pausePlayback);
     document.getElementById('stopPlayback')?.addEventListener('click', stopPlayback);
-    </script>
-    
+  </script>
+
 </body>
+
 </html>
