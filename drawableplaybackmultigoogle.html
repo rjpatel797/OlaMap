@@ -1697,10 +1697,14 @@ function findClosestPointOnPolyline(latLng, data) {
 function createPointInfoContent(point, deviceId) {
     // Calculate distance from the start
     const totalDistance = calculateCumulativeDistance(point, deviceId);
+    
+    // Find the device name from selectedDevices array
+    const selectedDevice = selectedDevices.find(d => d.did === deviceId);
+    const deviceName = selectedDevice ? selectedDevice.name : deviceId;
 
     return `
         <div class="point-details">
-            <div class="point-header">Point Details</div>
+            <div class="point-header">${deviceName}</div>
             <div class="point-info">
                 <div><strong>Time:</strong> ${point.date.split('.')[0]}</div>
                 <div><strong>Speed:</strong> ${point.speed.toFixed(1)} km/h</div>

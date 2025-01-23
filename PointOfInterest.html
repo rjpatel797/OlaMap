@@ -60,7 +60,6 @@
         .input-group {
             display: flex;
             gap: 10px;
-            margin-bottom: 10px;
         }
 
         input,
@@ -126,23 +125,40 @@
         }
 
         .action-btn {
-            padding: 5px 10px;
-            margin: 0 2px;
-            cursor: pointer;
-            border-radius: 3px;
-        }
+    cursor: pointer;
+    padding: 6px;
+    margin: 0 3px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
 
-        .enable-btn {
-            color: #27ae60;
-        }
+.enable-btn {
+    color: #28a745;
+}
 
-        .disable-btn {
-            color: #e74c3c;
-        }
+.disable-btn {
+    color: #ffc107;
+}
 
-        .delete-btn {
-            color: #c0392b;
-        }
+.delete-btn {
+    color: #dc3545;
+}
+
+.action-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Optional: Add transition for smooth hover effect */
+.action-btn i {
+    font-size: 16px;
+    transition: transform 0.2s;
+}
+
+.action-btn:hover i {
+    transform: scale(1.1);
+}
 
         .search-bar {
             padding: 5px;
@@ -192,7 +208,6 @@
         .table-container {
             max-height: 300px;  /* Set maximum height for the table container */
             overflow-y: auto;   /* Enable vertical scrolling */
-            margin-bottom: 20px;
             position: relative;
         }
 
@@ -262,6 +277,44 @@
             flex: 1;
             min-height: 0; /* Important for proper flexbox scrolling */
         }
+
+        /* Address column scrolling */
+        .poi-table td:nth-child(5) {
+    /* width: 500px; */
+    white-space: nowrap;
+    overflow-x: auto;
+    text-align: left;
+    /* display: block;  Added to ensure proper scrolling */
+    text-overflow:initial;  /* Prevents ellipsis truncation */
+    padding: 8px;  /* Added for better spacing */
+}
+
+/* Custom scrollbar styling for address column */
+.poi-table td:nth-child(5)::-webkit-scrollbar {
+    height: 4px;
+}
+
+.poi-table td:nth-child(5)::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 2px;
+}
+
+.poi-table td:nth-child(5)::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 2px;
+}
+
+.poi-table td:nth-child(5)::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.poi-table td:nth-child(6):contains('Enable') {
+    color: #27ae60;
+}
+
+.poi-table td:nth-child(6):contains('Disable') {
+    color: #e74c3c;
+}
     </style>
 </head>
 
@@ -323,6 +376,7 @@
         let markerLayer = null;
         let styleLoaded = false;
         let map;
+        let draggedMarker = null;
         // Initialize Ola Map
         const olaMap = new OlaMapsSDK.OlaMaps({
             apiKey: '0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9'
@@ -403,12 +457,18 @@ function initializeMap() {
                         <td>${poi.plocation || ''}</td>
                         <td>${poi.latitude || ''}</td>
                         <td>${poi.langitude || ''}</td>
-                        <td>${poi.plocation || ''}</td>
-                        <td>${poi.status || 'Enable'}</td>
+                        <td>${poi.address || ''}</td>
+                        <td style="${poi.status === 'Disable' ? 'color: red;' : 'color: green;'}">${poi.status || 'Enable'}</td>
                         <td>
-                            <span class="action-btn enable-btn" onclick="updateStatus(${poi.id}, 'Enable')">Enable</span>
-                            <span class="action-btn disable-btn" onclick="updateStatus(${poi.id}, 'Disable')">Disable</span>
-                            <span class="action-btn delete-btn" onclick="deletePOI(${poi.id})">Delete</span>
+                            <span class="action-btn enable-btn" onclick="updateStatus(${poi.id}, 'Enable')" title="Enable">
+                                <i class="fas fa-check-circle"></i>
+                            </span>
+                            <span class="action-btn disable-btn" onclick="updateStatus(${poi.id}, 'Disable')" title="Disable">
+                                <i class="fas fa-ban"></i>
+                            </span>
+                            <span class="action-btn delete-btn" onclick="deletePOI(${poi.id})" title="Delete">
+                                <i class="fas fa-trash-alt"></i>
+                            </span>
                         </td>
                     </tr>
                 `;
@@ -611,7 +671,8 @@ function selectPlace(place) {
                 },
                 properties: {
                     title: place.description,
-                    description: place.description
+                    description: place.description,
+                    draggable: true
                 }
             };
 
@@ -636,6 +697,8 @@ function selectPlace(place) {
                     }
                 });
 
+                makeMarkerDraggable();
+
                 // Fly to the location
                 map.flyTo({
                     center: [lng, lat],
@@ -655,6 +718,79 @@ function selectPlace(place) {
     }
 }
 
+function makeMarkerDraggable() {
+            const canvas = map.getCanvas();
+            canvas.style.cursor = 'move';
+
+            // Variables to track dragging
+            let isDragging = false;
+            let startPos = null;
+
+            // Mouse down event to start dragging
+            map.on('mousedown', 'selected-place-marker', (e) => {
+                e.preventDefault();
+                isDragging = true;
+                startPos = e.lngLat;
+                canvas.style.cursor = 'grabbing';
+            });
+
+            // Mouse move event during dragging
+            map.on('mousemove', (e) => {
+                if (!isDragging) return;
+
+                // Update marker position
+                const newCoords = [e.lngLat.lng, e.lngLat.lat];
+                
+                // Update the marker's coordinates
+                const source = map.getSource('selected-place');
+                if (source) {
+                    source.setData({
+                        type: 'Feature',
+                        geometry: {
+                            type: 'Point',
+                            coordinates: newCoords
+                        },
+                        properties: {
+                            draggable: true
+                        }
+                    });
+                }
+            });
+
+            // Mouse up event to finalize dragging
+            map.on('mouseup', (e) => {
+                if (!isDragging) return;
+
+                isDragging = false;
+                canvas.style.cursor = 'move';
+
+                // Update form fields with new coordinates
+                const newLat = e.lngLat.lat;
+                const newLng = e.lngLat.lng;
+
+                document.getElementById('latitude').value = newLat.toFixed(6);
+                document.getElementById('longitude').value = newLng.toFixed(6);
+
+                // Perform reverse geocoding to update address
+                reverseGeocode(newLat, newLng).then(address => {
+                    if (address) {
+                        document.getElementById('address').value = address;
+                    }
+                });
+            });
+
+            // Prevent dragging from happening on the whole map
+            map.on('mousedown', (e) => {
+                const features = map.queryRenderedFeatures(e.point, {
+                    layers: ['selected-place-marker']
+                });
+                
+                if (features.length === 0) {
+                    isDragging = false;
+                    canvas.style.cursor = 'default';
+                }
+            });
+        }
 
 
 async function getPlaceDetails(placeId) {
