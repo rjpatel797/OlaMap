@@ -610,8 +610,8 @@ function updatePOITable(pois) {
             <tr data-id="${poi.id}">
                         <td>${index + 1}</td>
                         <td>${poi.plocation || ''}</td>
-                        <td>${poi.latitude || ''}</td>
-                        <td>${poi.langitude || ''}</td>
+                        <td>${poi.latitude ? parseFloat(poi.latitude).toFixed(3) : ''}</td>
+                        <td>${poi.langitude ? parseFloat(poi.langitude).toFixed(3) : ''}</td>
                         <td>${poi.address || ''}</td>
                         <td style="${poi.status === 'Disable' ? 'color: red;' : 'color: green;'}">${poi.status || 'Enable'}</td>
                         <td>
