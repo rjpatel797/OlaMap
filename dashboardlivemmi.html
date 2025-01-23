@@ -1534,6 +1534,10 @@ function createDeviceList() {
 
     // Create HTML for each group
     Object.entries(deviceGroups).forEach(([groupName, groupDevices]) => {
+        // Check if all devices in this group are selected
+        const allGroupDevicesSelected = isInitialLoad || 
+            groupDevices.every(device => selectedDevices.has(device.deviceId));
+
         // Create group header with checkbox
         const groupHeader = $(`
             <div class="group-header" style="
@@ -1550,7 +1554,7 @@ function createDeviceList() {
             ">
                 <input type="checkbox" class="group-checkbox" 
                     data-group="${groupName}" 
-                    ${isInitialLoad ? 'checked' : ''}
+                    ${allGroupDevicesSelected ? 'checked' : ''}
                     style="cursor: pointer;"
                 />
                 <span style="flex: 1;">${groupName}</span>
