@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Based Vehicle Tracking System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --text-color: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            gap: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #background-video {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -1;
+            object-fit: cover;
+        }
+
+        .logo-container {
+            width: 100%;
+            max-width: 1200px;
+            background: rgba(52, 152, 219, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            color: var(--text-color);
+            font-size: 24px;
+            font-weight: 500;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        .content-container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            align-items: stretch;
+            z-index: 1;
+        }
+
+        .login-section {
+            flex: 0 1 400px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .login-header {
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            color: var(--text-color);
+            font-size: 28px;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.5);
+        }
+
+        .form-group i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-color);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background: #2980b9;
+        }
+
+        .download-btn {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .download-text {
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .download-text:hover {
+            opacity: 1;
+        }
+
+        .company-info {
+            flex: 0 1 600px;
+            background: rgba(44, 62, 80, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 15px;
+            color: var(--text-color);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .company-info h2 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .company-info p {
+            margin-bottom: 30px;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        .company-info h3 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .company-info ul {
+            list-style: none;
+            margin-bottom: 30px;
+        }
+
+        .company-info li {
+            margin-bottom: 10px;
+            padding-left: 25px;
+            position: relative;
+            opacity: 0.9;
+        }
+
+        .company-info li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+        }
+
+        .company-info a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .company-info a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 992px) {
+            .content-container {
+                flex-direction: column;
+            }
+
+            .login-section, .company-info {
+                flex: 1;
+            }
+        }
+
+        #errordiv {
+            display: none;
+            background-color: rgba(231, 76, 60, 0.9);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        #errordiv.show {
+            display: block;
+        }
+
+        #errordiv.shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+            transform: translate3d(0, 0, 0);
+        }
+
+        @keyframes shake {
+            10%, 90% {
+                transform: translate3d(-1px, 0, 0);
+            }
+            
+            20%, 80% {
+                transform: translate3d(2px, 0, 0);
+            }
+
+            30%, 50%, 70% {
+                transform: translate3d(-4px, 0, 0);
+            }
+
+            40%, 60% {
+                transform: translate3d(4px, 0, 0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <video autoplay muted loop id="background-video">
+        <source src="video/main1.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <div class="logo-container">
+        GPS Tracker Logo
+    </div>
+    
+    <div class="content-container">
+        <div class="login-section">
+            <div class="login-header">
+                <h1>GPS Tracker Login</h1>
+            </div>
+            <form method="POST" id="form-horizontal" action="">
+                <div class="form-group">
+                    <input type="text" name="uid" id="uid" placeholder="Username" />
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="password" name="passwd" placeholder="Password" />
+                    <i class="fas fa-lock"></i>
+                </div>
+                <button type="submit" name="submit" class="submit-btn">Sign In</button>
+                <div id="errordiv"></div>
+                <div class="download-btn">
+                    <a class="download-text" href="https://ttsgps.in/APP/TTSGPS.apk">
+                        <i class="fas fa-download"></i> Download Mobile App
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <div class="company-info">
+            <h2>About Our GPS Tracking System</h2>
+            <p>We provide cutting-edge GPS-based vehicle tracking solutions, empowering businesses with real-time insights and enhanced fleet management capabilities.</p>
+            <h3>Our Services</h3>
+            <ul>
+                <li>Real-time vehicle tracking</li>
+                <li>Advanced fleet management</li>
+                <li>Fuel consumption optimization</li>
+                <li>Driver behavior analysis</li>
+                <li>Custom reporting and analytics</li>
+            </ul>
+            <p>Contact us: <a href="mailto:info@gpstracker.com">info@gpstracker.com</a></p>
+        </div>
+    </div>
+
+    <input type="hidden" name="ipaddress" value="192.168.1.134" id="ipaddress" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="js/jquery.validate.min.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        async function loginajax() {
+    const username = document.getElementById("uid").value;
+    const password = document.getElementById("password").value;
+    const ip = document.getElementById("ipaddress").value;
+
+    if (username.length == 0) {
+        showError("Please enter valid ID/Password.");
+        return false;
+    } else if (password.length == 0) {
+        showError("Please enter valid ID/Password.");
+        return false;
+    }
+
+    try {
+        const params = new URLSearchParams({
+            opr: 'andro_login',
+            uid: username,
+            passwd: password,
+            ip: ip
+        });
+
+        const response = await fetch(`${API}${params.toString()}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Response data:", data);
+
+        // Check for the specific error response
+        if (data.msg === "Error In Login" && data.status === "false") {
+            document.getElementById("uid").value = "";
+            document.getElementById("password").value = "";
+            showError("Invalid username or password. Please try again.");
+            return false;
+        }
+
+        // Check for successful login
+        if (data[0] && data[0].status === "true") {
+            localStorage.setItem("mid", data[0].data.managerid);
+            localStorage.setItem("keyType", data[0].data.keyType);
+            localStorage.setItem("key", data[0].data.key);
+            window.location.href = "dashboardliveola.html";
+        } else {
+            document.getElementById("uid").value = "";
+            document.getElementById("password").value = "";
+            showError("Login failed. Please check your credentials.");
+        }
+
+    } catch (error) {
+        console.error("Login Error:", error);
+        showError("Connection error. Please try again.");
+    }
+
+    return false;
+}
+
+$(document).ready(function () {
+    $("#uid").focus();
+    
+    $("#form-horizontal input").on("keypress", function(e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            loginajax();
+        }
+    });
+
+    $("#form-horizontal").validate({
+        rules: {
+            uid: { required: true },
+            passwd: { required: true }
+        },
+        messages: {
+            uid: { required: "Please enter username" },
+            passwd: { required: "Please enter password" }
+        },
+        submitHandler: function (form) {
+            loginajax();
+            return false;
+        }
+    });
+});
+
+function showError(message) {
+    const errorDiv = $("#errordiv");
+    errorDiv.html("<i class='fas fa-exclamation-circle'></i> " + message)
+           .addClass("show");
+    
+    // Add shake animation class
+    errorDiv.addClass("shake");
+    
+    // Remove shake class after animation completes
+    setTimeout(() => {
+        errorDiv.removeClass("shake");
+    }, 500);
+    
+    // Hide error message after 5 seconds
+    setTimeout(() => {
+        errorDiv.removeClass("show");
+    }, 5000);
+}
+
+// Add this CSS to your existing styles
+    </script>
+</body>
+</html>
