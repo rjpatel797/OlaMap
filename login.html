@@ -43,16 +43,16 @@
             object-fit: cover;
         }
 
-        .logo-container {
+        .header-container {
             width: 100%;
             max-width: 1200px;
-            background: rgba(52, 152, 219, 0.9);
+            background: var(--primary-color);
             padding: 20px;
-            border-radius: 15px;
+            border-radius: 15px 15px 0 0;
             text-align: center;
             color: var(--text-color);
-            font-size: 24px;
-            font-weight: 500;
+            font-size: 28px;
+            font-weight: 600;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             z-index: 1;
         }
@@ -74,22 +74,35 @@
             padding: 40px;
             border-radius: 15px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .logo-container {
+            margin-bottom: 30px;
+        }
+
+        .logo-container img {
+            max-width: 150px;
+            height: auto;
         }
 
         .login-header {
             margin-bottom: 30px;
+            text-align: center;
         }
 
         .login-header h1 {
             color: var(--text-color);
-            font-size: 28px;
-            text-align: left;
+            font-size: 24px;
             font-weight: 500;
         }
 
         .form-group {
             margin-bottom: 20px;
             position: relative;
+            width: 100%;
         }
 
         .form-group input {
@@ -223,6 +236,7 @@
             text-align: center;
             font-size: 14px;
             transition: all 0.3s ease;
+            width: 100%;
         }
 
         #errordiv.show {
@@ -259,15 +273,18 @@
         Your browser does not support the video tag.
     </video>
 
-    <div class="logo-container">
-        GPS Tracker Logo
+    <div class="header-container">
+        Your Company Name
     </div>
     
     <div class="content-container">
         <div class="login-section">
-            <div class="login-header">
-                <h1>GPS Tracker Login</h1>
+            <div class="logo-container">
+                <img src="images/logocom.jpeg" alt="GPS Tracker Logo">
             </div>
+            <!-- <div class="login-header">
+                <h1>GPS Tracker Login</h1>
+            </div> -->
             <form method="POST" id="form-horizontal" action="">
                 <div class="form-group">
                     <input type="text" name="uid" id="uid" placeholder="Username" />
