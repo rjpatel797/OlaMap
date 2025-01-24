@@ -95,6 +95,120 @@
         border-radius: 5px;
         border: 1px solid #ccc;
       }
+
+      .mappls-popup {
+          position: absolute;
+          background: #fff;
+          padding: 15px 20px;
+          border: none;
+          border-radius: 8px;
+          box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
+          z-index: 1000;
+          min-width: 280px;
+          width: max-content;
+          text-align: left;
+          font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+          transform: translate(-50%, -100%);
+          margin-top: -10px;
+      }
+
+      .mappls-popup::after {
+          content: '';
+          position: absolute;
+          bottom: -8px;
+          left: 50%;
+          transform: translateX(-50%);
+          border-left: 8px solid transparent;
+          border-right: 8px solid transparent;
+          border-top: 8px solid #fff;
+      }
+
+      .mappls-popup-close-button {
+          position: absolute;
+          top: 5px;
+          right: 5px;
+          cursor: pointer;
+          font-size: 20px;
+          color: #999;
+          transition: color 0.2s;
+      }
+
+      .mappls-popup-close-button:hover {
+          color: #666;
+      }
+
+      .mappls-popup-content {
+          line-height: 1.8;
+          color: #2c3e50;
+          font-size: 13px;
+          padding-top: 5px;
+      }
+
+      .mappls-popup-title {
+          font-size: 16px;
+          font-weight: bold;
+          color: #2c3e50;
+          margin-bottom: 10px;
+          padding-bottom: 5px;
+          border-bottom: 1px solid #eee;
+      }
+
+      .mappls-popup-content b {
+          color: #34495e;
+          width: 100px;
+          display: inline-block;
+          font-weight: 600;
+      }
+
+      .status-indicator {
+          display: inline-block;
+          padding: 2px 8px;
+          border-radius: 12px;
+          font-size: 12px;
+          font-weight: 500;
+          margin-left: 5px;
+      }
+
+      .status-indicator-status {
+          display: inline-block;
+          padding: 0.2px 3px;
+          border-radius: 4px;
+          font-size: 10px;
+          font-weight: 500;
+      }
+
+      .status-on {
+          background-color: #2ecc71;
+          color: white;
+      }
+
+      .status-off {
+          background-color: #e74c3c;
+          color: white;
+      }
+
+      .popup-btn {
+          padding: 6px 12px;
+          background-color: #4CAF50;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+          margin-top: 5px;
+          transition: background-color 0.3s;
+      }
+
+      .popup-btn:hover {
+          background-color: #45a049;
+      }
+
+      .button-container {
+          display: flex;
+          gap: 10px;
+          margin-top: 10px;
+      }
+
       .deviceItem {
         display: flex;
         align-items: center;
@@ -841,7 +955,7 @@
     position: relative;
     background-color: #fff;
     margin: 15% auto;
-    padding: 20px;
+    padding: 10px;
     width: 90%;
     max-width: 500px;
     border-radius: 8px;
@@ -864,7 +978,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 
 .close {
@@ -943,15 +1057,19 @@
 .copy-section {
     display: flex;
     gap: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 5px;
 }
+
+
 
 #shareUrl {
     flex: 1;
-    padding: 8px 12px;
+    padding: 4px 6px;
     border: 1px solid #ddd;
     border-radius: 4px;
     transition: border-color 0.2s;
+    width: 80%;
+    font-size: 10px;
 }
 
 #shareUrl:focus {
@@ -960,13 +1078,14 @@
 }
 
 #copyButton {
-    padding: 8px 16px;
+    padding: 4px 6px;
     background-color: #1a73e8;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s;
+    font-size: 10px;
 }
 
 #copyButton:hover {
@@ -990,6 +1109,7 @@
     cursor: pointer;
     transition: all 0.2s;
     border-radius: 4px;
+    font-size: 10px;
 }
 
 .share-button:hover {
@@ -1002,8 +1122,8 @@
 }
 
 .share-button img {
-    width: 24px;
-    height: 24px;
+    width: 19px;
+    height: 19px;
     transition: transform 0.2s;
 }
 
@@ -1060,6 +1180,20 @@
 
 .mapboxgl-popup{
   max-width: 3000px;
+}
+
+.customMarkerClass {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.customMarkerClass img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
     </style>
@@ -1178,7 +1312,7 @@ function initMap() {
 
     try {
         map = new mappls.Map('map', {
-            center: {lat: 28.612964, lng: 77.229463},
+            center: {lat: 20.5937, lng: 78.9629},
             zoom: 5,  // Start with a wider view to show clusters
             zoomControl: true,
             hybrid: true
@@ -1193,6 +1327,26 @@ function initMap() {
         map.on('error', function(e) {
             console.error('Map error:', e);
         });
+
+        map.on('drag', updatePopupPosition);
+        map.on('zoom', updatePopupPosition);
+
+        map.on('move', () => {
+    if (currentMarker) {
+        const popup = document.querySelector('.mappls-popup');
+        if (popup) {
+            const markerElement = currentMarker.getElement();
+            if (markerElement) {
+                const markerRect = markerElement.getBoundingClientRect();
+                const mapContainer = map.getContainer();
+                const mapRect = mapContainer.getBoundingClientRect();
+
+                popup.style.left = `${markerRect.left - mapRect.left + (markerRect.width / 2)}px`;
+                popup.style.top = `${markerRect.top - mapRect.top}px`;
+            }
+        }
+    }
+});
 
     } catch (error) {
         console.error("Error initializing map:", error);
@@ -1331,7 +1485,7 @@ function loadMapScript() {
           clusterElement.addEventListener("click", () => {
             this.map.flyTo({
               center: center,
-              zoom: Math.min(this.map.getZoom() + 2, this.options.maxZoom),
+              // zoom: Math.min(this.map.getZoom() + 2, this.options.maxZoom),
               speed: 1.5,
             });
           });
@@ -1499,8 +1653,9 @@ async function fetchLocation(latlang) {
         }
         
         createDeviceList();
-        initializeMarkers();
+        initializeMarkersWithRotation();  // Use the new function
         updateStatusCounts();
+        updateMarkers(devices);  
     } catch (error) {
         console.error("Error fetching device data:", error);
     }
@@ -1590,11 +1745,12 @@ function createDeviceList() {
         const groupContainer = $(`<div data-group="${groupName}"></div>`);
 
         // Add devices in this group
-        groupDevices.forEach((device, index) => {
+        groupDevices.forEach((device) => {
+            const deviceIndex = devices.indexOf(device);
             const isChecked = isInitialLoad || selectedDevices.has(device.deviceId);
             const item = $(`
                 <div class="deviceItem" id="device-${device.name.replace(/\s+/g, "-")}" style="margin-left: 10px;">
-                    <input type="checkbox" class="deviceCheckbox" data-index="${devices.indexOf(device)}" ${isChecked ? 'checked' : ''} />
+                    <input type="checkbox" class="deviceCheckbox" data-index="${deviceIndex}" ${isChecked ? 'checked' : ''} />
                     <span class="car-emoji">${getCarEmoji(device)}</span>
                     <span>${device.name}</span>
                 </div>
@@ -1611,16 +1767,29 @@ function createDeviceList() {
                 groupHeader.find('.group-checkbox').prop('checked', allGroupChecked);
             });
 
+            // Add click handler for the device item
             item.on("click", function(e) {
+                // Only handle click if it's not on the checkbox
                 if (!e.target.classList.contains('deviceCheckbox')) {
-                    if (currentMarker && currentMarker === markers[devices.indexOf(device)]) {
+                    const device = devices[deviceIndex];
+                    const marker = markers[deviceIndex];
+
+                    if (marker) {
+                        // Hide existing popup
                         hidePopup();
-                    } else {
-                        showPopup(devices.indexOf(device), markers[devices.indexOf(device)]);
-                        myMap.flyTo({
-                            center: device.coordinates,
+                        
+                        // Show popup for this device
+                        showPopup(deviceIndex, marker);
+                        
+                        // Fly to the device location
+                        map.flyTo({
+                            center: {
+                                lat: device.coordinates[0],
+                                lng: device.coordinates[1]
+                            },
                             zoom: 14,
-                            speed: 1.5
+                            essential: true,
+                            duration: 1000 // 1 second animation
                         });
                     }
                 }
@@ -1685,6 +1854,10 @@ function getCarEmoji(device) {
       }
 
 function hidePopup() {
+  document.querySelectorAll('.mappls-popup').forEach(popup => {
+        popup.remove();
+    });
+    currentMarker = null;
     const popup = document.getElementById('customPopup');
     popup.style.display = 'none';
     isPopupOpen = false;
@@ -1718,115 +1891,78 @@ function hidePopup() {
       }
 
       function showPopup(index, marker) {
-    console.log('Showing popup for index:', index);
+        if (!marker || !devices[index]) return;
 
-    if (!marker || !devices[index]) {
-        console.error('Invalid marker or device index');
-        return;
-    }
+        const device = devices[index];
+        const popup = document.getElementById('customPopup');
+        const popupTitle = document.getElementById('popupTitle');
+        const popupContent = document.getElementById('popupContent');
 
-    const popup = document.getElementById('customPopup');
-    const popupTitle = document.getElementById('popupTitle');
-    const popupContent = document.getElementById('popupContent');
+        // Update popup content
+        popupTitle.innerHTML = `<div class="title">
+            ${device.name}
+            <div class="status">
+                <b>GPS:</b> <span class="status-indicator ${device.gps ? "status-on" : "status-off"}">${device.gps ? "ON" : "OFF"}</span>
+                <b>Engine:</b> <span class="status-indicator ${device.ignition === "true" ? "status-on" : "status-off"}">${device.ignition === "true" ? "ON" : "OFF"}</span>
+                <b>Power:</b> <span class="status-indicator ${device.power === "true" ? "status-on" : "status-off"}">${device.power === "true" ? "ON" : "OFF"}</span>
+            </div>
+        </div>`;
 
-    const device = devices[index];
-    
-    // Set popup content
-    popupTitle.innerHTML = `<div class="title">${
-        device.name
-    }<div class="status"><b>GPS:</b> <span class="status-indicator ${
-        device.gps == true ? "status-on" : "status-off"
-    }">
-        ${device.gps == true ? "ON" : "OFF"}
-    </span><br />
-    <b>Engine:</b> <span class="status-indicator ${
-        device.ignition == "true" ? "status-on" : "status-off"
-    }">
-        ${device.ignition == "true" ? "ON" : "OFF"}
-    </span><br />
-    <b>Power:</b> <span class="status-indicator ${
-        device.power === "true" ? "status-on" : "status-off"
-    }">
-        ${device.power === "true" ? "ON" : "OFF"}
-    </span></div></div>`;
+        popupContent.innerHTML = `
+            <b>Name: </b>${device.name}<br>
+            <b>Date:</b> ${device.dateNew}<br>
+            <b>Speed:</b> ${device.speed} km/h<br>
+            <b>Hold Time:</b> ${device.holdtime}<br>
+            <b>Status:</b> <span class="status-indicator-status ${device.status === "Online" ? "status-on" : "status-off"}">${device.status}</span><br>
+            <b>Battery:</b> ${device.battery}V<br>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <b>Location:</b> 
+                <span id="location-popup-${device.deviceId}">
+                    <button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" class="popup-btn">Get Location</button>
+                </span>
+            </div>
+            <div class="button-container">
+                <button onclick="viewTodayTrip('${device.name}')" class="popup-btn">Today's Trip</button>
+                <button onclick="viewLiveTracking('${device.name}')" class="popup-btn">Live Tracking</button>
+                <button onclick="shareLocation(${device.coordinates[0]}, ${device.coordinates[1]})" class="popup-btn">Share Location</button>
+            </div>
+        `;
 
-    popupContent.innerHTML = `
-        <b>Date:</b> ${device.dateNew} <br />
-        <b>Speed:</b> ${device.speed} km/h <br />
-        <b>Hold Time:</b> ${device.holdtime} <br />
-        <b>Status:</b> <span class="status-indicator-status ${
-            device.status == "Online" ? "status-on" : "status-off"
-        }">${device.status}</span> <br />
-        <b>Battery:</b> ${device.battery}V <br />
-        <div style="display: flex; align-items: center; gap: 5px;">
-            <b>Location:</b> <span id="location-popup-${device.deviceId}">
-                <button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" 
-                    style="background: none; border: none; padding: 0; color: #3498db; text-decoration: underline; cursor: pointer; font-size: 11px;">
-                    Get Location
-                </button>
-            </span>
-        </div>
-    `;
+        // Show popup
+        popup.style.display = 'block';
 
-    // Show the popup
-    popup.style.display = "block";
-
-    try {
-        // Get the marker's DOM element
+        // Get marker position and position popup
         const markerElement = marker.getElement();
         if (markerElement) {
-            // Get the marker's position relative to the map container
             const markerRect = markerElement.getBoundingClientRect();
             const mapContainer = map.getContainer();
             const mapRect = mapContainer.getBoundingClientRect();
 
-            // Position the popup relative to the marker
-            popup.style.left = `${markerRect.left - mapRect.left + markerRect.width / 2}px`;
-            popup.style.top = `${markerRect.top - mapRect.top - popup.offsetHeight - 20}px`;
+            popup.style.left = `${markerRect.left - mapRect.left + (markerRect.width / 2)}px`;
+            popup.style.top = `${markerRect.top - mapRect.top - popup.offsetHeight - 10}px`;
         }
-    } catch (error) {
-        console.error('Error positioning popup:', error);
 
-        // Fallback positioning
-        const mapContainer = map.getContainer();
-        const containerRect = mapContainer.getBoundingClientRect();
-        popup.style.left = `${containerRect.width / 2}px`;
-        popup.style.top = `${containerRect.height / 2}px`;
+        currentMarker = marker;
+        isPopupOpen = true;
     }
 
-    currentMarker = marker;
-    isPopupOpen = true;
-    currentPopupDid = device.deviceId;
-}
 
-
-function updatePopupPosition() {
-    if (!currentMarker || !popup.style.display === "block") return;
-
-    try {
-        const position = currentMarker.getPosition();
-        const point = map.getPixel(position);
+    function updatePopupPosition() {
+        if (!currentMarker) return;
         
-        // Get the map container dimensions
+        const popup = document.querySelector('.mappls-popup');
+        if (!popup) return;
+
+        const markerElement = currentMarker.getElement();
+        if (!markerElement) return;
+
+        const markerRect = markerElement.getBoundingClientRect();
         const mapContainer = map.getContainer();
         const mapRect = mapContainer.getBoundingClientRect();
-        
-        // Update popup position
-        popup.style.left = `${point.x}px`;
-        popup.style.top = `${point.y - 20}px`;
-        
-        // Ensure popup stays within map bounds
-        const popupRect = popup.getBoundingClientRect();
-        if (point.x + popupRect.width > mapRect.width) {
-            popup.style.left = `${mapRect.width - popupRect.width - 10}px`;
-        }
-        if (point.y - popupRect.height < 0) {
-            popup.style.top = `${point.y + 30}px`; // Show below marker instead
-        }
-    } catch (error) {
-        console.error('Error updating popup position:', error);
+
+        popup.style.left = `${markerRect.left - mapRect.left + (markerRect.width / 2)}px`;
+        popup.style.top = `${markerRect.top - mapRect.top}px`;
     }
-}
 
       async function updateDistance(deviceId) {
         const distanceSpan = document.getElementById("distance-value");
@@ -1847,6 +1983,7 @@ function updatePopupPosition() {
       function generatePopupContent(device) {
         return `
                     <div class="popup-content" style="">
+                      
                             <div class="status">
                                 <b></b> <span class="status-indicator ${device.gps == true ? "status-on" : "status-off"}">
                                     GPS
@@ -1860,6 +1997,7 @@ function updatePopupPosition() {
                             </div>
                         </div>
                         <div class="popup-details">
+                            ${device.name}<br/>
                             <b>Date:</b> ${device.dateNew}<br/>
                             <b>Speed:</b> ${device.speed} km/h<br/>
                             <b>Hold Time:</b> ${formatHoldTime(parseInt(device.holdtime))}<br/>
@@ -1894,13 +2032,132 @@ function updatePopupPosition() {
                                     class="nearby-btn">
                                     Add POI
                                 </button>
+                                <div id="shareModal" class="modal">
+                                  <div class="modal-content">
+                                      <div class="modal-header">
+                                          <h3>Share Location</h3>
+                                          <span class="close">&times;</span>
+                                      </div>
+                                      <div class="copy-section">
+                                          <input type="text" id="shareUrl" readonly>
+                                          <button id="copyButton">Copy Link</button>
+                                      </div>
+                                      <div class="share-options">
+                                          <button onclick="shareVia('whatsapp')" class="share-button">
+                                              <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
+                                              WhatsApp
+                                          </button>
+                                          <button onclick="shareVia('twitter')" class="share-button">
+                                              <img src="https://upload.wikimedia.org/wikipedia/commons/6/6f/Logo_of_Twitter.svg" alt="Twitter">
+                                              Twitter
+                                          </button>
+                                          <button onclick="shareVia('email')" class="share-button">
+                                              <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Email">
+                                              Email
+                                          </button>
+                                      </div>
+                                  </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 `;
       }
 
-      function initializeMarkers() {
+      function processDeviceData(data) {
+          return data.map(item => ({
+              ...item,
+              coordinates: item.latlang ? 
+                  item.latlang.split(",").map(coord => parseFloat(coord)) : 
+                  [0, 0],
+              angle: parseFloat(item.angle || 0), // Ensure angle is properly parsed
+              speed: parseFloat(item.speed),
+              status: new Date() - new Date(item.ddate) > 6 * 60 * 60 * 1000 ? 
+                  "Offline" : "Online"
+          }));
+      }
+
+      function updateMarkers(newDevices) {
+          newDevices.forEach((device, index) => {
+              const marker = markers[index];
+              if (marker && device.angle !== undefined) {
+                  updateMarkerRotation(marker, device.angle);
+              }
+          });
+      }
+
+      function createMarkerWithRotation(device) {
+    // Create marker with rotation options
+          const marker = new mappls.Marker({
+              map: map,
+              position: {
+                  lat: device.coordinates[0],
+                  lng: device.coordinates[1]
+              },
+              icon: getMarkerIcon(device),
+              rotateWithMap: true, // Enable rotation with map
+              rotation: device.angle || 0, // Set initial rotation angle
+              width: 40,
+              height: 40,
+              popupHtml: generatePopupContent(device),
+              draggable: false,
+              fitbounds: true
+          });
+
+          // Add click handler
+          marker.addListener('click', function() {
+              showPopup(devices.indexOf(device), marker);
+          });
+
+          return marker;
+      }
+
+function createRotatedMarker(device) {
+    try {
+        // Create custom HTML element for the marker
+        const markerElement = document.createElement('div');
+        markerElement.className = 'customMarkerClass';
+        
+        // Create and setup the image
+        const img = document.createElement('img');
+        img.src = getMarkerIcon(device);
+        img.style.transform = `rotate(${device.angle}deg)`;
+        img.style.transition = 'transform 0.3s ease';
+        markerElement.appendChild(img);
+
+        // Create the marker
+        const marker = new mappls.Marker({
+            map: map,
+            position: {
+                lat: device.coordinates[0],
+                lng: device.coordinates[1]
+            },
+            html: markerElement, // Use custom HTML element
+            width: 40,
+            height: 40,
+            offset: [20, 20], // Center the marker
+            popupHtml: generatePopupContent(device)
+        });
+
+        // Add click event listener
+        marker.addListener('click', () => {
+            showPopup(devices.indexOf(device), marker);
+        });
+
+        return marker;
+    } catch (error) {
+        console.error('Error creating rotated marker:', error);
+        return null;
+    }
+}
+
+function updateMarkerRotation(marker, angle) {
+    if (marker && typeof marker.setRotation === 'function') {
+        marker.setRotation(angle);
+    }
+}
+
+function initializeMarkersWithRotation() {
     // Remove existing markers
     markers.forEach(marker => {
         if (marker && marker.remove) {
@@ -1909,231 +2166,380 @@ function updatePopupPosition() {
     });
     markers = [];
 
-    console.log('Total devices:', devices.length);
-    console.log('Selected devices:', selectedDevices.size);
-
-    try {
-    // Prepare data for clustering by marker type
-    const markersByType = {
-        offline: { size: [5, 5], features: [] },
-        stopped: { size: [80, 800], features: [] },
-        moving: { size: [100, 100], features: [] },
-        idle: { size: [100, 100], features: [] }
-    };
-
-    // Group features by type
     devices
-        .filter(device => {
-            return device.coordinates && 
-                   device.coordinates[0] !== 0 && 
-                   device.coordinates[1] !== 0 &&
-                   selectedDevices.has(device.deviceId);
-        })
+        .filter(device => 
+            device.coordinates && 
+            device.coordinates[0] !== 0 && 
+            device.coordinates[1] !== 0 &&
+            selectedDevices.has(device.deviceId)
+        )
         .forEach(device => {
-            const currentDate = new Date();
-            const deviceDate = new Date(device.date);
-            const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-            const ignitionStatus = typeof device.ignition === 'string' 
-                ? device.ignition.toLowerCase() === 'true' 
-                : Boolean(device.ignition);
-            
-            let markerType;
-            let iconUrl;
-
-            if (hoursDifference > 2) {
-                markerType = 'offline';
-                iconUrl = '/deviceTracking/images/blackcar1.png';
-            } else if (!ignitionStatus) {
-                markerType = 'stopped';
-                iconUrl = '/images/icon/red/car0.png';
-            } else if (ignitionStatus && device.speed > 0) {
-                markerType = 'moving';
-                iconUrl = '/deviceTracking/images/green.png';
-            } else {
-                markerType = 'idle';
-                iconUrl = '/deviceTracking/images/yellow.png';
-            }
-
-            
-
-            const feature = {
-                "type": "Feature",
-                "properties": {
-                    "deviceId": device.deviceId,
-                    // "name": device.name,
-                    "icon": iconUrl,
-                    // "htmlPopup": generatePopupContent(device)
-                },
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": [device.coordinates[0], device.coordinates[1]]
-                }
-            };
-
-            markersByType[markerType].features.push(feature);
-        });
-
-    // Clear existing markers
-    markers.forEach(marker => {
-        if (marker && marker.remove) {
-            marker.remove();
-        }
-    });
-    markers = [];
-    // console.log("-------------dddd"+ JSON.stringify(devices))
-
-
-    // Create markers for each type with different sizes
-// First, let's process the markers by type with proper angle handling
-// First, let's process the markers by type with proper angle handling
-Object.entries(markersByType).forEach(([type, data]) => {
-    if (data.features.length > 0) {
-        const geoJson = {
-            "type": "FeatureCollection",
-            "features": data.features
-        };
-
-        // First, let's process and validate our devices
-        const validDevices = devices.filter(device => {
-            const isValid = device.coordinates && 
-                          device.coordinates[0] !== 0 && 
-                          device.coordinates[1] !== 0 &&
-                          selectedDevices.has(device.deviceId);
-            
-            if (!isValid && selectedDevices.has(device.deviceId)) {
-                console.log('Invalid device:', device);
-            }
-            
-            return isValid;
-        }).map(device => {
-            const matchingFeature = geoJson.features.find(
-                feature => feature.properties.deviceId === device.deviceId
-            );
-            
-            return {
-                ...device,
-                icon: matchingFeature ? matchingFeature.properties.icon : null
-            };
-        });
-
-        console.log('Valid devices for markers:', validDevices.length);
-
-        try {
-            // Create marker with a comprehensive configuration
-            let marker = new mappls.Marker({
+            // Create marker using MapmyIndia's marker system
+            const marker = new mappls.Marker({
                 map: map,
                 position: {
-                    type: "FeatureCollection",
-                    features: validDevices.map(device => ({
-                        type: "Feature",
-                        geometry: {
-                            type: "Point",
-                            coordinates: device.coordinates
-                        },
-                        properties: {
-                            deviceId: device.deviceId,
-                            name: device.name,
-                            // icon: device.icon,
-                            "icon-size": data.size[0]/100,
-                            angle: device.angle || 0,
-                            htmlPopup: generatePopupContent(device),
-                            ...device
-                        }
-                    }))
+                    lat: device.coordinates[0],
+                    lng: device.coordinates[1]
                 },
-                clusters: true,
-                clusterStyle: {
-                    color: '#108cff',
-                    textColor: '#ffffff',
-                    textSize: '14px',
-                    border: '2px solid #fff',
-                    borderRadius: '50%',
-                    boxShadow: '0 0 10px rgba(0,0,0,0.2)'
-                },
-                clusterOptions: {
-                    clusterRadius: 80,
-                    maxZoom: 14,
-                    minClusterSize: 2,
-                    zoomOnClick: true,
-                    clusterBreakpoint: [
-                        {
-                            count: 50,
-                            color: '#ff6961',
-                            textColor: '#ffffff'
-                        },
-                        {
-                            count: 20,
-                            color: '#FFA726',
-                            textColor: '#ffffff'
-                        },
-                        {
-                            count: 5,
-                            color: '#77dd77',
-                            textColor: '#ffffff'
-                        }
-                    ]
-                },
-                fitbounds: true,
-                animate: true,
-                // This callback runs when the marker is added
-                callback: function(marker) {
-                  console.log("adadsadasd")
-                    try {
-                        // Wait a short moment for the marker to be fully initialized
-                        setTimeout(() => {
-                          console.log("fddfdf")
-                            // Apply rotation to the marker if it has an angle
-                            if (marker && typeof marker.setRotation === 'function') {
-                              console.log("hhi")
-                                const markerFeatures = marker.getPosition().features;
-                                if (markerFeatures && markerFeatures.length > 0) {
-                                    const angle = markerFeatures[0].properties.angle || 0;
-                                    console.log(angle)
-                                    marker.setRotation(angle);
-                                }
-                            }
-                        }, 100);
-                    } catch (e) {
-                        console.warn('Error in marker callback:', e);
-                    }
-                }
+                icon: getMarkerIcon(device),
+                icon_size: [40, 40],
+                rotation: device.angle || 0,
+                draggable: false,
+                rotateWithMap: true,
+                // fitbounds: true,
+                popupHtml: generatePopupContent(device)  // Add popup content here
             });
 
-            // Store the marker reference for later use
-            markers.push(marker);
-
-            // If you need to handle map-level events, use addListener
-            if (map.addListener) {
-                map.addListener('idle', function() {
-                    // This event fires when the map has finished moving/loading
-                    try {
-                        const markerLayers = marker.getLayers && marker.getLayers();
-                        if (markerLayers) {
-                            markerLayers.forEach(layer => {
-                                if (layer && layer.feature && layer.feature.properties.angle) {
-                                    const angle = layer.feature.properties.angle;
-                                    if (typeof layer.setRotation === 'function') {
-                                        layer.setRotation(angle);
-                                    }
-                                }
-                            });
-                        }
-                    } catch (e) {
-                        console.warn('Failed to update marker rotations:', e);
-                    }
+            // Add click event listener
+            marker.addListener('click', function() {
+                hidePopup(); // Hide any existing popup
+                // showPopup(devices.indexOf(device), marker);
+                
+                // Center map on marker with animation
+                map.flyTo({
+                    center: {
+                        lat: device.coordinates[0],
+                        lng: device.coordinates[1]
+                    },
+                    zoom: 10,
+                    essential: true
                 });
-            }
+            });
 
-        } catch (error) {
-            console.error('Error creating marker:', error);
-        }
-    }
-});
+            markers.push(marker);
+        });
+}
 
-} catch (error) {
-        console.error('Error creating markers:', error);
+// function showMarkerPopup(device, marker) {
+//     const popup = document.createElement('div');
+//     popup.className = 'mappls-popup';
+//     popup.id = `popup-${device.deviceId}`;
+
+//     popup.innerHTML = `
+//         <div class="mappls-popup-close-button" onclick="hidePopup()">✖</div>
+//         <div style="padding-right: 20px;">
+//             <div style="display: flex; justify-content: space-between; align-items: start;">
+//                 <h3 style="margin: 0 0 10px 0;">${device.name}</h3>
+//                 <div style="text-align: right;">
+//                     <div><b style="font-size: 12px;">GPS:</b> 
+//                         <span class="status-indicator ${device.gps ? 'status-on' : 'status-off'}">${device.gps ? 'ON' : 'OFF'}</span>
+//                     </div>
+//                     <div><b style="font-size: 12px;">Engine:</b> 
+//                         <span class="status-indicator ${device.ignition === 'true' ? 'status-on' : 'status-off'}">${device.ignition === 'true' ? 'ON' : 'OFF'}</span>
+//                     </div>
+//                     <div><b style="font-size: 12px;">Power:</b> 
+//                         <span class="status-indicator ${device.power === 'true' ? 'status-on' : 'status-off'}">${device.power === 'true' ? 'ON' : 'OFF'}</span>
+//                     </div>
+//                 </div>
+//             </div>
+//             <div style="margin-top: 10px;">
+//                 <div><b>Date:</b> ${device.dateNew}</div>
+//                 <div><b>Speed:</b> ${device.speed} km/h</div>
+//                 <div><b>Hold Time:</b> ${formatHoldTime(parseInt(device.holdtime))}</div>
+//                 <div><b>Status:</b> <span class="${device.status === 'Online' ? 'status-on' : 'status-off'} status-indicator">${device.status}</span></div>
+//                 <div><b>Battery:</b> ${device.battery}V</div>
+//                 <div style="margin-top: 5px;">
+//                     <b>Location:</b>
+//                     <span id="location-popup-${device.deviceId}">
+//                         <button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" 
+//                             style="padding: 4px 8px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
+//                             Get Location
+//                         </button>
+//                     </span>
+//                 </div>
+//             </div>
+//             <div style="display: flex; gap: 10px; margin-top: 10px;">
+//                 <button onclick="viewTodayTrip('${device.name}')" 
+//                     style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
+//                     Today's Trip
+//                 </button>
+//                 <button onclick="viewLiveTracking('${device.name}')"
+//                     style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
+//                     Live Tracking
+//                 </button>
+//                 <button onclick="shareLocation(${device.coordinates[0]}, ${device.coordinates[1]})"
+//                     style="padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
+//                     Share Location
+//                 </button>
+//             </div>
+//         </div>
+//     `;
+
+//     // Get marker position on screen
+//     const markerElement = marker.getElement();
+//     const markerRect = markerElement.getBoundingClientRect();
+//     const mapContainer = map.getContainer();
+//     const mapRect = mapContainer.getBoundingClientRect();
+
+//     // Position popup above marker
+//     popup.style.left = `${markerRect.left - mapRect.left + (markerRect.width / 2)}px`;
+//     popup.style.top = `${markerRect.top - mapRect.top}px`;
+
+//     // Add popup to map container
+//     mapContainer.appendChild(popup);
+//     currentMarker = marker;
+// }
+
+function getScreenCoordinates(map, lat, lng) {
+    try {
+        // Get map container and bounds
+        const container = map.getContainer();
+        const bounds = map.getBounds();
+        const ne = bounds.getNorthEast();
+        const sw = bounds.getSouthWest();
+        
+        // Get container dimensions
+        const containerRect = container.getBoundingClientRect();
+        
+        // Calculate position
+        const x = containerRect.left + ((lng - sw.lng) / (ne.lng - sw.lng) * containerRect.width);
+        const y = containerRect.top + ((ne.lat - lat) / (ne.lat - sw.lat) * containerRect.height);
+        
+        return { x, y };
+    } catch (error) {
+        console.error('Error calculating screen coordinates:', error);
+        // Return center of container as fallback
+        const container = map.getContainer();
+        const rect = container.getBoundingClientRect();
+        return {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2
+        };
     }
 }
+
+      function initializeMarkers() {
+        // Remove existing markers
+        markers.forEach(marker => {
+            if (marker && marker.remove) {
+                marker.remove();
+            }
+        });
+        markers = [];
+
+        console.log('Total devices:', devices.length);
+        console.log('Selected devices:', selectedDevices.size);
+
+        try {
+        // Prepare data for clustering by marker type
+        const markersByType = {
+            offline: { size: [5, 5], features: [] },
+            stopped: { size: [80, 800], features: [] },
+            moving: { size: [100, 100], features: [] },
+            idle: { size: [100, 100], features: [] }
+        };
+
+        // Group features by type
+        devices
+            .filter(device => {
+                return device.coordinates && 
+                      device.coordinates[0] !== 0 && 
+                      device.coordinates[1] !== 0 &&
+                      selectedDevices.has(device.deviceId);
+            })
+            .forEach(device => {
+                const currentDate = new Date();
+                const deviceDate = new Date(device.date);
+                const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+                const ignitionStatus = typeof device.ignition === 'string' 
+                    ? device.ignition.toLowerCase() === 'true' 
+                    : Boolean(device.ignition);
+                
+                let markerType;
+                let iconUrl;
+
+                if (hoursDifference > 2) {
+                    markerType = 'offline';
+                    iconUrl = '/deviceTracking/images/blackcar1.png';
+                } else if (!ignitionStatus) {
+                    markerType = 'stopped';
+                    iconUrl = '/images/icon/red/car0.png';
+                } else if (ignitionStatus && device.speed > 0) {
+                    markerType = 'moving';
+                    iconUrl = '/deviceTracking/images/green.png';
+                } else {
+                    markerType = 'idle';
+                    iconUrl = '/deviceTracking/images/yellow.png';
+                }
+
+                
+
+                const feature = {
+                    "type": "Feature",
+                    "properties": {
+                        "deviceId": device.deviceId,
+                        // "name": device.name,
+                        "icon": iconUrl,
+                        // "htmlPopup": generatePopupContent(device)
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [device.coordinates[0], device.coordinates[1]]
+                    }
+                };
+
+                markersByType[markerType].features.push(feature);
+            });
+
+        // Clear existing markers
+        markers.forEach(marker => {
+            if (marker && marker.remove) {
+                marker.remove();
+            }
+        });
+        markers = [];
+        // console.log("-------------dddd"+ JSON.stringify(devices))
+
+
+        // Create markers for each type with different sizes
+        Object.entries(markersByType).forEach(([type, data]) => {
+            if (data.features.length > 0) {
+                const geoJson = {
+                    "type": "FeatureCollection",
+                    "features": data.features
+                };
+
+                // First, let's process and validate our devices
+                const validDevices = devices.filter(device => {
+                    const isValid = device.coordinates && 
+                                  device.coordinates[0] !== 0 && 
+                                  device.coordinates[1] !== 0 &&
+                                  selectedDevices.has(device.deviceId);
+                    
+                    if (!isValid && selectedDevices.has(device.deviceId)) {
+                        console.log('Invalid device:', device);
+                    }
+                    
+                    return isValid;
+                }).map(device => {
+                    const matchingFeature = geoJson.features.find(
+                        feature => feature.properties.deviceId === device.deviceId
+                    );
+                    
+                    return {
+                        ...device,
+                        icon: matchingFeature ? matchingFeature.properties.icon : null
+                    };
+                });
+
+                console.log('Valid devices for markers:', validDevices.length);
+
+                try {
+                    // Create marker with a comprehensive configuration
+                    let marker = new mappls.Marker({
+                        map: map,
+                        position: {
+                            type: "FeatureCollection",
+                            features: validDevices.map(device => ({
+                                type: "Feature",
+                                geometry: {
+                                    type: "Point",
+                                    coordinates: device.coordinates
+                                },
+                                properties: {
+                                    deviceId: device.deviceId,
+                                    name: device.name,
+                                    // icon: device.icon,
+                                    "icon-size": data.size[0]/100,
+                                    angle: device.angle || 0,
+                                    htmlPopup: generatePopupContent(device),
+                                    ...device
+                                }
+                            }))
+                        },
+                        clusters: true,
+                        clusterStyle: {
+                            color: '#108cff',
+                            textColor: '#ffffff',
+                            textSize: '14px',
+                            border: '2px solid #fff',
+                            borderRadius: '50%',
+                            boxShadow: '0 0 10px rgba(0,0,0,0.2)'
+                        },
+                        clusterOptions: {
+                            clusterRadius: 80,
+                            // maxZoom: 14,
+                            minClusterSize: 2,
+                            zoomOnClick: true,
+                            clusterBreakpoint: [
+                                {
+                                    count: 50,
+                                    color: '#ff6961',
+                                    textColor: '#ffffff'
+                                },
+                                {
+                                    count: 20,
+                                    color: '#FFA726',
+                                    textColor: '#ffffff'
+                                },
+                                {
+                                    count: 5,
+                                    color: '#77dd77',
+                                    textColor: '#ffffff'
+                                }
+                            ]
+                        },
+                        fitbounds: true,
+                        animate: true,
+                        // This callback runs when the marker is added
+                        callback: function(marker) {
+                          console.log("adadsadasd")
+                            try {
+                                // Wait a short moment for the marker to be fully initialized
+                                setTimeout(() => {
+                                  console.log("fddfdf")
+                                    // Apply rotation to the marker if it has an angle
+                                    if (marker && typeof marker.setRotation === 'function') {
+                                      console.log("hhi")
+                                        const markerFeatures = marker.getPosition().features;
+                                        if (markerFeatures && markerFeatures.length > 0) {
+                                            const angle = markerFeatures[0].properties.angle || 0;
+                                            console.log(angle)
+                                            marker.setRotation(angle);
+                                        }
+                                    }
+                                }, 100);
+                            } catch (e) {
+                                console.warn('Error in marker callback:', e);
+                            }
+                        }
+                    });
+
+                    // Store the marker reference for later use
+                    markers.push(marker);
+
+                    // If you need to handle map-level events, use addListener
+                    if (map.addListener) {
+                        map.addListener('idle', function() {
+                            // This event fires when the map has finished moving/loading
+                            try {
+                                const markerLayers = marker.getLayers && marker.getLayers();
+                                if (markerLayers) {
+                                    markerLayers.forEach(layer => {
+                                        if (layer && layer.feature && layer.feature.properties.angle) {
+                                            const angle = layer.feature.properties.angle;
+                                            if (typeof layer.setRotation === 'function') {
+                                                layer.setRotation(angle);
+                                            }
+                                        }
+                                    });
+                                }
+                            } catch (e) {
+                                console.warn('Failed to update marker rotations:', e);
+                            }
+                        });
+                    }
+
+                } catch (error) {
+                    console.error('Error creating marker:', error);
+                }
+            }
+        });
+
+    } catch (error) {
+            console.error('Error creating markers:', error);
+        }
+    }
 
 // Helper function to safely apply rotation to a marker
 function safelyRotateMarker(marker, angle) {
@@ -2162,8 +2568,7 @@ function updateMarkersRotation() {
     });
 }
 
-function getMarkerIcon(feature) {
-    const device = feature.properties;
+function getMarkerIcon(device) {
     const currentDate = new Date();
     const deviceDate = new Date(device.date);
     const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
@@ -2242,7 +2647,7 @@ function createMarker(device) {
 }
 
 function filterMarkers() {
-  initializeMarkers();
+  initializeMarkersWithRotation();
 
     // Filter features based on selected devices
     const filteredData = devices
@@ -3034,7 +3439,7 @@ function addPOIForDevice(deviceName, lat, lng) {
         lat: lat,
         lng: lng
     });
-    window.open(`PointOfInterest.html?${params.toString()}`);
+    window.open(`PointOfInterestmmi.html?${params.toString()}`);
 }
 
 document.querySelectorAll('.status-item').forEach(item => {
@@ -3375,6 +3780,12 @@ function showVehiclePopup(data) {
 
 // Close popup when clicking outside
 document.addEventListener('click', function(event) {
+
+  if (!event.target.closest('.mappls-popup') && 
+        !event.target.closest('.customMarkerClass')) {
+        hidePopup();
+    }
+
     const popup = document.getElementById('customPopup');
     const popupCloseBtn = popup.querySelector('.close-btn');
     
