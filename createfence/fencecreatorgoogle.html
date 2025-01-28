@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fence Creator with Google Maps</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #navbar-container {
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 0;
+        }
+
+        .search-bar {
+            padding: 15px;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1;
+        }
+
+        .search-box {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-label {
+            font-weight: bold;
+            color: #333;
+            margin-right: 10px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 92%;
+        }
+
+        .drawing-tools {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 1;
+        }
+
+        .tool-button {
+            width: 36px;
+            height: 36px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tool-button.active {
+            background: #e3f2fd;
+            border-color: #2196F3;
+        }
+
+        .name-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 2;
+        }
+
+        .name-popup.active {
+            display: block;
+        }
+
+        .popup-content {
+            min-width: 300px;
+        }
+
+        .name-input {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .popup-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .popup-button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .cancel-btn {
+            background: #f5f5f5;
+        }
+
+        .save-btn {
+            background: #2196F3;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="navbar-container"></div>
+        <div class="search-bar">
+            <div class="search-box">
+                <label class="search-label">Place:</label>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search places...">
+            </div>
+        </div>
+        <div class="map-container">
+            <div id="map"></div>
+            <div class="drawing-tools">
+                <button class="tool-button" onclick="setDrawingMode('hand', event)" title="Pan Map" data-mode="hand">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                    </svg>
+                </button>
+                <button class="tool-button" onclick="setDrawingMode('circle', event)" title="Draw Circle" data-mode="circle">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                </button>
+                <button class="tool-button" onclick="setDrawingMode('polygon', event)" title="Draw Polygon" data-mode="polygon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="name-popup" id="namePopup">
+            <div class="popup-content">
+                <label for="fenceName">Fence Name:</label>
+                <input type="text" id="fenceName" class="name-input">
+                <div class="popup-buttons">
+                    <button class="popup-button cancel-btn" onclick="cancelFence()">Cancel</button>
+                    <button class="popup-button save-btn" onclick="saveFence()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&libraries=drawing,places&callback=initMap" async defer></script>
+    <script>
+        let map;
+        let drawingManager;
+        let currentShape = null;
+        let searchBox;
+        let currentDrawingMode = null;
+
+        $(document).ready(function () {
+            $("#navbar-container").load("../navbarola.html", function () {
+                console.log("Navbar loaded successfully!");
+            });
+
+            // Check if 'mid' is available in localStorage
+            if (!localStorage.getItem("mid")) {
+                window.location.href = "../index.html";
+            }
+        });
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 28.638698386592438, lng: 77.27604556863412 },
+                zoom: 12,
+                mapTypeId: google.maps.MapTypeId.ROADMAP,
+                disableDefaultUI: true,
+                zoomControl: true
+            });
+
+            // Initialize search box
+            const input = document.getElementById('searchInput');
+            searchBox = new google.maps.places.SearchBox(input);
+
+            // Bias SearchBox results towards current map's viewport
+            map.addListener('bounds_changed', () => {
+                searchBox.setBounds(map.getBounds());
+            });
+
+            // Listen for the event fired when the user selects a prediction
+            searchBox.addListener('places_changed', () => {
+                const places = searchBox.getPlaces();
+                if (places.length === 0) return;
+
+                const bounds = new google.maps.LatLngBounds();
+                places.forEach(place => {
+                    if (place.geometry && place.geometry.location) {
+                        if (place.geometry.viewport) {
+                            bounds.union(place.geometry.viewport);
+                        } else {
+                            bounds.extend(place.geometry.location);
+                        }
+                    }
+                });
+                map.fitBounds(bounds);
+            });
+
+            // Initialize drawing manager
+            drawingManager = new google.maps.drawing.DrawingManager({
+                drawingMode: null,
+                drawingControl: false,
+                drawingControlOptions: {
+                    position: google.maps.ControlPosition.TOP_CENTER,
+                    drawingModes: [
+                        google.maps.drawing.OverlayType.CIRCLE,
+                        google.maps.drawing.OverlayType.POLYGON
+                    ]
+                }
+            });
+            drawingManager.setMap(map);
+
+            // Add listeners for when shapes are completed
+            google.maps.event.addListener(drawingManager, 'circlecomplete', (circle) => {
+                currentShape = circle;
+                showNamePopup();
+            });
+
+            google.maps.event.addListener(drawingManager, 'polygoncomplete', (polygon) => {
+                currentShape = polygon;
+                showNamePopup();
+            });
+        }
+
+        function setDrawingMode(mode, event) {
+            // Reset active state of all buttons
+            document.querySelectorAll('.tool-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Clear existing shape if any
+            if (currentShape) {
+                currentShape.setMap(null);
+                currentShape = null;
+            }
+
+            // Update currentDrawingMode
+            currentDrawingMode = mode;
+
+            // Find the button that was clicked
+            const button = event ? event.currentTarget : document.querySelector(`.tool-button[data-mode="${mode}"]`);
+            
+            switch (mode) {
+                case 'hand':
+                    drawingManager.setDrawingMode(null);
+                    button.classList.add('active');
+                    break;
+                case 'circle':
+                    drawingManager.setDrawingMode(google.maps.drawing.OverlayType.CIRCLE);
+                    button.classList.add('active');
+                    break;
+                case 'polygon':
+                    drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
+                    button.classList.add('active');
+                    break;
+            }
+        }
+
+        function showNamePopup() {
+            document.getElementById('namePopup').classList.add('active');
+            document.getElementById('fenceName').focus();
+        }
+
+        function cancelFence() {
+            if (currentShape) {
+                currentShape.setMap(null);
+                currentShape = null;
+            }
+            document.getElementById('namePopup').classList.remove('active');
+            setDrawingMode('hand');
+        }
+
+        function saveFence() {
+            const name = document.getElementById('fenceName').value;
+            if (!name || !currentShape) return;
+
+            const mid = localStorage.getItem('mid');
+            if (!mid) {
+                console.error('mid not found in local storage.');
+                alert('User ID (mid) not found. Please set mid in localStorage.');
+                return;
+            }
+
+            let url = '';
+
+            if (currentShape instanceof google.maps.Circle) {
+                // Circle shape handling remains the same
+                const center = currentShape.getCenter();
+                const lat = center.lat();
+                const lng = center.lng();
+                const radius = currentShape.getRadius();
+
+                url = `${API}opr=savefence&fvalue=${lat},${lng},${radius}&fname=${encodeURIComponent(name)}&ftype=circle&mid=${encodeURIComponent(mid)}`;
+            } else if (currentShape instanceof google.maps.Polygon) {
+                // Modified polygon shape handling
+                const path = currentShape.getPath();
+                const coords = [];
+                
+                // Get all coordinates
+                path.forEach(coord => {
+                    coords.push(`${coord.lat()},${coord.lng()}`);
+                });
+                
+                // Add the first coordinate again at the end to close the polygon
+                const firstCoord = path.getAt(0);
+                coords.push(`${firstCoord.lat()},${firstCoord.lng()}`);
+                
+                const coordPairs = coords.join(',');
+
+                url = `${API}opr=savefence&fvalue=${coordPairs}&fname=${encodeURIComponent(name)}&ftype=polygon&mid=${encodeURIComponent(mid)}`;
+            } else {
+                console.error('Invalid shape type');
+                return;
+            }
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data[0].msg === "0") {
+                        console.log('Fence saved successfully');
+                        alert("Successfully added the fence.");
+                        cancelFence();
+                    } else {
+                        throw new Error('Failed to save fence');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving fence:', error);
+                    alert('Error saving fence. Please try again.');
+                });
+        }
+
+        function getFenceCoordinates(shape) {
+            if (shape instanceof google.maps.Circle) {
+                return {
+                    center: {
+                        lat: shape.getCenter().lat(),
+                        lng: shape.getCenter().lng()
+                    },
+                    radius: shape.getRadius()
+                };
+            } else if (shape instanceof google.maps.Polygon) {
+                return shape.getPath().getArray().map(coord => ({
+                    lat: coord.lat(),
+                    lng: coord.lng()
+                }));
+            }
+        }
+
+        
+    </script>
+</body>
+</html>

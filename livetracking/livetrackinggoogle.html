@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>GPS Playback System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- jQuery for API requests -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body,
+    html {
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Container setup for full layout */
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 93vh;
+    }
+
+    /* Navbar styles */
+    #navbar-container {
+      width: 100%;
+      background-color: #333;
+      color: white;
+      padding: 0;
+    }
+
+    /* Flex layout for main content */
+    .content {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    #map {
+      width: 100%;
+      height: 725px;
+    }
+
+    .controls {
+      margin: 3px;
+      background: #2c3e50;
+      /* Matching navbar background */
+      padding: 5px;
+      border-radius: 8px;
+      display: flex;
+      gap: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .controls button {
+      padding: 5px 15px;
+      font-size: 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    /* Start Button */
+    #startPlayback {
+      background-color: #2ecc71;
+      color: white;
+    }
+
+    #startPlayback:hover {
+      background-color: #27ae60;
+    }
+
+    /* Pause Button */
+    #pausePlayback {
+      background-color: #f1c40f;
+      color: #2c3e50;
+    }
+
+    #pausePlayback:hover {
+      background-color: #f39c12;
+    }
+
+    /* Stop Button */
+    #stopPlayback {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    #stopPlayback:hover {
+      background-color: #c0392b;
+    }
+
+    /* Add icons to buttons */
+    #startPlayback::before {
+      content: "▶";
+      font-size: 12px;
+    }
+
+    #pausePlayback::before {
+      content: "⏸";
+      font-size: 12px;
+    }
+
+    #stopPlayback::before {
+      content: "⏹";
+      font-size: 12px;
+    }
+
+    /* Active state for buttons */
+    .controls button:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+
+    /* Disabled state */
+    .controls button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .customMarkerClass {
+      margin-top: 10px;
+      height: 400px;
+      width: 800px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+      /* transition: transform 0.3s ease; */
+    }
+
+    .customMarkerClass .carImage {
+      height: 45px;
+      width: 20px;
+      /* transform-origin: center;
+      transition: transform 0.3s ease;
+      will-change: transform; */
+    }
+
+    @media (max-width: 768px) {
+      .controls {
+        margin: 10px;
+        padding: 10px;
+      }
+
+      .controls button {
+        padding: 8px 16px;
+        font-size: 12px;
+      }
+    }
+
+    .customMarkerClass {
+      margin-top: 10px;
+      height: 20px;
+      width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+
+    .carImage {
+      width: 40px;
+      height: 20px;
+    }
+
+    #customPopup {
+      position: absolute;
+      background: #fff;
+      padding: 15px 20px;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      min-width: 280px;
+      text-align: left;
+      transform: translate(-50%, -130%);
+      margin-top: -20px;
+      /* Increased negative margin to move higher */
+    }
+
+    /* Arrow position */
+    .popup::after {
+      content: "";
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid #fff;
+    }
+
+    #popupContent {
+      line-height: 1.8;
+      color: #2c3e50;
+      font-size: 13px;
+    }
+
+    #popupContent b {
+      color: #34495e;
+      width: 100px;
+      display: inline-block;
+      font-weight: 600;
+    }
+
+    /* Status indicators */
+    .status-indicator {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 500;
+      margin-left: 5px;
+    }
+
+    .status-on {
+      background-color: #2ecc71;
+      color: white;
+    }
+
+    .status-off {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    /* Popup styling */
+    .popup {
+      position: absolute;
+      background: white;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
+      display: none;
+      z-index: 1000;
+      min-width: 280px;
+      text-align: left;
+      transform: translateX(-50%);
+      /* Center the popup horizontally */
+    }
+
+    .popup .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      cursor: pointer;
+      color: #95a5a6;
+      font-size: 16px;
+      transition: color 0.2s ease;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .popup .close-btn:hover {
+      color: #34495e;
+      background: #f5f6f7;
+    }
+
+    /* Arrow indicator */
+    /* .popup::after {
+    content: "";
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid #fff;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
+} */
+
+    .controls {
+      margin: 3px;
+      background: #2c3e50;
+      padding: 5px 15px;
+      /* Increased padding */
+      border-radius: 8px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .selected-device {
+      margin-left: 15px;
+      padding: 5px 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      min-width: 200px;
+    }
+
+    .device-icon {
+      font-size: 16px;
+    }
+
+    #deviceNameDisplay {
+      font-weight: 500;
+      color: #ecf0f1;
+    }
+
+    .deviceItem {
+      position: relative;
+      background-color: #f5f6f7;
+      border-radius: 6px;
+      margin: 5px 0;
+      transition: all 0.3s ease;
+    }
+
+    .device-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .device-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dropdown-arrow {
+      font-size: 10px;
+      color: #666;
+      transition: transform 0.3s ease;
+    }
+
+    .device-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background-color: white;
+      border-radius: 0 0 6px 6px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.3s ease;
+      z-index: 100;
+    }
+
+    .device-selector {
+      position: relative;
+      margin-left: 10px;
+    }
+
+    #deviceSelect {
+      padding: 5px 35px 5px 15px;
+      font-size: 13px;
+      color: #fff;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      min-width: 200px;
+      height: 32px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    #deviceSelect:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    #deviceSelect:focus {
+      background-color: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .device-selector::after {
+      content: "▼";
+      font-size: 10px;
+      color: #fff;
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    #deviceSelect option {
+      background-color: #2c3e50;
+      color: #fff;
+      padding: 8px;
+    }
+
+    #deviceSelect option:hover {
+      background-color: #34495e;
+    }
+
+    .track-btn {
+      background-color: #2ecc71;
+      color: white;
+      padding: 8px 16px;
+      font-size: 13px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .track-btn:hover {
+      background-color: #27ae60;
+    }
+
+    .track-btn.tracking {
+      background-color: #e74c3c;
+    }
+
+    .refresh-selector {
+      position: relative;
+      margin-left: 10px;
+    }
+
+    .refresh-selector select {
+      padding: 5px 35px 5px 15px;
+      font-size: 13px;
+      color: #fff;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      min-width: 160px;
+      height: 32px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .refresh-selector::after {
+      content: "▼";
+      font-size: 10px;
+      color: #fff;
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .refresh-selector select:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .refresh-selector select:focus {
+      background-color: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .refresh-selector select option {
+      background-color: #2c3e50;
+      color: #fff;
+      padding: 8px;
+    }
+
+    .device-selector {
+      position: relative;
+      width: 250px;
+    }
+
+    .dropdown-container {
+      position: relative;
+    }
+
+    .dropdown-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border-radius: 4px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      display: none;
+      z-index: 1000;
+    }
+
+    .dropdown-search {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .dropdown-search input {
+      width: 100%;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 4px;
+      color: rgb(0, 0, 0);
+      font-size: 13px;
+    }
+
+    .dropdown-items {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .dropdown-item {
+      padding: 8px 10px;
+      color: black;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .dropdown-item:hover {
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .selected-vehicle {
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      color: rgb(0, 0, 0);
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .selected-vehicle:after {
+      content: "▼";
+      font-size: 10px;
+      margin-left: 8px;
+    }
+
+    /*pop-up display right-side*/
+    .vehicle-info-popup {
+      position: fixed;
+      top: 160px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 8px;
+      /* Reduced from 15px */
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      width: 180px;
+      /* Reduced from 280px */
+      z-index: 9999;
+      transition: all 0.3s ease;
+    }
+
+    .info-container {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      /* Reduced from 12px */
+    }
+
+    .info-card {
+      display: flex;
+      align-items: center;
+      padding: 5px;
+      /* Reduced from 10px */
+      background: white;
+      border-radius: 10px;
+      transition: transform 0.2s ease;
+      border: 1px solid #f0f0f0;
+    }
+
+    .info-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .info-icon {
+      font-size: 16px;
+      /* Reduced from 20px */
+      width: 30px;
+      /* Reduced from 40px */
+      height: 30px;
+      /* Reduced from 40px */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-right: 8px;
+      /* Reduced from 12px */
+    }
+
+    .info-details {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      /* Reduced from 4px */
+    }
+
+    .info-label {
+      color: #64748b;
+      font-size: 11px;
+      /* Reduced from 12px */
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .info-value {
+      color: #1e293b;
+      font-size: 13px;
+      /* Reduced from 16px */
+      font-weight: 600;
+    }
+
+    #speedDisplay {
+      color: #2563eb;
+    }
+
+    #dateTimeDisplay {
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    #distanceDisplay {
+      color: #059669;
+    }
+
+    .custom-marker {
+  position: relative;
+  cursor: pointer;
+}
+
+.custom-marker img {
+  transform-origin: center center;
+  /* Optional: add this if you want to prevent blurry rotation */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.gmnoprint img {
+  max-width: none !important;
+  transform-origin: center center;
+}
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .vehicle-info-popup {
+        width: calc(100% - 40px);
+        top: auto;
+        bottom: 20px;
+        right: 20px;
+      }
+
+      .info-container {
+        flex-direction: row;
+        justify-content: space-between;
+      }
+
+      .info-card {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Navbar -->
+    <div id="navbar-container"></div>
+    <div class="content">
+      <div class="controls">
+        <div class="device-selector">
+          <div class="dropdown-container">
+            <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
+              Select Vehicle
+            </div>
+            <div class="dropdown-list" id="deviceDropdown">
+              <div class="dropdown-search">
+                <input type="text" placeholder="Search vehicle..." id="vehicleSearch" onclick="event.stopPropagation()"
+                  onkeyup="filterVehicles(this.value)" />
+              </div>
+              <div class="dropdown-items" id="vehicleList"></div>
+            </div>
+          </div>
+        </div>
+        <div class="refresh-selector">
+          <select id="refreshRate">
+            <option value="5000">Refresh - 5 sec</option>
+            <option value="10000">Refresh - 10 sec</option>
+            <option value="20000">Refresh - 20 sec</option>
+            <option value="30000">Refresh - 30 sec</option>
+            <option value="60000" selected>Refresh - 1 minute</option>
+            <option value="300000">Refresh - 5 minute</option>
+            <option value="600000">Refresh - 10 minute</option>
+          </select>
+        </div>
+        <button id="trackButton" class="track-btn">Track</button>
+      </div>
+      <div id="map"></div>
+
+      <!-- Custom Popup Element -->
+
+      <div id="vehicleInfoPopup" class="vehicle-info-popup">
+        <div class="info-container">
+          <div class="info-card">
+            <div class="info-icon">🚗</div>
+            <div class="info-details">
+              <span class="info-label">Speed</span>
+              <span class="info-value" id="speedDisplay">0 km/h</span>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">🕒</div>
+            <div class="info-details">
+              <span class="info-label">Time</span>
+              <span class="info-value" id="dateTimeDisplay">--</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <script src="../js/api.js"></script>
+      <script>
+      let map;
+      let mapOverlay = null;
+      let currentMarker = null;
+      let trackingInterval = null;
+      let isTracking = false;
+      let lastPosition = null;
+      let customInfoWindow = null;
+      let isAnimating = false;
+      let isMapDragging = false;
+      let devices = [];
+// Create and append MapMyIndia script dynamically
+const script = document.createElement('script');
+script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap&libraries=marker&v=beta`;
+script.defer = true;
+script.async = true;
+document.head.appendChild(script);
+
+function initMap() {
+    try {
+        map = new google.maps.Map(document.getElementById('map'), {
+            mapTypeId: google.maps.MapTypeId.ROADMAP,
+            center: { 
+                lat: 28.612964,
+                lng: 77.229463 
+            },
+            zoom: 15,
+        });
+
+        // Add this new line to initialize custom overlay
+        initializeCustomOverlay();
+
+        map.addListener('idle', () => {
+            console.log("Map loaded");
+            fetchDeviceData();
+        });
+    } catch (error) {
+        console.error("Error initializing map:", error);
+    }
+}
+
+function initializeCustomOverlay() {
+    window.CustomInfoWindow = class extends google.maps.OverlayView {
+        constructor(content, position) {
+            super();
+            this.content = content;
+            this.position = position;
+            this.div = null;
+        }
+
+        onAdd() {
+          const div = document.createElement('div');
+            div.id = 'customPopup';
+            div.className = 'popup';
+            div.style.position = 'absolute';
+            div.style.display = 'block';  // Add this line
+            div.style.transform = 'translate(-50%, -130%)';  // Add this line
+            
+            // Create main content div
+            const contentDiv = document.createElement('div');
+            contentDiv.id = 'popupContent';  // Add id for content
+            contentDiv.innerHTML = this.content;
+            
+            // Create close button
+            const closeBtn = document.createElement('span');
+            closeBtn.className = 'close-btn';
+            closeBtn.innerHTML = '✖';
+            closeBtn.onclick = () => hidePopup(true);
+            
+            // Append elements
+            div.appendChild(closeBtn);
+            div.appendChild(contentDiv);
+            
+            this.div = div;
+            const panes = this.getPanes();
+            panes.floatPane.appendChild(div);
+        }
+
+        draw() {
+            if (!this.div) return;
+            const overlayProjection = this.getProjection();
+            const position = overlayProjection.fromLatLngToDivPixel(this.position);
+            this.div.style.left = position.x + 'px';
+            this.div.style.top = (position.y + 20) + 'px';
+        }
+
+        onRemove() {
+            if (this.div) {
+                this.div.parentNode.removeChild(this.div);
+                this.div = null;
+            }
+        }
+
+        setContent(content) {
+            if (this.div) {
+                const contentDiv = this.div.querySelector('#popupContent');
+                if (contentDiv) {
+                    contentDiv.innerHTML = content;
+                }
+            }
+        }
+
+        setPosition(position) {
+            this.position = position;
+            this.draw();
+        }
+    };
+}
+
+function initializeOverlay() {
+  if (!map || mapOverlay) return;
+  
+  class CustomOverlay extends google.maps.OverlayView {
+    constructor(map) {
+      super();
+      this.setMap(map);
+    }
+    draw() {} // Required but empty
+  }
+  
+  mapOverlay = new CustomOverlay(map);
+}
+
+
+function toggleDropdown() {
+    const dropdown = document.getElementById("deviceDropdown");
+    dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+}
+
+function filterVehicles(searchText) {
+    const filteredDevices = devices.filter((device) =>
+        device.name.toLowerCase().includes(searchText.toLowerCase())
+    );
+    populateVehicleList(filteredDevices);
+}
+
+function selectVehicle(deviceId, deviceName) {
+
+    hidePopup(true);
+    isPopupOpen = false;
+    currentPopupDid = null;
+    
+    // Stop existing tracking
+    if (isTracking) {
+        stopTracking();
+    }
+    
+    // Reset marker and data
+    if (currentMarker) {
+        currentMarker.setMap(null);
+        currentMarker = null;
+    }
+
+    lastPosition = null;
+    isAnimating = false;
+    isMapDragging = false;
+
+    // Clear vehicle info displays
+    document.getElementById('speedDisplay').textContent = '0 km/h';
+    document.getElementById('dateTimeDisplay').textContent = '--';
+    
+    // Hide popups
+    const customPopup = document.getElementById('customPopup');
+    if (customPopup) {
+        customPopup.style.display = 'none';
+    }
+
+    // Update dropdown selection
+    document.getElementById("selectedVehicle").textContent = deviceName;
+    document.getElementById("deviceDropdown").style.display = "none";
+    
+    // Reset track button
+    const trackButton = document.getElementById("trackButton");
+    if (trackButton) {
+        trackButton.textContent = "Track";
+        trackButton.classList.remove("tracking");
+    }
+
+    // Fetch vehicle location
+    if (deviceId) {
+        fetchVehicleLocation(deviceId);
+    }
+}
+
+function populateVehicleList(devicesList) {
+    const vehicleList = document.getElementById("vehicleList");
+    vehicleList.innerHTML = "";
+
+    devicesList.forEach((device) => {
+        const item = document.createElement("div");
+        item.className = "dropdown-item";
+        item.textContent = device.name;
+        item.onclick = () => selectVehicle(device.did, device.name);
+        vehicleList.appendChild(item);
+    });
+}
+
+function fetchDeviceData() {
+    const mid = localStorage.getItem("mid");
+    fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+        .then((response) => response.json())
+        .then((data) => {
+            devices = data.map((item) => ({
+                name: item.dname,
+                did: item.did,
+            }));
+            populateVehicleList(devices);
+        })
+        .catch((error) => console.error("Error fetching Vehicles:", error));
+}
+
+function updateMarkerPosition(coordinates) {
+  if (!currentMarker) {
+        try {
+            console.log("Creating new marker at position:", position);
+            
+            // Remove any existing marker
+            if (currentMarker) {
+                currentMarker.setMap(null);
+            }
+            
+            // Create marker using MapMyIndia's recommended syntax
+            currentMarker = new mappls.Marker({
+                map: map,
+                position: {
+                    lat: position.lat,
+                    lng: position.lng
+                },
+                fitbounds: true,
+                icon: 'https://apis.mapmyindia.com/map_v3/1.png',
+                iconSize: [40, 40],
+                popupHtml: generatePopupContent(data)
+            });
+            
+            // Center and zoom the map
+            map.flyTo({
+                center: [position.lng, position.lat],
+                zoom: 15,
+                essential: true
+            });
+            
+            console.log('Marker created successfully:', currentMarker);
+            console.log('Current marker position:', [position.lng, position.lat]);
+        } catch (error) {
+            console.error('Error creating marker:', error);
+            console.error('Position data:', position);
+            console.error('Map instance:', map);
+        }
+      }
+}
+
+function fetchVehicleLocation(did) {
+    fetch(`${API}opr=getVehicleBydeviceid&did=${did}`)
+        .then((response) => response.json())
+        .then((data) => {
+            if (!isTracking) return;
+            updateVehicleMarker(data);
+            updateVehicleInfo(data[0]);
+        })
+        .catch((error) => {
+            console.error("Error fetching vehicle location:", error);
+            if (isTracking) {
+                stopTracking();
+                alert("Error tracking vehicle. Please try again.");
+            }
+        });
+}
+
+let isPopupOpen = false;
+let currentPopupDid = null;
+
+function createMarkerIcon() {
+  return {
+    url: '/deviceTracking/images/car_image_transparent.png#vehicleMarker',
+    scaledSize: new google.maps.Size(30, 30),
+    anchor: new google.maps.Point(15, 15)
+  };
+}
+
+function rotateMarker(newAngle) {
+  if (!currentMarker) return;
+  
+  // Normalize the angle
+  newAngle = ((Number(newAngle) % 360) + 360) % 360;
+  
+  // Apply rotation using CSS transform
+  $('img[src$="#vehicleMarker"]').css({
+    'transform': `rotate(${newAngle}deg)`,
+    'transform-origin': 'center',
+    'width': '30px',  // Set desired width
+    'height': '32px', // Maintain aspect ratio
+    'max-width': '100%',
+    'object-fit': 'scale-down'
+  });
+}
+
+function getMarkerRotation() {
+  const markerImg = $('img[src$="#vehicleMarker"]');
+  if (!markerImg.length) return 0;
+  
+  const transform = markerImg.css('transform');
+  if (transform === 'none') return 0;
+  
+  const values = transform.split('(')[1].split(')')[0].split(',');
+  const a = values[0];
+  const b = values[1];
+  const angle = Math.round(Math.atan2(b, a) * (180/Math.PI));
+  return ((angle % 360) + 360) % 360;
+}
+
+function updateVehicleMarker(vehicleData) {
+  if (!vehicleData || vehicleData.length === 0) return;
+
+  const data = vehicleData[0];
+  if (!data.latlang) {
+    console.error('No position data available');
+    return;
+  }
+
+  try {
+    const [lat, lng] = data.latlang.split(",").map(coord => parseFloat(coord));
+    const position = {
+      lat: lat || 23.0225,
+      lng: lng || 72.5714
+    };
+
+    // Parse and normalize the initial angle
+    let initialAngle = Number(data.angle) || 0;
+    initialAngle = ((initialAngle % 360) + 360) % 360;
+
+    console.log('Setting initial marker angle:', initialAngle + JSON.stringify(position));
+
+    if (!currentMarker) {
+      // Create new marker
+      currentMarker = new google.maps.Marker({
+        map: map,
+        position: position,
+        icon: createMarkerIcon(),
+        clickable: true,
+        optimized: false // This helps with rotation issues
+      });
+
+      // Add CSS style for smooth rotation
+      const style = document.createElement('style');
+      style.textContent = `
+        img[src$="#vehicleMarker"] {
+          transition: transform 0.1s ease-out;
+          transform-origin: center;
+        }
+      `;
+      document.head.appendChild(style);
+
+      // Set initial rotation after a short delay to ensure marker is rendered
+      setTimeout(() => {
+        rotateMarker(initialAngle);
+      }, 100);
+
+      currentMarker.addListener('click', () => {
+    if (!isPopupOpen || currentPopupDid !== data.did) {
+        showVehicleInfo(vehicleData, true);
+        currentPopupDid = data.did;
+        isPopupOpen = true;
+    }
+});
+
+      map.panTo(position);
+      lastPosition = position;
+      
+    } else {
+      // Update existing marker
+      if (lastPosition && !isAnimating) {
+        let targetAngle = initialAngle;
+        
+        // Only calculate bearing if position has changed
+        if (lastPosition.lat !== position.lat || lastPosition.lng !== position.lng) {
+          targetAngle = calculateBearing(lastPosition, position);
+        }
+
+        // Normalize target angle
+        targetAngle = ((targetAngle % 360) + 360) % 360;
+        
+        animateMarkerMovement(lastPosition, position, targetAngle);
+      } else {
+        currentMarker.setPosition(position);
+        rotateMarker(initialAngle);
+      }
+      lastPosition = {...position};
+    }
+
+    if (isPopupOpen && currentPopupDid === data.did) {
+      showVehicleInfo(vehicleData, false);
+      debouncedUpdatePopupPosition();
+    }
+
+    if (isPopupOpen && customInfoWindow) {
+    customInfoWindow.setPosition(currentMarker.getPosition());
+  }
+  } catch (error) {
+    console.error('Error updating vehicle marker:', error);
+  }
+}
+
+function animateMarkerMovement(from, to, finalAngle) {
+  if (isAnimating || isMapDragging) return;
+  isAnimating = true;
+
+  const startTime = performance.now();
+  const duration = 15000;
+
+  const startAngle = getMarkerRotation();
+  
+  // Ensure the final angle is the most direct rotation
+  let angleDiff = finalAngle - startAngle;
+  
+  // Choose the shortest rotation path
+  if (Math.abs(angleDiff) > 180) {
+    angleDiff = angleDiff > 0 ? angleDiff - 360 : angleDiff + 360;
+  }
+
+  function animate(currentTime) {
+    if (isMapDragging) {
+      isAnimating = false;
+      return;
+    }
+
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const easeProgress = easeInOutQuad(progress);
+
+    const currentPosition = {
+      lat: from.lat + (to.lat - from.lat) * easeProgress,
+      lng: from.lng + (to.lng - from.lng) * easeProgress
+    };
+
+    const currentAngle = startAngle + (angleDiff * easeProgress);
+    const normalizedAngle = ((currentAngle % 360) + 360) % 360;
+
+    currentMarker.setPosition(currentPosition);
+    rotateMarker(normalizedAngle);
+    
+    lastPosition = currentPosition;
+    
+    if (isPopupOpen) {
+      // debouncedUpdatePopupPosition();
+    }
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      isAnimating = false;
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+
+
+function calculateBearing(from, to) {
+  const toRad = (degree) => degree * (Math.PI / 180);
+  const toDeg = (radian) => radian * (180 / Math.PI);
+
+  const fromLat = toRad(from.lat);
+  const fromLng = toRad(from.lng);
+  const toLat = toRad(to.lat);
+  const toLng = toRad(to.lng);
+
+  const dLng = toLng - fromLng;
+
+  const y = Math.sin(dLng) * Math.cos(toLat);
+  const x = Math.cos(fromLat) * Math.sin(toLat) - 
+            Math.sin(fromLat) * Math.cos(toLat) * Math.cos(dLng);
+
+  let bearingRad = Math.atan2(y, x);
+  let bearingDeg = toDeg(bearingRad);
+
+  // Normalize to 0-360 degrees
+  bearingDeg = (bearingDeg + 360) % 360;
+
+  return bearingDeg;
+}
+
+
+function generatePopupContent(data) {
+  return `
+    <div style="border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 5px;">
+      <b>Vehicle:</b> ${data.dname}
+    </div>
+    <div>
+      <b>Speed:</b> ${data.speed || 0} km/h <br/>
+      <b>GPS:</b> <span class="status-indicator ${data.gps === true ? 'status-on' : 'status-off'}">
+        ${data.gps === true ? 'ON' : 'OFF'}
+      </span><br/>
+      <b>Engine:</b> <span class="status-indicator ${data.ignition === 'true' ? 'status-on' : 'status-off'}">
+        ${data.ignition === 'true' ? 'ON' : 'OFF'}
+      </span><br/>
+      <b>Power:</b> <span class="status-indicator ${data.power === 'true' ? 'status-on' : 'status-off'}">
+        ${data.power === 'true' ? 'ON' : 'OFF'}
+      </span><br/>
+      <b>Date-Time:</b> ${data.ddate}<br/>
+      <div style="display: flex; align-items: center; gap: 5px;">
+        <b>Location:</b> <span id="location-popup-${data.deviceId}">
+          <button onclick="updateLocationPopup('${data.deviceId}', '${data.latlang}')"
+            style="background: none; border: none; padding: 0; color: #3498db;
+            text-decoration: underline; cursor: pointer; font-size: 11px;">
+            Get Location
+          </button>
+        </span>
+      </div>
+    </div>
+  `;
+}
+
+function showVehicleInfo(vehicleData, showPopup = false) {
+  if (!vehicleData || vehicleData.length === 0) return;
+
+  const data = vehicleData[0];
+  
+  if (showPopup && (!isPopupOpen || currentPopupDid !== data.did)) {
+    const content = generatePopupContent(data);
+    const position = currentMarker.getPosition();
+
+    if (!customInfoWindow) {
+      customInfoWindow = new CustomInfoWindow(content, position);
+      customInfoWindow.setMap(map);
+    } else {
+      customInfoWindow.setContent(content);
+      customInfoWindow.setPosition(position);
+    }
+    
+    isPopupOpen = true;
+    currentPopupDid = data.did;
+  } else if (isPopupOpen && currentPopupDid === data.did) {
+    const content = generatePopupContent(data);
+    if (customInfoWindow) {
+      customInfoWindow.setContent(content);
+      customInfoWindow.setPosition(currentMarker.getPosition());
+    }
+  }
+}
+
+let isPopupUpdating = false;
+
+function updatePopupPosition() {
+    if (!currentMarker || !isPopupOpen) return;
+
+    try {
+        const markerPosition = currentMarker.getPosition();
+        if (!markerPosition) return;
+
+        if (!window.popupOverlay) {
+            window.popupOverlay = new window.CustomInfoWindow(
+                popupContent.innerHTML,
+                markerPosition
+            );
+            window.popupOverlay.setMap(map);
+        } else {
+            window.popupOverlay.setPosition(markerPosition);
+            window.popupOverlay.setContent(popupContent.innerHTML);
+        }
+    } catch (error) {
+        console.error('Error updating popup position:', error);
+    }
+}
+
+
+function debounce(func, delay) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => func.apply(this, args), delay);
+  };
+}
+
+const debouncedUpdatePopupPosition = debounce(updatePopupPosition, 100);
+
+function hidePopup(manuallyClosed = false) {
+  if (customInfoWindow) {
+    customInfoWindow.setMap(null);
+    customInfoWindow = null;
+  }
+  isPopupOpen = false;
+  currentPopupDid = null;
+}
+
+function updateVehicleInfo(data) {
+    document.getElementById('speedDisplay').textContent = `${Math.round(data.speed)} km/h`;
+    const dateTime = data.ddate.split('.')[0];
+    document.getElementById('dateTimeDisplay').textContent = dateTime;
+}
+
+function startTracking() {
+    const selectedVehicle = document.getElementById("selectedVehicle").textContent;
+
+    if (selectedVehicle === "Select Vehicle" || selectedVehicle.trim() === "") {
+        alert("Please select a vehicle first");
+        return;
+    }
+
+    const selectedDevice = devices.find(device => device.name === selectedVehicle);
+    if (!selectedDevice) {
+        alert("Selected vehicle not found in the list");
+        return;
+    }
+
+    const did = selectedDevice.did;
+    const refreshRate = parseInt(document.getElementById("refreshRate").value);
+
+    isTracking = true;
+    document.getElementById("trackButton").textContent = "Stop Tracking";
+    document.getElementById("trackButton").classList.add("tracking");
+
+    fetchVehicleLocation(did);
+
+    trackingInterval = setInterval(() => {
+        fetchVehicleLocation(did);
+    }, refreshRate);
+}
+
+function stopTracking() {
+    if (trackingInterval) {
+        clearInterval(trackingInterval);
+        trackingInterval = null;
+    }
+
+    isTracking = false;
+    document.getElementById("trackButton").textContent = "Track";
+    document.getElementById("trackButton").classList.remove("tracking");
+    
+    hidePopup();
+    
+    document.getElementById('speedDisplay').textContent = '0 km/h';
+    document.getElementById('dateTimeDisplay').textContent = '--';
+
+    if (currentMarker) {
+        currentMarker.setMap(null);
+        currentMarker = null;
+    }
+
+    lastPosition = null;
+    isAnimating = false;
+    isMapDragging = false;
+
+    const customPopup = document.getElementById('customPopup');
+    if (customPopup) {
+        customPopup.style.display = 'none';
+    }
+
+    const selectedVehicle = document.getElementById('selectedVehicle');
+    if (selectedVehicle) {
+        selectedVehicle.textContent = 'Select Vehicle';
+    }
+}
+
+function getTimeDiff(currentTime, vehicleTime) {
+  const currentTimeMs = new Date(currentTime).getTime();
+  const vehicleTimeMs = new Date(vehicleTime).getTime();
+  const timeDiff = Math.abs(currentTimeMs - vehicleTimeMs);
+  return timeDiff / 1000; // Convert milliseconds to seconds
+}
+
+function easeInOutQuad(t) {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+}
+
+async function updateLocationPopup(deviceId, latlang) {
+    const locationCell = document.getElementById(`location-popup-${deviceId}`);
+    if (!locationCell) return;
+
+    locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
+
+    try {
+        const location = await fetchLocation(latlang);
+        locationCell.innerHTML = location;
+    } catch (error) {
+        console.error("Error updating location:", error);
+        locationCell.innerHTML = "Error fetching location";
+    }
+}
+
+async function fetchLocation(latlang) {
+    try {
+        if (!latlang) return "Location not available";
+
+        const [lat, lng] = latlang.split(",").map(coord => parseFloat(coord));
+        if (isNaN(lat) || isNaN(lng)) return "Invalid coordinates";
+        
+        const response = await fetch(`${API}opr=getLoc&lat=${lat}&lang=${lng}`);
+        const data = await response.json();
+        return data[0].location || "Location not available";
+    } catch (error) {
+        console.error("Error fetching location:", error);
+        return "Error fetching location";
+    }
+}
+
+// Event Listeners
+document.addEventListener("click", function(event) {
+    const dropdown = document.getElementById("deviceDropdown");
+    if (!event.target.closest(".device-selector")) {
+        dropdown.style.display = "none";
+    }
+});
+
+$("#trackButton").on("click", function() {
+    if (isTracking) {
+        stopTracking();
+    } else {
+        startTracking();
+    }
+});
+
+$("#refreshRate").on("change", function() {
+    if (isTracking) {
+        stopTracking();
+        startTracking();
+    }
+});
+
+        // Update device select handler
+        $("#deviceSelect").on("change", function () {
+          const did = $(this).val();
+          if (did && isTracking) {
+            stopTracking();
+            startTracking();
+          }
+        });
+
+        $(document).ready(function () {
+          // Load navbar from external file
+          $("#navbar-container").load("../navbarola.html", function () {
+            console.log("Navbar loaded successfully!");
+          });
+
+          // Check if 'mid' is available in localStorage otherwise ri-direct login page
+          if (!localStorage.getItem('mid')) {
+            // Redirect to login page if 'mid' is not found
+            window.location.href = '../index.html';
+          }
+
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+          // Get URL parameters
+          const urlParams = new URLSearchParams(window.location.search);
+          const deviceName = urlParams.get('device');
+          const trackButton = document.getElementById('trackButton');
+
+          if (deviceName) {
+
+            // Wait for the vehicle list to be populated
+            const checkVehicleList = setInterval(() => {
+              const vehicleList = document.getElementById('vehicleList');
+              if (vehicleList && vehicleList.children.length > 0) {
+                clearInterval(checkVehicleList);
+
+                // Find and click the matching device in the list
+                const deviceElements = vehicleList.querySelectorAll('.dropdown-item');
+                for (const element of deviceElements) {
+                  if (element.textContent.trim() === deviceName) {
+                    element.click();
+                    trackButton.click();
+                    break;
+                  }
+                }
+              }
+            }, 100);
+
+            // Add a timeout to prevent infinite checking
+            setTimeout(() => clearInterval(checkVehicleList), 10000);
+          }
+        });
+      </script>
+</body>
+
+</html>

@@ -1,0 +1,1885 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>mappls Map</title>
+  <meta name="viewport" content="initial-scale=1.0">
+  <meta charset="utf-8">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body,
+    html {
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Container setup for full layout */
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 93vh;
+    }
+
+    /* Navbar styles */
+    #navbar-container {
+      width: 100%;
+      background-color: #333;
+      color: white;
+      padding: 0;
+    }
+
+    /* Flex layout for main content */
+    .content {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    #map {
+      width: 100%;
+      height: 725px;
+    }
+
+    .controls {
+      margin: 3px;
+      background: #2c3e50;
+      /* Matching navbar background */
+      padding: 5px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      gap: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .controls button {
+      padding: 5px 15px;
+      font-size: 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .controls {
+      margin: 3px;
+      background: #2c3e50;
+      padding: 10px;
+      border-radius: 8px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .datetime-selector {
+      display: flex;
+      gap: 10px;
+    }
+
+    .date-input {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .date-input label {
+      color: white;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .date-input input[type="date"] {
+      padding: 5px 8px;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #2c3e50;
+      background-color: white;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .date-input input[type="date"]:hover {
+      background-color: #f8f9fa;
+    }
+
+    .date-input input[type="date"]:focus {
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+    }
+
+
+    .datetime-wrapper {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .date-input input[type="time"] {
+      padding: 5px 8px;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #2c3e50;
+      background-color: white;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .date-input input[type="time"]:hover {
+      background-color: #f8f9fa;
+    }
+
+    .date-input input[type="time"]:focus {
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+    }
+
+    .device-selector select {
+      padding: 5px 25px 5px 10px;
+      font-size: 13px;
+      color: #2c3e50;
+      background-color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232c3e50' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 12px;
+      min-width: 150px;
+    }
+
+    .device-selector {
+      position: relative;
+      width: 250px;
+    }
+
+    .dropdown-container {
+      position: relative;
+    }
+
+    .dropdown-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border-radius: 4px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      display: none;
+      z-index: 1000;
+    }
+
+    .dropdown-header {
+      padding: 10px;
+      color: rgb(0, 0, 0);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-weight: 500;
+    }
+
+    .dropdown-search {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .dropdown-search input {
+      width: 100%;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 4px;
+      color: rgb(0, 0, 0);
+      font-size: 13px;
+    }
+
+    .dropdown-search input::placeholder {
+      color: rgba(0, 0, 0, 0.5);
+    }
+
+    .dropdown-items {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .dropdown-item {
+      padding: 8px 10px;
+      color: black;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .dropdown-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Selected Vehicle */
+    .selected-vehicle {
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      color: rgb(0, 0, 0);
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .selected-vehicle:after {
+      content: "▼";
+      font-size: 10px;
+      margin-left: 8px;
+    }
+
+    .device-selector select:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+    }
+
+    .buttonclass {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Keep your existing button styles */
+    .buttonclass button {
+      padding: 5px 15px;
+      font-size: 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    /* Start Button */
+    #startPlayback {
+      background-color: #2ecc71;
+      color: white;
+    }
+
+    #startPlayback:hover {
+      background-color: #27ae60;
+    }
+
+    /* Pause Button */
+    #pausePlayback {
+      background-color: #f1c40f;
+      color: #2c3e50;
+    }
+
+    #pausePlayback:hover {
+      background-color: #f39c12;
+    }
+
+    /* Stop Button */
+    #stopPlayback {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    #stopPlayback:hover {
+      background-color: #c0392b;
+    }
+
+    /* Add icons to buttons */
+    #startPlayback::before {
+      content: "▶";
+      font-size: 12px;
+    }
+
+    #pausePlayback::before {
+      content: "⏸";
+      font-size: 12px;
+    }
+
+    #stopPlayback::before {
+      content: "⏹";
+      font-size: 12px;
+    }
+
+    /* Active state for buttons */
+    .controls button:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+
+    /* Disabled state */
+    .controls button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 768px) {
+      .controls {
+        margin: 10px;
+        padding: 10px;
+      }
+
+      .controls button {
+        padding: 8px 16px;
+        font-size: 12px;
+      }
+    }
+
+    .customMarkerClass {
+      display: block !important;
+      height: 20px;
+      width: 40px;
+      position: relative;
+      transform-origin: center center;
+      transform: translate(-50%, -50%);
+      /* Add this to center the marker */
+      top: -105px;
+      /* Adjust this value to fine-tune vertical position */
+    }
+
+    .carImage {
+      width: 40px;
+      height: 20px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform-origin: center center;
+      transform: translate(-50%,
+          -50%);
+      /* Center the image within the marker */
+      display: block;
+    }
+
+    #customPopup {
+      position: absolute;
+      background: #fff;
+      padding: 15px 20px;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
+      display: none;
+      z-index: 1000;
+      /* Ensure popup stays above marker */
+      min-width: 280px;
+      text-align: left;
+      transform: translate(-50%, -100%);
+      /* Center horizontally and move up */
+      margin-top: -20px;
+      /* Add extra space between popup and marker */
+    }
+
+    /* Update arrow position */
+    .popup::after {
+      content: "";
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid #fff;
+      filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
+    }
+
+    #popupContent {
+      line-height: 1.8;
+      color: #2c3e50;
+      font-size: 13px;
+    }
+
+    #popupContent b {
+      color: #34495e;
+      width: 100px;
+      display: inline-block;
+      font-weight: 600;
+    }
+
+    /* Status indicators */
+    .status-indicator {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 500;
+      margin-left: 5px;
+    }
+
+    .status-on {
+      background-color: #2ecc71;
+      color: white;
+    }
+
+    .status-off {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    /* Popup styling */
+    .popup {
+      position: absolute;
+      background: white;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
+      display: none;
+      z-index: 1000;
+      min-width: 280px;
+      text-align: left;
+      transform: translateX(-50%);
+      /* Center the popup horizontally */
+    }
+
+    .popup .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      cursor: pointer;
+      color: #95a5a6;
+      font-size: 16px;
+      transition: color 0.2s ease;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .popup .close-btn:hover {
+      color: #34495e;
+      background: #f5f6f7;
+    }
+
+    /* Arrow indicator */
+    /* .popup::after {
+    content: "";
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid #fff;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
+} */
+
+    .controls {
+      margin: 3px;
+      background: #2c3e50;
+      padding: 5px 15px;
+      /* Increased padding */
+      border-radius: 8px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .selected-device {
+      margin-left: 15px;
+      padding: 5px 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      min-width: 200px;
+    }
+
+    .device-icon {
+      font-size: 16px;
+    }
+
+    #deviceNameDisplay {
+      font-weight: 500;
+      color: #ecf0f1;
+    }
+
+    .deviceItem {
+      position: relative;
+      background-color: #f5f6f7;
+      border-radius: 6px;
+      margin: 5px 0;
+      transition: all 0.3s ease;
+    }
+
+    .device-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .device-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dropdown-arrow {
+      font-size: 10px;
+      color: #666;
+      transition: transform 0.3s ease;
+    }
+
+    .device-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background-color: white;
+      border-radius: 0 0 6px 6px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.3s ease;
+      z-index: 100;
+    }
+
+    .device-selector {
+      position: relative;
+      margin-left: 10px;
+    }
+
+    #deviceSelect {
+      padding: 5px 35px 5px 15px;
+      font-size: 13px;
+      color: #fff;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      min-width: 200px;
+      height: 32px;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    #deviceSelect:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    #deviceSelect:focus {
+      background-color: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .device-selector::after {
+      content: "▼";
+      font-size: 10px;
+      color: #000;
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    #deviceSelect option {
+      background-color: #2c3e50;
+      color: #fff;
+      padding: 8px;
+    }
+
+    #deviceSelect option:hover {
+      background-color: #34495e;
+    }
+
+    /* Adjust the existing controls styles */
+    .controls {
+      margin: 3px;
+      background: #2c3e50;
+      padding: 5px 15px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .controls button {
+      padding: 8px 16px;
+      font-size: 13px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    #startPlayback {
+      background-color: #2ecc71;
+      color: white;
+    }
+
+    #startPlayback:hover {
+      background-color: #27ae60;
+    }
+
+    #pausePlayback {
+      background-color: #f1c40f;
+      color: #2c3e50;
+    }
+
+    #pausePlayback:hover {
+      background-color: #f39c12;
+    }
+
+    #stopPlayback {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    #stopPlayback:hover {
+      background-color: #c0392b;
+    }
+
+    .polyline-popup {
+      display: none;
+      position: absolute;
+      background: #ffffff;
+      padding: 10px 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      font-size: 13px;
+      pointer-events: none;
+      z-index: 1000;
+      color: #2c3e50;
+      max-width: 250px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      line-height: 1.6;
+    }
+
+    .polyline-popup b {
+      color: #34495e;
+      display: inline-block;
+      width: 100px;
+      font-weight: 600;
+    }
+
+    .polyline-popup .status-indicator {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 500;
+      margin-left: 5px;
+    }
+
+    .polyline-popup::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid #ffffff;
+      filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.05));
+    }
+
+    /* pop-up display righ-side*/
+    .vehicle-info-popup {
+      position: fixed;
+      top: 160px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 8px;
+      /* Reduced from 15px */
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      width: 180px;
+      /* Reduced from 280px */
+      z-index: 9999;
+      transition: all 0.3s ease;
+    }
+
+    .info-container {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      /* Reduced from 12px */
+    }
+
+    .info-card {
+      display: flex;
+      align-items: center;
+      padding: 3px;
+      /* Reduced from 10px */
+      background: white;
+      border-radius: 10px;
+      transition: transform 0.2s ease;
+      border: 1px solid #f0f0f0;
+    }
+
+    .info-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .info-icon {
+      font-size: 16px;
+      /* Reduced from 20px */
+      width: 30px;
+      /* Reduced from 40px */
+      height: 30px;
+      /* Reduced from 40px */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-right: 8px;
+      /* Reduced from 12px */
+    }
+
+    .info-details {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      /* Reduced from 4px */
+    }
+
+    .info-label {
+      color: #64748b;
+      font-size: 11px;
+      /* Reduced from 12px */
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .info-value {
+      color: #1e293b;
+      font-size: 13px;
+      /* Reduced from 16px */
+      font-weight: 600;
+    }
+
+    #speedDisplay {
+      color: #2563eb;
+    }
+
+    #dateTimeDisplay {
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    #distanceDisplay {
+      color: #059669;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .vehicle-info-popup {
+        width: calc(100% - 40px);
+        top: auto;
+        bottom: 20px;
+        right: 20px;
+      }
+
+      .info-container {
+        flex-direction: row;
+        justify-content: space-between;
+      }
+
+      .info-card {
+        flex: 1;
+      }
+    }
+
+    .direction-arrow {
+      pointer-events: none;
+      z-index: 1;
+    }
+  </style>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Navbar -->
+    <div id="navbar-container"></div>
+    <div class="content">
+      <div class="controls">
+        <div class="datetime-selector">
+          <div class="device-selector">
+            <div class="dropdown-container">
+              <!-- Dropdown Button (Selected Vehicle) -->
+              <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
+                Select Vehicle
+              </div>
+
+              <!-- Dropdown List (Hidden by default) -->
+              <div class="dropdown-list" id="deviceDropdown">
+                <!-- Search input for filtering vehicles -->
+                <div class="dropdown-search">
+                  <input type="text" placeholder="Search vehicle..." id="vehicleSearch"
+                    onclick="event.stopPropagation()" onkeyup="filterVehicles(this.value)" />
+                </div>
+
+                <!-- List of filtered vehicles -->
+                <div class="dropdown-items" id="vehicleList">
+                  <!-- Vehicles will be populated here dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="date-input">
+            <label>From:</label>
+            <div class="datetime-wrapper">
+              <input type="date" id="fromDate" placeholder="dd/mm/yyyy" />
+              <input type="time" id="fromTime" value="00:00" />
+            </div>
+          </div>
+          <div class="date-input">
+            <label>To:</label>
+            <div class="datetime-wrapper">
+              <input type="date" id="toDate" placeholder="dd/mm/yyyy" />
+              <input type="time" id="toTime" value="23:59" />
+            </div>
+          </div>
+        </div>
+
+        <div class="buttonclass">
+          <button id="startPlayback">Start</button>
+          <button id="pausePlayback">Pause</button>
+          <button id="stopPlayback">Stop</button>
+        </div>
+      </div>
+      <div id="map"></div>
+      <div id="polylinePopup" class="polyline-popup">
+        <div id="polylinePopupContent"></div>
+      </div>
+
+      <!-- Custom Popup Element -->
+      <div id="customPopup" class="popup">
+        <span class="close-btn" onclick="hidePopup(true)">✖</span>
+        <div id="popupContent"></div>
+      </div>
+    </div>
+
+    <div id="vehicleInfoPopup" class="vehicle-info-popup">
+      <div class="info-container">
+        <div class="info-card">
+          <div class="info-icon">🚗</div>
+          <div class="info-details">
+            <span class="info-label">Speed</span>
+            <span class="info-value" id="speedDisplay">0 km/h</span>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-icon">🕒</div>
+          <div class="info-details">
+            <span class="info-label">Time</span>
+            <span class="info-value" id="dateTimeDisplay">--</span>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-icon">📍</div>
+          <div class="info-details">
+            <span class="info-label">Distance</span>
+            <span class="info-value" id="distanceDisplay">0 km</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script>
+    // Global variables
+    var map;
+    let selectedDeviceId = null;
+    let devices = [];
+    let vehicleMarker = null;
+    let playbackData = [];
+    let index = 0;
+    let playbackInterval = null;
+    let isPaused = false;
+    let pathCoordinates = [];
+    let totalDistance = 0;
+    let polyline = null;
+    let startMarker = null;
+    let endMarker = null;
+    let arrowMarkers = [];
+    let deviceData = [];
+    const popup = document.getElementById("customPopup");
+    const popupContent = document.getElementById("popupContent");
+
+
+    // Initialize when document is ready
+    $(document).ready(function () {
+      if (!localStorage.getItem('mid')) {
+        window.location.href = '../index.html';
+      }
+
+      $("#navbar-container").load("../navbarola.html", function () {
+        console.log("Navbar loaded successfully!");
+      });
+
+      const mid = localStorage.getItem("mid");
+      console.log("mid:::" + mid);
+
+      setDefaultDates();
+      loadMapScript();
+    });
+
+    // Load mappls SDK
+    function loadMapScript() {
+      const key = localStorage.getItem("key");
+      if (!key) {
+        console.error("No API key found in localStorage.");
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = `https://apis.mappls.com/advancedmaps/api/${key}/map_sdk?layer=vector&v=3.0&callback=initMap1`;
+      script.defer = true;
+      script.async = true;
+
+      script.onload = function () {
+        console.log("mappls SDK loaded successfully.");
+        // No need to call initMap1 here as it's invoked by the callback
+        fetchDeviceData();
+      };
+
+      script.onerror = function () {
+        console.error("Error loading mappls SDK.");
+      };
+
+      document.head.appendChild(script);
+    }
+
+
+    // Initialize map
+    function initMap1() {
+      map = new mappls.Map('map', {
+        center: [28.638698386592438, 77.27604556863412],
+        zoomControl: true,
+        hybrid: true,
+        location: true,
+        zoom: 15,
+        scrollWheelZoom: true,
+        continuousWorld: true
+      });
+      setupPolylineHoverInteractions();
+    }
+
+
+    // Date handling functions
+    function setDefaultDates() {
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+
+      document.getElementById('fromDate').value = today;
+      document.getElementById('toDate').value = today;
+      document.getElementById('fromTime').value = '00:00';
+      document.getElementById('toTime').value = '23:59';
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function formatTime(timeString) {
+      return timeString.replace(':', '') + '00';
+    }
+
+    // Vehicle list handling functions
+    function toggleDropdown() {
+      const dropdown = document.getElementById('deviceDropdown');
+      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function filterVehicles(searchText) {
+      const filteredDevices = devices.filter(device =>
+        device.name.toLowerCase().includes(searchText.toLowerCase())
+      );
+      populateVehicleList(filteredDevices);
+    }
+
+    function selectVehicle(deviceId, deviceName) {
+      selectedDeviceId = deviceId;
+      document.getElementById('selectedVehicle').textContent = deviceName;
+      document.getElementById('deviceDropdown').style.display = 'none';
+
+      const fromDate = document.getElementById("fromDate").value;
+      const toDate = document.getElementById("toDate").value;
+
+      if (fromDate && toDate) {
+        fetchPlaybackData(deviceId).then(() => {
+          if (playbackData.length) {
+            addPolyline();
+            addStartEndMarkers();
+          }
+        }).catch(error => {
+          console.error("Error:", error);
+          alert("Error loading playback data");
+        });
+      } else {
+        alert("Please select dates");
+      }
+    }
+
+    function populateVehicleList(devicesList) {
+      const vehicleList = document.getElementById('vehicleList');
+      vehicleList.innerHTML = '';
+
+      devicesList.forEach(device => {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item';
+        item.textContent = device.name;
+        item.onclick = () => selectVehicle(device.did, device.name);
+        vehicleList.appendChild(item);
+      });
+    }
+
+    // Data fetching functions
+    function fetchDeviceData() {
+      const mid = localStorage.getItem("mid");
+      if (!mid) {
+        console.error("No mid found in localStorage");
+        return;
+      }
+
+      fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+        .then(response => response.json())
+        .then(data => {
+          devices = data.map(item => ({
+            name: item.dname,
+            did: item.did
+          }));
+          populateVehicleList(devices);
+          deviceData = devices;
+        })
+        .catch(error => {
+          console.error("Error fetching devices:", error);
+        });
+    }
+
+    function fetchPlaybackData(did) {
+      if (!did) return Promise.reject("No device ID provided");
+
+      const fromDate = document.getElementById("fromDate").value;
+      const toDate = document.getElementById("toDate").value;
+      const fromTime = document.getElementById("fromTime").value;
+      const toTime = document.getElementById("toTime").value;
+
+      const formattedFromDateTime = fromDate.split('-').join('') + fromTime.split(':').join('');
+      const formattedToDateTime = toDate.split('-').join('') + toTime.split(':').join('');
+
+      console.log("Fetching data for:", {
+        did: did,
+        fromDateTime: formattedFromDateTime,
+        toDateTime: formattedToDateTime
+      });
+
+      return fetch(`${API}opr=getplaybacktest&sdate=${formattedFromDateTime}00&edate=${formattedToDateTime}59&did=${did}`)
+        .then(response => response.json())
+        .then(data => {
+          if (!Array.isArray(data) || data.length === 0) {
+            throw new Error("No data available for the selected period");
+          }
+
+          playbackData = data.map(item => ({
+            coordinates: [Number(item.latitude), Number(item.langitude)],
+            angle: Number(item.angle) || 0,
+            speed: Number(item.speed) || 0,
+            deviceId: String(item.deviceId || ''),
+            date: item.DeviceDate,
+          }));
+
+          pathCoordinates = playbackData.map(item => item.coordinates);
+          return playbackData;
+        })
+        .catch(error => {
+          console.error("Error fetching playback data:", error);
+          alert(error.message);
+          throw error;
+        });
+    }
+
+    function calculateBearing(lat1, lon1, lat2, lon2) {
+      const toRad = (degree) => degree * Math.PI / 180;
+      const toDeg = (rad) => rad * 180 / Math.PI;
+
+      const φ1 = toRad(lat1);
+      const φ2 = toRad(lat2);
+      const Δλ = toRad(lon2 - lon1);
+
+      const y = Math.sin(Δλ) * Math.cos(φ2);
+      const x = Math.cos(φ1) * Math.sin(φ2) -
+        Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+
+      const θ = Math.atan2(y, x);
+      return (toDeg(θ) + 360) % 360;
+    }
+
+    function addDirectionalArrows(path) {
+      if (!path || path.length < 2) return;
+
+      // Remove existing arrows
+      cleanupDirectionalArrows();
+
+      // Calculate optimal number of arrows
+      const totalDistance = calculateTotalDistance(path);
+      const arrowCount = Math.min(Math.floor(totalDistance / 0.3), 20);
+      const interval = Math.max(Math.floor(path.length / arrowCount), 2);
+
+      for (let i = 0; i < path.length - 1; i += interval) {
+        const start = path[i];
+        const end = path[i + 1];
+        if (!start || !end) continue;
+
+        // Calculate midpoint
+        const midLat = (start.lat + end.lat) / 2;
+        const midLng = (start.lng + end.lng) / 2;
+
+        // Calculate bearing between points
+        let bearing = calculateBearing(start.lat, start.lng, end.lat, end.lng);
+
+        // Create arrow marker with calculated bearing
+        const arrowMarker = new mappls.Marker({
+          map: map,
+          position: [midLat, midLng],
+          icon: createArrowIcon(bearing),
+          clickable: false,
+          zIndex: 999,
+          anchor: 'center'
+        });
+
+        // Store reference
+        arrowMarkers.push(arrowMarker);
+      }
+    }
+
+    function calculateTotalDistance(path) {
+      let total = 0;
+      for (let i = 0; i < path.length - 1; i++) {
+        total += calculateDistance(
+          path[i].lat,
+          path[i].lng,
+          path[i + 1].lat,
+          path[i + 1].lng
+        );
+      }
+      return total;
+    }
+
+
+    // Function to create arrow icon
+    function createArrowIcon(bearing) {
+      const size = 20; // Canvas size
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // Clear the canvas and set up rotation
+      ctx.clearRect(0, 0, size, size);
+      ctx.save();  // Save the current state
+
+      // Translate to center and rotate
+      ctx.translate(size / 2, size / 2);
+      ctx.rotate((bearing + 90) * Math.PI / 180);  // Convert degrees to radians and adjust for arrow direction
+
+      // Arrow dimensions
+      const arrowLength = size * 0.3;
+      const arrowWidth = size * 0.2;
+
+      // Create arrow path (now centered at origin due to translation)
+      ctx.beginPath();
+      ctx.moveTo(-arrowLength / 2, 0);  // Arrow tip (starts at left of center)
+      ctx.lineTo(arrowLength / 2, -arrowWidth / 2);  // Top right
+      ctx.lineTo(arrowLength / 2, arrowWidth / 2);   // Bottom right
+      ctx.closePath();
+
+      // Fill arrow
+      ctx.fillStyle = '#000000'; // Black fill
+      ctx.fill();
+
+      // Add white stroke
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+
+      // Restore the canvas state
+      ctx.restore();
+
+      return canvas.toDataURL();
+    }
+
+    // Marker and polyline functions
+    function addPolyline() {
+      if (!playbackData || playbackData.length === 0) {
+        console.warn("No playback data available for polyline");
+        return;
+      }
+
+      try {
+        // Remove existing polyline and arrows
+        if (polyline) {
+          polyline.setMap(null);
+          polyline = null;
+        }
+        cleanupDirectionalArrows();
+
+        const path = playbackData.map(point => ({
+          lat: point.coordinates[0],
+          lng: point.coordinates[1]
+        }));
+
+        // Create polyline
+        polyline = new mappls.Polyline({
+          map: map,
+          path: path,
+          strokeColor: '#FF0000',
+          strokeOpacity: 0.8,
+          strokeWeight: 3
+        });
+
+        // Add direction arrows
+        addDirectionalArrows(path);
+
+      } catch (error) {
+        console.error("Error with polyline management:", error);
+        polyline = null;
+      }
+    }
+
+    function setupPolylineHoverInteractions() {
+      const popup = document.getElementById("polylinePopup");
+      const popupContent = document.getElementById("polylinePopupContent");
+
+      // Ensure popup is in the correct initial state
+      popup.style.position = 'absolute';
+      popup.style.zIndex = '1000';
+      popup.style.display = 'none';
+
+      // Add mousemove and mouseleave listeners to the map
+      map.on('mousemove', (event) => {
+        if (!polyline) return;
+
+        // Find closest point on polyline to mouse cursor
+        const mousePoint = [event.lngLat.lng, event.lngLat.lat];
+        const closestPointIndex = findClosestPointIndex(mousePoint);
+
+        if (closestPointIndex !== -1) {
+          const pointData = playbackData[closestPointIndex];
+
+          // Calculate approximate distance from start
+          const distance = calculateCumulativeDistance(closestPointIndex);
+
+          // Update popup content
+          popupContent.innerHTML = `
+            <div><b>Time:</b> ${pointData.date.split(" ")[1]}</div>
+                <div><b>Speed:</b> ${pointData.speed.toFixed(1)} km/h 
+                </div>
+                <div><b>Distance:</b> ${distance.toFixed(2)} km</div>
+            `;
+
+          // Position and show popup
+          popup.style.left = `${event.point.x - 95}px`;
+          popup.style.top = `${event.point.y - 0}px`;
+          popup.style.display = 'block';
+        } else {
+          popup.style.display = 'none';
+        }
+      });
+
+      // Hide popup when mouse leaves map
+      map.on('mouseleave', () => {
+        popup.style.display = 'none';
+      });
+    }
+
+    function findClosestPointIndex(mousePoint) {
+      if (!playbackData || playbackData.length === 0) return -1;
+
+      let minDistance = Infinity;
+      let closestIndex = -1;
+
+      playbackData.forEach((point, index) => {
+        const distance = calculatePointDistance(
+          mousePoint[0], mousePoint[1],
+          point.coordinates[1], point.coordinates[0]
+        );
+
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestIndex = index;
+        }
+      });
+
+      // Only return index if it's close enough (within ~0.1 km)
+      return minDistance < 0.1 ? closestIndex : -1;
+    }
+
+    function calculatePointDistance(lon1, lat1, lon2, lat2) {
+      const R = 6371; // Earth's radius in kilometers
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    // Calculate cumulative distance from the start of the route
+    function calculateCumulativeDistance(upToIndex) {
+      let totalDist = 0;
+      for (let i = 1; i <= upToIndex; i++) {
+        totalDist += calculateDistance(
+          playbackData[i - 1].coordinates[0],
+          playbackData[i - 1].coordinates[1],
+          playbackData[i].coordinates[0],
+          playbackData[i].coordinates[1]
+        );
+      }
+      return totalDist;
+    }
+
+
+    function setMapBounds(path) {
+      if (!path || path.length === 0) return;
+
+      let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+
+      path.forEach(coord => {
+        const lat = coord.lat;
+        const lng = coord.lng;
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+        if (lng < minLng) minLng = lng;
+        if (lng > maxLng) maxLng = lng;
+      });
+
+      const bounds = [
+        [minLng, minLat], // Southwest corner
+        [maxLng, maxLat]  // Northeast corner
+      ];
+
+      map.fitBounds(bounds, {
+        padding: 50,
+        duration: 1
+      });
+    }
+
+
+    function addStartEndMarkers() {
+      if (!playbackData || playbackData.length < 2) {
+        console.warn("Insufficient playback data for markers");
+        return;
+      }
+
+      // Remove existing markers
+      if (startMarker) {
+        startMarker.remove();
+      }
+      if (endMarker) {
+        endMarker.remove();
+      }
+
+      const startPoint = playbackData[0];
+      const endPoint = playbackData[playbackData.length - 1];
+
+      try {
+        // Create start marker
+        startMarker = new mappls.Marker({
+          map: map,
+          position: {
+            lat: startPoint.coordinates[0],
+            lng: startPoint.coordinates[1]
+          },
+          icon: createStartEndIcon('S', '#2ecc71')
+        });
+
+        // Create end marker
+        endMarker = new mappls.Marker({
+          map: map,
+          position: {
+            lat: endPoint.coordinates[0],
+            lng: endPoint.coordinates[1]
+          },
+          icon: createStartEndIcon('E', '#e74c3c')
+        });
+
+        // Add permanent timestamp labels without prefixes
+        addPermanentLabel(startMarker, startPoint.date);
+        addPermanentLabel(endMarker, endPoint.date);
+
+        // Calculate bounds to include both start and end markers
+        const bounds = new mappls.LatLngBounds();
+        bounds.extend([startPoint.coordinates[1], startPoint.coordinates[0]]);
+        bounds.extend([endPoint.coordinates[1], endPoint.coordinates[0]]);
+
+        // Fit the map to the calculated bounds with some padding
+        map.fitBounds(bounds, {
+          padding: { top: 50, bottom: 50, left: 50, right: 50 },
+          duration: 1000  // 1 second animation
+        });
+
+      } catch (error) {
+        console.error("Error creating markers:", error);
+      }
+    }
+
+    function createStartEndIcon(label, color) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 40;
+      canvas.height = 40;
+      const ctx = canvas.getContext('2d');
+
+      // Draw circle
+      ctx.beginPath();
+      ctx.arc(20, 20, 15, 0, 2 * Math.PI);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Add label
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, 20, 20);
+
+      return canvas.toDataURL();
+    }
+
+    function addPermanentLabel(marker, timestamp) {
+      const markerElement = marker.getElement();
+      if (!markerElement) return;
+
+      // Create label container
+      const labelContainer = document.createElement('div');
+      labelContainer.style.position = 'absolute';
+      labelContainer.style.top = '-35px';  // Position above marker
+      labelContainer.style.left = '50%';
+      labelContainer.style.transform = 'translateX(-50%)';
+      labelContainer.style.backgroundColor = 'white';
+      labelContainer.style.padding = '4px 8px';
+      labelContainer.style.borderRadius = '4px';
+      labelContainer.style.fontSize = '12px';
+      labelContainer.style.fontWeight = '600';  // Made font bolder
+      labelContainer.style.whiteSpace = 'nowrap';
+      labelContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+      labelContainer.style.zIndex = '1000';
+      labelContainer.style.pointerEvents = 'none';
+
+      // Set the timestamp without prefix
+      labelContainer.textContent = timestamp.split('.')[0];
+
+      // Append label to marker
+      markerElement.appendChild(labelContainer);
+    }
+
+    function createVehicleMarker() {
+      const markerElement = document.createElement('div');
+      markerElement.className = 'customMarkerClass';
+
+      const carImage = document.createElement('img');
+      carImage.src = '../images/truck1.png';
+      carImage.className = 'carImage';
+      carImage.alt = 'Vehicle';
+
+      carImage.onload = () => {
+        markerElement.style.display = 'block';
+      };
+
+      carImage.onerror = () => {
+        console.error('Error loading vehicle image');
+        // Fallback to a simple circle if image fails to load
+        const fallback = document.createElement('div');
+        fallback.style.width = '20px';
+        fallback.style.height = '20px';
+        fallback.style.backgroundColor = 'red';
+        fallback.style.borderRadius = '50%';
+        markerElement.appendChild(fallback);
+      };
+
+      markerElement.appendChild(carImage);
+      return markerElement;
+    }
+
+    function createPopupContent(data, totalDistance) {
+      const devicename = deviceData.find((d) => d.did == data.deviceId)?.name;
+      return `
+        <div style="border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 5px;">
+            <b>Vehicle:</b> ${devicename} 
+        </div>
+        <div>
+          <b>Date-Time:</b> ${data.date.split(".")[0]} <br/>
+          <b>Speed:</b> ${Math.round(data.speed)} km/h <br/>
+          <b>Distance:</b> ${totalDistance.toFixed(2)} km
+        </div>
+    `;
+    }
+
+    function showPopup(content) {
+      if (isPopupClosedManually) return; // Do not show if manually closed
+      popupContent.innerHTML = content;
+      popup.style.display = "block";
+      updatePopupPosition(); // Ensure popup is positioned correctly initially
+    }
+
+    function updatePopupPosition() {
+      if (vehicleMarker && popup.style.display === "block") {
+        const coordinates = vehicleMarker.getLngLat();
+        const mapPos = map.project(coordinates);
+
+        // Increase the vertical offset to move popup higher above the marker
+        popup.style.left = `${mapPos.x}px`;
+        popup.style.top = `${mapPos.y + 80}px`; // Changed from -60 to -120 to move it higher
+      }
+    }
+
+    function hidePopup(manuallyClosed = false) {
+      popup.style.display = "none";
+      if (manuallyClosed) isPopupClosedManually = true;
+    }
+
+    // Playback control functions
+    function startPlayback() {
+      if (!selectedDeviceId) {
+        alert('Please select a vehicle first');
+        return;
+      }
+
+      if (!playbackData || playbackData.length === 0) {
+        alert('No playback data available');
+        return;
+      }
+
+      if (playbackInterval) {
+        clearInterval(playbackInterval);
+      }
+
+      if (!isPaused) {
+        index = 0;
+        totalDistance = 0;
+      }
+      isPaused = false;
+
+      try {
+        // Create or update vehicle marker
+        if (!vehicleMarker) {
+          vehicleMarker = new mappls.Marker({
+            map: map,
+            position: [
+              playbackData[0].coordinates[1],
+              playbackData[0].coordinates[0]
+            ],
+            html: `<img src="../images/truck1.png" style="width: 40px; height: 20px; margin-top:25px; transform: rotate(${playbackData[index].angle}deg);" />`,
+            width: 35,
+            height: 35,
+
+            draggable: false,
+            rotateWithMap: true
+          });
+
+          vehicleMarker.addListener('click', function () {
+            isPopupClosedManually = false;
+            const cumulativeDistance = calculateCumulativeDistance(index);
+            const content = createPopupContent(playbackData[index], cumulativeDistance);
+            updateVehicleInfo(playbackData[index], cumulativeDistance);
+            showPopup(content);
+          });
+        }
+
+
+
+        playbackInterval = setInterval(() => {
+          if (index >= playbackData.length) {
+            stopPlayback();
+            return;
+          }
+
+          const currentPoint = playbackData[index];
+
+          // Update marker position
+          vehicleMarker.setPosition([
+            currentPoint.coordinates[1],
+            currentPoint.coordinates[0]
+          ]);
+
+          // Update map center
+          map.setCenter([
+            currentPoint.coordinates[1],
+            currentPoint.coordinates[0]
+          ]);
+
+          // Update rotation
+          updateVehicleRotation(currentPoint.angle);
+
+          if (index < playbackData.length) {
+            const currentPoint = playbackData[index];
+            const { coordinates, angle } = currentPoint;
+
+            const markerElement = vehicleMarker.getElement();
+            if (markerElement) {
+              const imgElement = markerElement.querySelector('img');
+              if (imgElement) {
+                // Adjust angle if needed (similar to the previous code with ANGLE_OFFSET)
+                const adjustedAngle = angle + 90;
+                imgElement.style.transform = `rotate(${adjustedAngle}deg)`;
+              }
+            }
+          }
+
+          // Calculate distance
+          if (index > 0) {
+            const prevPoint = playbackData[index - 1];
+            totalDistance += calculateDistance(
+              prevPoint.coordinates[0],
+              prevPoint.coordinates[1],
+              currentPoint.coordinates[0],
+              currentPoint.coordinates[1]
+            );
+          }
+
+          // Update info displays
+          updateVehicleInfo(currentPoint, totalDistance);
+
+          index++;
+        }, 1000);
+
+      } catch (error) {
+        console.error('Error in startPlayback:', error);
+        alert('Error starting playback. Please try again.');
+      }
+    }
+
+    function updateVehicleRotation(angle) {
+      const markerElement = vehicleMarker.getElement();
+      if (markerElement) {
+        const imageElement = markerElement.querySelector('.carImage');
+        if (imageElement) {
+          const rotationAngle = (angle + 90) % 360;
+          imageElement.style.transform = `translate(-50%, -50%) rotate(${rotationAngle}deg)`;
+        }
+      }
+    }
+
+    function pausePlayback() {
+      if (playbackInterval) {
+        clearInterval(playbackInterval);
+        isPaused = true;
+      }
+    }
+
+    function cleanupDirectionalArrows() {
+
+      if (arrowMarkers && arrowMarkers.length > 0) {
+        arrowMarkers.forEach(marker => {
+          if (marker) marker.remove();
+        });
+        arrowMarkers = [];
+      }
+    }
+
+    function stopPlayback() {
+      // Clear interval
+      clearInterval(playbackInterval);
+      playbackInterval = null;
+
+      // Remove vehicle marker
+      if (vehicleMarker) {
+        vehicleMarker.remove();  // Markers use remove()
+        vehicleMarker = null;
+      }
+
+      // Remove start and end markers
+      if (startMarker) {
+        startMarker.remove();  // Markers use remove()
+        startMarker = null;
+      }
+      if (endMarker) {
+        endMarker.remove();  // Markers use remove()
+        endMarker = null;
+      }
+
+      // Remove polyline
+      if (polyline) {
+        polyline.setMap(null);  // Polylines use setMap(null)
+        polyline = null;
+      }
+
+      cleanupDirectionalArrows();
+
+      // Reset device selection
+      document.getElementById('selectedVehicle').textContent = 'Select Vehicle';
+      selectedDeviceId = null;
+
+      // Reset all counters and flags
+      index = 0;
+      isPaused = false;
+      totalDistance = 0;
+      playbackData = [];
+      pathCoordinates = [];
+
+      // Reset info displays
+      document.getElementById('speedDisplay').textContent = '0 km/h';
+      document.getElementById('dateTimeDisplay').textContent = '--';
+      document.getElementById('distanceDisplay').textContent = '0.00 km';
+
+      // Reset dropdown state
+      const dropdown = document.getElementById('deviceDropdown');
+      if (dropdown) {
+        dropdown.style.display = 'none';
+      }
+
+      // Hide any popups
+      const customPopup = document.getElementById('customPopup');
+      if (customPopup) {
+        customPopup.style.display = 'none';
+      }
+
+      // Remove any direction arrows
+      const arrows = document.querySelectorAll('.direction-arrow');
+      arrows.forEach(arrow => arrow.remove());
+
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('device');
+        url.searchParams.delete('from');
+        url.searchParams.delete('to');
+        window.history.replaceState({}, '', url);
+      } catch (error) {
+        console.error('Error resetting URL parameters:', error);
+      }
+    }
+
+    // Helper functions
+    function isValidCoordinate(lng, lat) {
+      return (
+        !isNaN(lng) &&
+        !isNaN(lat) &&
+        lng >= -180 &&
+        lng <= 180 &&
+        lat >= -90 &&
+        lat <= 90 &&
+        lng !== 0 &&
+        lat !== 0
+      );
+    }
+
+    function updateVehicleInfo(data, distance) {
+      document.getElementById('speedDisplay').textContent =
+        `${Math.round(data.speed)} km/h`;
+      document.getElementById('dateTimeDisplay').textContent =
+        data.date.split('.')[0];
+      document.getElementById('distanceDisplay').textContent =
+        `${distance.toFixed(2)} km`;
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Earth's radius in kilometers
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      const deviceName = urlParams.get('device');
+      const fromDate = urlParams.get('from');
+      const toDate = urlParams.get('to');
+
+      if (deviceName && fromDate && toDate) {
+        const dateInputs = document.querySelectorAll('.date-input input[type="date"]');
+        const timeInputs = document.querySelectorAll('.date-input input[type="time"]');
+
+        if (dateInputs.length >= 2) {
+          dateInputs[0].value = fromDate;
+          dateInputs[1].value = toDate;
+          timeInputs[0].value = '00:00';
+          timeInputs[1].value = '23:59';
+        }
+
+        const checkVehicleList = setInterval(() => {
+          const vehicleList = document.getElementById('vehicleList');
+          if (vehicleList && vehicleList.children.length > 0) {
+            clearInterval(checkVehicleList);
+            const deviceElements = vehicleList.querySelectorAll('.dropdown-item');
+            for (const element of deviceElements) {
+              if (element.textContent.trim() === deviceName) {
+                element.click();
+                break;
+              }
+            }
+          }
+        }, 100);
+
+        setTimeout(() => clearInterval(checkVehicleList), 10000);
+      }
+    });
+
+    // Event listeners
+    document.addEventListener('click', function (event) {
+      const dropdown = document.getElementById('deviceDropdown');
+      if (!event.target.closest('.device-selector')) {
+        dropdown.style.display = 'none';
+      }
+    });
+
+    document.getElementById('startPlayback')?.addEventListener('click', startPlayback);
+    document.getElementById('pausePlayback')?.addEventListener('click', pausePlayback);
+    document.getElementById('stopPlayback')?.addEventListener('click', stopPlayback);
+  </script>
+
+</body>
+
+</html>

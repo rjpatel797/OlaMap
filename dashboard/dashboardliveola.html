@@ -1,0 +1,2857 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Device Location Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- jQuery for event handling -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Ola Maps SDK and custom styles -->
+    <link href="../olamap/style.css" rel="stylesheet" />
+    <script src="../olamap/olamaps-js-sdk.umd.js"></script>
+
+    <!-- Add these within the <head> tag of your Dashboard HTML -->
+<!-- XLSX for Excel export -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<!-- jsPDF for PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- jsPDF Autotable for table support in PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+<!-- Add this in the head section of your dashboard.html -->
+<script type="module">
+  // Import Firebase modules
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
+
+  // Your Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyD4XUicGEssUiXciIiTAYfB3U8cUSGsoVQ",
+    authDomain: "https://krishtrack-1d350.firebaseio.com",
+    projectId: "krishtrack-1d350",
+    messagingSenderId: "655489206659",
+    appId: "1:655489206659:android:2cc151714018504edb4eb6"
+};
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  
+  const messaging = getMessaging(app);
+
+  // Function to get FCM token with retry
+  async function getFCMToken(registration, maxRetries = 3) {
+      
+          try {
+              const currentToken = await getToken(messaging, {
+                  vapidKey: 'BG3wOmHHCynfGS3zVVOGL6R9VcZU0tl-8cPXmu9xbPNySHtKOZXLhkIufs6DCOPJJdZ9oxlkZOa_gM3LWZQYg2Y',
+                  serviceWorkerRegistration: registration
+              });
+
+              if (currentToken) {
+                  console.log('FCM Token obtained:', currentToken);
+                  return currentToken;
+              } else {
+                  console.log('No token received from Firebase');
+              }
+          } catch (error) {
+              console.error(`Error getting token (attempt ${attempt}):`, error);
+          }
+      
+      return null;
+  }
+
+  // Function to initialize FCM
+  async function initializeFCM() {
+      console.log('Requesting notification permission...');
+      try {
+          const permission = await Notification.requestPermission();
+          
+          if (permission === 'granted') {
+              // Register and activate service worker
+              const registration = await registerServiceWorker();
+              
+              // Get FCM token with retry logic
+              const token = await getFCMToken(registration);
+              
+              if (token) {
+                  // await sendTokenToBackend(token);
+              }
+          } else {
+              console.log('Notification permission denied');
+          }
+      } catch (error) {
+          console.error('Error in initializeFCM:', error);
+      }
+  }
+
+  // Function to register service worker
+  async function registerServiceWorker() {
+      if ('serviceWorker' in navigator) {
+          try {
+              // Unregister any existing service workers first
+              const existingRegistrations = await navigator.serviceWorker.getRegistrations();
+              for (let registration of existingRegistrations) {
+                  await registration.unregister();
+              }
+              
+              // Register new service worker
+              const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                  scope: '/'
+              });
+              console.log('Service Worker registered successfully');
+              console.log('Service Worker scope:', registration.scope);
+              
+              // Wait for the service worker to be ready
+              await navigator.serviceWorker.ready;
+              console.log('Service Worker is now active');
+              
+              return registration;
+          } catch (error) {
+              console.error('Service Worker registration failed:', error);
+              throw error;
+          }
+      }
+      throw new Error('Service workers are not supported');
+  }
+
+  // Function to send token to backend
+  // async function sendTokenToBackend(token) {
+  //     console.log('Attempting to send token to backend...');
+  //     try {
+  //         const response = await fetch('your-backend-url/fcm-token', {
+  //             method: 'POST',
+  //             headers: {
+  //                 'Content-Type': 'application/json',
+  //             },
+  //             body: JSON.stringify({ token })
+  //         });
+  //         console.log('Backend response:', response.ok);
+  //         return response.ok;
+  //     } catch (error) {
+  //         console.error('Error sending token to backend:', error);
+  //         return false;
+  //     }
+  // }
+
+  // Handle foreground messages
+  onMessage(messaging, (payload) => {
+      console.log('Message received:', payload);
+      const { title, body, icon } = payload.notification;
+      
+      // Show notification
+      new Notification(title, {
+          body,
+          icon
+      });
+  });
+
+  // Initialize FCM when page loads
+  if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeFCM);
+  } else {
+      initializeFCM();
+  }
+</script>
+
+
+    <style>
+      /* General reset and box-sizing */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body,
+      html {
+        height: 100%;
+        font-family: Arial, sans-serif;
+      }
+
+      /* Container setup for full layout */
+      .container {
+        display: flex;
+        flex-direction: column;
+        height: 93vh;
+      }
+
+      /* Navbar styles */
+      #navbar-container {
+        width: 100%;
+        background-color: #333;
+        color: white;
+        padding: 0;
+      }
+
+      /* Flex layout for main content */
+      .content {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      /* Device List styling */
+      #deviceList {
+        width: 300px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border-right: 1px solid #ccc;
+        overflow-y: auto;
+      }
+
+      .nav-item {
+        position: relative;
+        display: flex;
+        padding: 8px 15px;
+        text-decoration: none;
+        color: #666;
+        font-size: 13px;
+        transition: all 0.3s ease;
+        align-items: baseline;
+      }
+
+      .welcome-text {
+        display: none;
+      }
+
+      #searchInput {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+
+      #deviceList {
+        width: 200px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border-right: 1px solid #ccc;
+        overflow-y: auto;
+      }
+      #searchInput {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+      .deviceItem {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 2px 8px;
+        margin: 4px 0;
+        background-color: #e6e6e6;
+        border-radius: 4px;
+        text-align: left;
+        font-size: 14px;
+        min-height: 25px; /* Ensure consistent height for all items */
+      }
+      .deviceItem:hover {
+        background-color: #d4d4d4;
+      }
+      .deviceItem input {
+        margin-right: 10px;
+      }
+      .deviceIcon {
+        margin-right: 10px;
+        font-size: 16px;
+        color: #4caf50;
+      }
+      #mapContainer {
+        flex: 1;
+        position: relative;
+      }
+      #map {
+        width: 100%;
+        height: 100%;
+      }
+      .refreshDropdown {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+      }
+
+      .refreshDropdown select {
+        padding: 8px 12px;
+        font-size: 13px;
+        color: #2c3e50;
+        background-color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        padding-right: 30px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        transition: all 0.3s ease;
+        min-width: 160px;
+      }
+
+      /* Custom dropdown arrow */
+      .refreshDropdown::after {
+        content: "▼";
+        font-size: 10px;
+        color: #2c3e50;
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+      }
+
+      /* Hover and focus states */
+      .refreshDropdown select:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        background-color: #f8f9fa;
+      }
+
+      .refreshDropdown select:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px #3498db40;
+      }
+
+      /* Option styling */
+      .refreshDropdown select option {
+        padding: 10px;
+        background-color: white;
+        color: #2c3e50;
+        font-size: 13px;
+      }
+
+      .refreshDropdown select option:hover {
+        background-color: #f8f9fa;
+      }
+      .customMarkerClass {
+        height: 40px;
+        width: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .customMarkerClass img {
+        height: 100%;
+        width: 100%;
+      }
+
+      /* Popup styling for vehicle details */
+      #customPopup {
+        position: absolute;
+        background: #fff;
+        padding: 15px 20px;
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
+        display: none;
+        z-index: 1000;
+        min-width: 280px;
+        text-align: left;
+        transform: translate(-50%, -100%);
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin-top: 10px;
+      }
+
+      #popupContent {
+        line-height: 1.8;
+        color: #2c3e50;
+        font-size: 13px;
+      }
+
+      #popupContent b {
+        color: #34495e;
+        width: 100px;
+        display: inline-block;
+        font-weight: 600;
+      }
+
+      .popup {
+        position: absolute;
+        background: white;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
+        display: none;
+        z-index: 1000;
+        max-width: 500px;
+        text-align: left;
+        transform: translate(-50%, -100%);
+      }
+      /* Close button */
+      .popup .close-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        cursor: pointer;
+        color: #95a5a6;
+        font-size: 16px;
+        transition: color 0.2s ease;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+      }
+
+      .popup .close-btn:hover {
+        color: #34495e;
+        background: #f5f6f7;
+      }
+
+      /* Arrow indicator */
+      .popup::after {
+        content: "";
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-top: 8px solid #fff;
+        filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
+      }
+      .popup-title {
+        font-size: 16px;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #eee;
+      }
+
+      /* Status indicators */
+      .status-indicator {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-left: 5px;
+      }
+
+      .status-indicator-status {
+        display: inline-block;
+        padding: 0.2px 5px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+      .status-indicator-list {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        min-width: 45px;
+        text-align: center;
+      }
+
+      #deviceDataTable td:nth-child(4),  /* Battery */
+      #deviceDataTable td:nth-child(5),  /* Ac */
+      #deviceDataTable td:nth-child(6),  /* Gps */
+      #deviceDataTable td:nth-child(7),  /* Power */
+      #deviceDataTable td:nth-child(11),  /* Power */
+      #deviceDataTable td:nth-child(12),  /* Power */
+      #deviceDataTable td:nth-child(13),  /* Power */
+      #deviceDataTable td:nth-child(14),  /* Power */
+      #deviceDataTable td:nth-child(8)   /* Ignition */ {
+        text-align: center;
+        padding: 8px 4px;
+        min-width: 60px;
+      }
+
+      #deviceDataTable td:nth-child(3) {
+        min-width: 80px;
+      }
+
+      /* Make table cells non-wrapping */
+      #deviceDataTable td > div {
+        display: inline-block;
+      }
+
+      .status-on {
+        background-color: #2ecc71;
+        color: white;
+      }
+
+      .status-off {
+        background-color: #e74c3c;
+        color: white;
+      }
+
+      .car-emoji {
+        display: inline-block;
+        font-size: 1.25rem;
+      }
+
+      /* status box css */
+
+      .status-box {
+  position: absolute;
+  top: 5px;
+  right: 500px;
+  background-color: white;
+  padding: 5px 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  display: flex;
+  gap: 2px;
+  font-size: 13px;
+  align-items: center;
+  transition: box-shadow 0.3s ease;
+}
+
+.status-box:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.status-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+.status-item:active {
+  background-color: rgba(0, 0, 0, 0.1);
+  transform: translateY(0);
+}
+
+.status-count {
+  font-weight: 600;
+  color: #fff;
+  background-color: #2c3e50;
+  padding: 2px 8px;
+  border-radius: 4px;
+  min-width: 28px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.status-count.updating {
+  transform: scale(1.1);
+  background-color: #34495e;
+}
+
+.status-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  vertical-align: middle;
+  transition: transform 0.2s ease;
+}
+
+/* Special handling for green icon */
+.status-icon[src*="green.png"] {
+  width: 32px;
+  height: 32px;
+  margin: -4px 0; /* Compensate for larger size */
+}
+
+/* Hover effect for icons */
+.status-item:hover .status-icon {
+  transform: scale(1.1);
+}
+
+/* Active state for icons */
+.status-item:active .status-icon {
+  transform: scale(0.95);
+}
+
+/* Additional styles for better visual hierarchy */
+.status-item.active {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.status-item.active .status-count {
+  background-color: #3498db;
+}
+
+  #selectAllCheckbox {
+    cursor: pointer;
+  }
+
+  .marker-cluster {
+    background-color: #fff;
+    border-radius: 50%;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  }
+  
+  .marker-cluster:hover {
+    transform: scale(1.1);
+  }
+      /* Button Styles */
+      .viewAllBtn {
+        position: absolute;
+        top: 7.5px;
+        right: 350px;
+        z-index: 1000;
+      }
+
+      .table-btn {
+        padding: 8px 16px;
+        background-color: #fff;
+        border: none;
+        border-radius: 6px;
+        color: #2c3e50;
+        font-size: 13px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+      }
+
+      .table-btn:hover {
+        background-color: #f8f9fa;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      /* Table Popup Styles */
+      .table-popup {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 2000;
+      }
+
+      .table-popup-content {
+        position: relative;
+        background-color: white;
+        margin: 50px auto;
+        padding: 20px;
+        width: 90%;
+        max-width: 1200px;
+        max-height: 80vh;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .table-popup-header{
+        display: flex;
+        justify-content: space-between;
+        margin: 0px 0 10px 0;
+      }
+
+      .table-close-btn {
+        position: absolute;
+        top: 0px;
+        right: 10px;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+        transition: color 0.3s ease;
+      }
+
+      .table-close-btn:hover {
+        color: #333;
+      }
+
+      .table-container {
+        overflow-x: auto;
+        max-height: calc(70vh - 100px);
+      }
+
+      #deviceDataTable {
+        width: 100%;
+        border-collapse: collapse; /* This removes spacing between cells */
+        background-color: white;
+      }
+
+      #deviceDataTable td {
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        font-size: 13px;
+        padding: 12px;
+        vertical-align: middle;
+      }
+
+      #deviceDataTable th,
+      #deviceDataTable td {
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        font-size: 13px;
+      }
+
+      #deviceDataTable th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: #2c3e50;
+        position: sticky;
+        top: 0;
+        text-align: center;
+        padding: 10px;
+      }
+
+      #deviceDataTable tr:hover {
+        background-color: #f8f9fa;
+      }
+
+      .status-cell {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+      }
+
+      .status-online {
+        background-color: #4ade80;
+        color: #14532d;
+      }
+
+      .status-offline {
+        background-color: #f87171;
+        color: #7f1d1d;
+      }
+
+      /* Add these styles to your CSS */
+      .view-trip-btn {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .view-trip-btn:hover {
+        background-color: #45a049;
+      }
+      .view-live-btn {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        padding: 6px 6px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+      }
+
+      .view-live-btn:hover {
+        background-color: #45a049;
+      }
+
+      /* Ensure the table column has enough width */
+      .table-container table th:last-child,
+      .table-container table td:last-child {
+        min-width: 120px;
+        text-align: center;
+      }
+
+      .button-two {
+        display: flex;
+      }
+
+      .distance-btn,
+      .nearby-btn {
+        padding: 4px 8px;
+        font-size: 11px;
+        /* min-width: 60px; */
+      }
+
+      #distance-value {
+        display: inline-block;
+      }
+
+      .distance-btn {
+        margin-top: 10px;
+        padding: 6px 12px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: background-color 0.3s;
+      }
+
+      .distance-btn:hover {
+        background-color: #45a049;
+      }
+
+      #distance-value {
+        min-width: 60px;
+      }
+
+      .button-container {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+      }
+
+      .nearby-btn {
+        padding: 6px 12px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: background-color 0.3s;
+      }
+
+      .nearby-btn:hover {
+        background-color: #2980b9;
+      }
+
+      .status {
+        display: flex;
+        margin-left: 5px;
+      }
+
+      .status b {
+        font-size: 10px;
+        margin-left: 2px;
+        display: flex;
+        align-items: center;
+        height: 100%;
+      }
+
+      .status-indicator {
+        display: inline-block;
+        padding: 1px 4px;
+        border-radius: 7px;
+        font-size: 8px;
+        font-weight: 500;
+        margin-left: 5px;
+        padding-top: 3px;
+        margin-bottom: 3px;
+        margin-top: 2px;
+      }
+
+      .title {
+        display: flex;
+        padding-bottom: auto;
+        padding-right: 10px;
+        justify-content: space-between;
+      }
+
+      .table-search {
+  position: relative;
+  margin: 0 30px 0 0;
+}
+
+.table-search-input {
+  width: 100%;
+  max-width: 300px;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #2c3e50;
+  transition: all 0.3s ease;
+}
+
+.table-search-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.table-search-input::placeholder {
+  color: #95a5a6;
+}
+
+.export-buttons {
+    margin: 10px 0;
+    display: flex;
+    gap: 10px;
+}
+
+.export-buttons button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    background: #34495e;
+    color: white;
+    transition: background 0.3s ease;
+}
+
+.export-buttons button:hover {
+    background: #2c3e50;
+}
+.group-header {
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.group-header:hover {
+    background-color: #34495e !important;
+}
+
+.deviceItem {
+    margin-left: 10px;
+}
+
+.group-checkbox {
+    width: 16px;
+    height: 16px;
+}
+
+.all-vehicles-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.all-vehicles-icon svg {
+    width: 100%;
+    height: 100%;
+    transition: transform 0.2s ease;
+}
+
+.status-item:hover .all-vehicles-icon svg {
+    transform: scale(1.1);
+}
+
+.all-status {
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+    padding-right: 15px;
+}
+
+.all-status:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.modal-content {
+    position: relative;
+    background-color: #fff;
+    margin: 15% auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.close {
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.2s;
+}
+
+.close:hover {
+    color: #333;
+}
+
+.modal-tabs {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.tab {
+    padding: 10px 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #666;
+    position: relative;
+    transition: color 0.2s;
+}
+
+.tab:hover {
+    color: #1a73e8;
+}
+
+.tab.active {
+    color: #1a73e8;
+}
+
+.tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #1a73e8;
+    animation: tabSlide 0.2s ease-out;
+}
+
+@keyframes tabSlide {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+.location-preview {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    transition: background-color 0.2s;
+}
+
+.location-preview:hover {
+    background-color: #f1f3f4;
+}
+
+.location-preview img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.copy-section {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#shareUrl {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: border-color 0.2s;
+}
+
+#shareUrl:focus {
+    outline: none;
+    border-color: #1a73e8;
+}
+
+#copyButton {
+    padding: 8px 16px;
+    background-color: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#copyButton:hover {
+    background-color: #1557b0;
+}
+
+.share-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.share-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 4px;
+}
+
+.share-button:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-2px);
+}
+
+.share-button:active {
+    transform: translateY(0);
+}
+
+.share-button img {
+    width: 24px;
+    height: 24px;
+    transition: transform 0.2s;
+}
+
+.share-button:hover img {
+    transform: scale(1.1);
+}
+
+/* Notification styles */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 24px;
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+    z-index: 2000;
+    animation: notificationSlideIn 0.3s ease-out;
+}
+
+@keyframes notificationSlideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification.success {
+    background-color: #4caf50;
+}
+
+.notification.error {
+    background-color: #f44336;
+}
+
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Navbar -->
+      <div id="navbar-container"></div>
+
+      <!-- Main Content -->
+      <div class="content">
+        <!-- Device List -->
+        <div id="deviceList">
+          <h3>Vehicle List</h3>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search Vehicle Here"
+          />
+          <div id="deviceContainer"></div>
+        </div>
+
+        <!-- Map Section -->
+        <div id="mapContainer">
+          <div class="refreshDropdown">
+            <select id="refreshRate">
+              <option value="5000">⟳ Refresh - 5 sec</option>
+              <option value="10000">⟳ Refresh - 10 sec</option>
+              <option value="20000">⟳ Refresh - 20 sec</option>
+              <option value="30000">⟳ Refresh - 30 sec</option>
+              <option value="60000" selected>⟳ Refresh - 1 minute</option>
+              <option value="300000">⟳ Refresh - 5 minute</option>
+              <option value="600000">⟳ Refresh - 10 minute</option>
+            </select>
+          </div>
+          <div id="map"></div>
+          <div id="customPopup" class="popup">
+            <span class="close-btn" onclick="hidePopup()">✖</span>
+            <div id="popupTitle" class="popup-title"></div>
+            <div id="popupContent"></div>
+          </div>
+        </div>
+        <div class="viewAllBtn">
+          <button onclick="showDeviceTable()" class="table-btn">
+            View All Vehicle
+          </button>
+        </div>
+
+        <!-- Add this new popup div for the table -->
+        <div id="tablePopup" class="table-popup">
+          <div class="table-popup-content">
+              <div class="table-popup-header">
+                  <h2>All Vehicles Status</h2>
+                  <div class="table-search">
+                      <input 
+                      type="text" 
+                      id="tableSearchInput" 
+                      placeholder="Search Vehicle name..." 
+                      class="table-search-input"
+                      >
+                  </div>
+              </div>
+              <span class="table-close-btn" onclick="hideDeviceTable()">✖</span>
+              <!-- Insert Export Buttons Here -->
+              <div class="export-buttons">
+                  <button onclick="copyDeviceTableToClipboard()">Copy</button>
+                  <button onclick="exportDeviceTableCSV()">CSV</button>
+                  <button onclick="exportDeviceTableExcel()">Excel</button>
+                  <button onclick="exportDeviceTablePDF()">PDF</button>
+                  <button onclick="printDeviceTable()">Print</button>
+                  <button onclick="saveDeviceTable()">Save</button>
+              </div>
+              <div class="table-container">
+                  <table id="deviceDataTable">
+                      <thead>
+                          <tr>
+                              <th>Vehicle Name</th>
+                              <th>Last Updated</th>
+                              <th>Status</th>
+                              <th>Battery</th>
+                              <th>Ac</th>
+                              <th>Gps</th>
+                              <th>Power</th>
+                              <th>Ignition</th>
+                              <th>Speed</th>
+                              <th>Hold Time</th>
+                              <th>Location</th>
+                              <th>Today's Trip</th>
+                              <th>Live Tracking</th>
+                              <th>Playback</th>
+                          </tr>
+                      </thead>
+                      <tbody id="deviceTableBody">
+                          <!-- Data will be populated here -->
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+      const olaMaps = new OlaMapsSDK.OlaMaps({
+        apiKey: "0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9",
+      });
+
+      const myMap = olaMaps.init({
+        style:
+          "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
+        container: "map",
+        center: [72.5714, 22.0225],
+        zoom: 6,
+      });
+
+      class MarkerClusterer {
+        constructor(map, options = {}) {
+          this.map = map;
+          this.markers = [];
+          this.clusters = [];
+          this.options = {
+            radius: options.radius || 500,
+            maxZoom: options.maxZoom || 14,
+            minPoints: options.minPoints || 2,
+          };
+
+          // Bind event handlers
+          this.map.on("zoom", () => this.updateClusters());
+          this.map.on("moveend", () => this.updateClusters());
+        }
+
+        // Add markers to the clusterer
+        addMarkers(markers) {
+          this.markers = markers;
+          this.updateClusters();
+        }
+
+        // Calculate clusters based on current zoom and viewport
+        updateClusters() {
+          // Clear existing clusters
+          this.clusters.forEach((cluster) => cluster.remove());
+          this.clusters = [];
+
+          if (this.map.getZoom() >= this.options.maxZoom) {
+            // Show individual markers at high zoom levels
+            this.markers.forEach((marker) => marker.addTo(this.map));
+            return;
+          }
+
+          // Group nearby markers
+          const groups = this.groupMarkers();
+
+          groups.forEach((group) => {
+            if (group.length >= this.options.minPoints) {
+              this.createCluster(group);
+            } else {
+              group.forEach((marker) => marker.addTo(this.map));
+            }
+          });
+        }
+
+        // Group markers based on proximity
+        groupMarkers() {
+          const groups = [];
+          const marked = new Set();
+
+          this.markers.forEach((marker, i) => {
+            if (marked.has(i)) return;
+
+            const group = [marker];
+            marked.add(i);
+
+            this.markers.forEach((otherMarker, j) => {
+              if (i !== j && !marked.has(j)) {
+                const distance = this.calculateDistance(
+                  marker.getLngLat(),
+                  otherMarker.getLngLat()
+                );
+
+                if (
+                  distance <=
+                  this.options.radius * Math.pow(2, -this.map.getZoom())
+                ) {
+                  group.push(otherMarker);
+                  marked.add(j);
+                }
+              }
+            });
+
+            groups.push(group);
+          });
+
+          return groups;
+        }
+
+        // Create a visual cluster representation
+        createCluster(markers) {
+          // Remove individual markers
+          markers.forEach((marker) => marker.remove());
+
+          // Calculate cluster center
+          const center = this.calculateClusterCenter(markers);
+
+          // Create cluster element
+          const clusterElement = document.createElement("div");
+          clusterElement.className = "marker-cluster";
+          clusterElement.style.cssText = getClusterStyle(markers.length);
+          clusterElement.addEventListener("mouseenter", () => {
+            // clusterElement.style.transform = 'scale(1.1)';
+          });
+
+          clusterElement.addEventListener("mouseleave", () => {
+            // clusterElement.style.transform = 'scale(1)';
+          });
+          clusterElement.innerHTML = markers.length;
+
+          // Add click handler to zoom in
+          clusterElement.addEventListener("click", () => {
+            this.map.flyTo({
+              center: center,
+              zoom: Math.min(this.map.getZoom() + 2, this.options.maxZoom),
+              speed: 1.5,
+            });
+          });
+
+          // Create and add cluster marker
+          const cluster = olaMaps
+            .addMarker({
+              element: clusterElement,
+              anchor: "center",
+            })
+            .setLngLat(center)
+            .addTo(this.map);
+
+          this.clusters.push(cluster);
+        }
+
+        // Calculate distance between two points
+        calculateDistance(lngLat1, lngLat2) {
+          const R = 6371; // Earth's radius in km
+          const dLat = ((lngLat2.lat - lngLat1.lat) * Math.PI) / 180;
+          const dLon = ((lngLat2.lng - lngLat1.lng) * Math.PI) / 180;
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos((lngLat1.lat * Math.PI) / 180) *
+              Math.cos((lngLat2.lat * Math.PI) / 180) *
+              Math.sin(dLon / 2) *
+              Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          return R * c;
+        }
+
+        // Calculate center point of a cluster
+        calculateClusterCenter(markers) {
+          const coords = markers.map((m) => m.getLngLat());
+          const center = coords.reduce(
+            (acc, curr) => ({
+              lng: acc.lng + curr.lng,
+              lat: acc.lat + curr.lat,
+            }),
+            { lng: 0, lat: 0 }
+          );
+
+          return {
+            lng: center.lng / coords.length,
+            lat: center.lat / coords.length,
+          };
+        }
+      }
+
+      // Initialize clusterer after map loads
+      const clusterer = new MarkerClusterer(myMap, {
+        radius: 5000,
+        maxZoom: 14,
+        minPoints: 2,
+      });
+
+      myMap.on("styleimagemissing", function (e) {
+        if (e.id === "pedestrian_polygon") {
+          myMap.addImage("pedestrian_polygon", new Image(1, 1));
+        }
+      });
+
+      let devices = [];
+      let markers = [];
+      const popup = document.getElementById("customPopup");
+      const popupTitle = document.getElementById("popupTitle");
+      const popupContent = document.getElementById("popupContent");
+      let currentMarker = null;
+      let refreshInterval = 60000;
+      let refreshTimer;
+      let selectedDevices = new Set();
+      let isInitialLoad = true;
+
+      function formatHoldTime(ms) {
+        const hours = Math.floor(ms / 3600000);
+        const minutes = Math.floor((ms % 3600000) / 60000);
+        const seconds = Math.floor((ms % 60000) / 1000);
+        return `${hours}hr ${minutes}min ${seconds}sec`;
+      }
+
+      async function updateLocation(deviceId, latlang) {
+        const locationCell = document.getElementById(`location-${deviceId}`);
+        if (!locationCell) return;
+
+        locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
+
+        try {
+          const location = await fetchLocation(latlang);
+          locationCell.innerHTML = location;
+        } catch (error) {
+          console.error("Error updating location:", error);
+          locationCell.innerHTML = "Error fetching location";
+        }
+      }
+
+      async function updateLocationPopup(deviceId, latlang) {
+        const locationCell = document.getElementById(
+          `location-popup-${deviceId}`
+        );
+        if (!locationCell) return;
+
+        locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
+
+        try {
+          const location = await fetchLocation(latlang);
+          locationCell.innerHTML = location;
+        } catch (error) {
+          console.error("Error updating location:", error);
+          locationCell.innerHTML = "Error fetching location";
+        }
+      }
+
+      async function fetchLocation(latlang) {
+        try {
+          // Check if latlang is valid
+          if (!latlang) return "Location not available";
+
+          const [lat, lng] = latlang
+            .split(",")
+            .map((coord) => parseFloat(coord));
+          if (isNaN(lat) || isNaN(lng)) return "Invalid coordinates";
+          const response = await fetch(
+            `${API}opr=getLoc&lat=${lat}&lang=${lng}`
+          );
+          const data = await response.json();
+          return data[0].location || "Location not available";
+        } catch (error) {
+          console.error("Error fetching location:", error);
+          return "Error fetching location";
+        }
+      }
+
+      function fetchDeviceData() {
+        const mid = localStorage.getItem("mid");
+        fetch(`${API}opr=getVehileByMid&mid=${mid}`)
+          .then((response) => response.json())
+          .then((data) => {
+            devices = data.map((item) => {
+              const coordinates = item.latlang
+                ? item.latlang
+                    .split(",")
+                    .map((coord) => parseFloat(coord))
+                    .reverse()
+                : [0, 0];
+
+              if (
+                !item.latlang ||
+                isNaN(coordinates[0]) ||
+                isNaN(coordinates[1])
+              ) {
+                console.warn(
+                  `Vehicle ${item.dname} has invalid or missing 'latlang' data.`
+                );
+              }
+
+              const currentDate = new Date();
+              const deviceDate = new Date(item.ddate);
+              const hoursDifference =
+                (currentDate - deviceDate) / (1000 * 60 * 60);
+
+              const status = hoursDifference > 6 ? "Offline" : "Online";
+
+              return {
+                name: item.dname,
+                deviceId: item.did,
+                coordinates: coordinates,
+                speed: parseFloat(item.speed),
+                angle: parseFloat(item.angle) || 0,
+                status: status,
+                date: item.ddate,
+                dateNew: item.ddatenew,
+                location: item.location,
+                holdtime: formatHoldTime(parseInt(item.holdtime)),
+                battery: item.Battery,
+                ignition: item.ignition,
+                ac: item.ac,
+                gps: item.gps,
+                power: item.power,
+                latlang: item.latlang,
+                devicegroup: item.devicegroup,
+                locationflag: item.locationflag,
+              };
+            });
+            if (isInitialLoad) {
+                initializeSelectedDevices(devices);
+                isInitialLoad = false; // Set flag to false after initial load
+            }
+            createDeviceList();
+            initializeMarkers();
+            updateStatusCounts();
+          })
+          .catch((error) => console.error("Error fetching data:", error));
+      }
+
+      function initializeSelectedDevices(devices) {
+    selectedDevices.clear();  // Clear existing selections
+    devices.forEach(device => {
+        selectedDevices.add(device.deviceId);
+    });
+}
+
+function createDeviceList() {
+    const deviceContainer = $("#deviceContainer");
+    deviceContainer.empty();
+
+    // Add "Select All" checkbox at the top
+    if (isInitialLoad) {
+        document.getElementById('selectAllCheckbox').checked = true;
+    }
+
+    // Group devices by their devicegroup
+    const deviceGroups = {};
+    devices.forEach(device => {
+        const groupName = device.devicegroup || 'Ungrouped';
+        if (!deviceGroups[groupName]) {
+            deviceGroups[groupName] = [];
+        }
+        deviceGroups[groupName].push(device);
+    });
+
+    // Create HTML for each group
+    Object.entries(deviceGroups).forEach(([groupName, groupDevices]) => {
+        // Create group header with checkbox
+        const groupHeader = $(`
+            <div class="group-header" style="
+                background-color: #2c3e50; 
+                color: white;
+                padding: 8px 12px;
+                margin: 10px 0 5px 0;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            ">
+                <input type="checkbox" class="group-checkbox" 
+                    data-group="${groupName}" 
+                    ${isInitialLoad ? 'checked' : ''}
+                    style="cursor: pointer;"
+                />
+                <span style="flex: 1;">${groupName}</span>
+            </div>
+        `);
+
+        // Add group checkbox handler
+        const groupCheckbox = groupHeader.find('.group-checkbox');
+        groupCheckbox.on('change', function() {
+            const isChecked = this.checked;
+            const groupDeviceCheckboxes = deviceContainer
+                .find(`[data-group="${groupName}"]`)
+                .find('.deviceCheckbox');
+            
+            groupDeviceCheckboxes.each(function() {
+                this.checked = isChecked;
+                const deviceIndex = parseInt(this.dataset.index);
+                const device = devices[deviceIndex];
+                
+                if (isChecked) {
+                    selectedDevices.add(device.deviceId);
+                } else {
+                    selectedDevices.delete(device.deviceId);
+                }
+            });
+            
+            // Update main "Select All" checkbox
+            const allChecked = $('.deviceCheckbox').toArray().every(cb => cb.checked);
+            $('#selectAllCheckbox').prop('checked', allChecked);
+            
+            filterMarkers();
+        });
+
+        deviceContainer.append(groupHeader);
+
+        // Create container for group's devices
+        const groupContainer = $(`<div data-group="${groupName}"></div>`);
+
+        // Add devices in this group
+        groupDevices.forEach((device, index) => {
+            const isChecked = isInitialLoad || selectedDevices.has(device.deviceId);
+            const item = $(`
+                <div class="deviceItem" id="device-${device.name.replace(/\s+/g, "-")}" style="margin-left: 10px;">
+                    <input type="checkbox" class="deviceCheckbox" data-index="${devices.indexOf(device)}" ${isChecked ? 'checked' : ''} />
+                    <span class="car-emoji">${getCarEmoji(device)}</span>
+                    <span>${device.name}</span>
+                </div>
+            `);
+
+            // Attach event listener to the checkbox
+            const checkbox = item.find('.deviceCheckbox')[0];
+            checkbox.addEventListener('change', function(e) {
+                handleCheckboxChange(e);
+                
+                // Update group checkbox state
+                const groupDevices = $(`[data-group="${groupName}"] .deviceCheckbox`);
+                const allGroupChecked = groupDevices.toArray().every(cb => cb.checked);
+                groupHeader.find('.group-checkbox').prop('checked', allGroupChecked);
+            });
+
+            item.on("click", function(e) {
+                if (!e.target.classList.contains('deviceCheckbox')) {
+                    if (currentMarker && currentMarker === markers[devices.indexOf(device)]) {
+                        hidePopup();
+                    } else {
+                        showPopup(devices.indexOf(device), markers[devices.indexOf(device)]);
+                        myMap.flyTo({
+                            center: device.coordinates,
+                            zoom: 14,
+                            speed: 1.5
+                        });
+                    }
+                }
+            });
+
+            groupContainer.append(item);
+        });
+
+        deviceContainer.append(groupContainer);
+    });
+
+    // Update main "Select All" checkbox behavior
+    $('#selectAllCheckbox').off('change').on('change', function() {
+        const isChecked = this.checked;
+        $('.deviceCheckbox, .group-checkbox').prop('checked', isChecked);
+        
+        if (isChecked) {
+            devices.forEach(device => selectedDevices.add(device.deviceId));
+        } else {
+            selectedDevices.clear();
+        }
+        
+        filterMarkers();
+    });
+}
+
+function getCarEmoji(device) {
+        // Convert ignition string to boolean if necessary
+        const ignitionStatus =
+          typeof device.ignition === "string"
+            ? device.ignition.toLowerCase() === "true"
+            : Boolean(device.ignition);
+
+        // Get current date and device date for comparison
+        const currentDate = new Date();
+        const deviceDate = new Date(device.date);
+        const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+
+        // Create image element with common styles
+        const imgStyle =
+          "width: 20px; height: 20px; object-fit: contain; vertical-align: middle;";
+        // Special style for green image with vertical alignment adjustment
+        const imgStyleGreen =
+          "width: 30px; height: 30px; object-fit: contain; vertical-align: middle; margin: -10px 0;";
+
+        if (hoursDifference > 2) {
+          // Offline - Black Car
+          return `<img src="/deviceTracking/images/blackcar1.png" style="${imgStyle}" alt="Offline"/>`;
+        } else if (!ignitionStatus) {
+          // Stopped - Red Car
+          return `<img src="/images/icon/red/car0.png" style="${imgStyle}" alt="Stopped"/>`;
+        } else if (ignitionStatus && device.speed > 0) {
+          // Moving - Green Car
+          return `<img src="/deviceTracking/images/green.png" style="${imgStyleGreen}" alt="Moving"/>`;
+        } else if (ignitionStatus && device.speed === 0) {
+          // Idle - Yellow Car
+          return `<img src="/deviceTracking/images/yellow.png" style="${imgStyle}" alt="Idle"/>`;
+        } else {
+          // Default - Black Car
+          return `<img src="/deviceTracking/images/blackcar1.png" style="${imgStyle}" alt="Default"/>`;
+        }
+      }
+
+      function hidePopup() {
+        popup.style.display = "none";
+        currentMarker = null;
+      }
+
+      function filterDeviceList() {
+        const searchValue = $("#searchInput").val().toLowerCase();
+        $(".deviceItem").each(function () {
+          const deviceName = $(this).text().toLowerCase();
+          $(this).toggle(deviceName.includes(searchValue));
+        });
+      }
+
+      function formatTimeDifference(minutes) {
+        if (minutes < 1) {
+          return "just now";
+        }
+        if (minutes < 60) {
+          return `${minutes} min ago`;
+        }
+        const hours = Math.floor(minutes / 60);
+        const remainingMins = minutes % 60;
+        if (hours < 24) {
+          return `${hours}h ${remainingMins}m ago`;
+        }
+        const days = Math.floor(hours / 24);
+        const remainingHours = hours % 24;
+        return `${days}d ${remainingHours}h ago`;
+      }
+
+      function showPopup(index, marker) {
+        currentMarker = marker;
+        const device = devices[index];
+
+        popupTitle.innerHTML = `<div class="title">${
+          device.name
+          }<div class="status"><b>GPS:</b> <span class="status-indicator ${
+          device.gps == true ? "status-on" : "status-off" }">
+              ${device.gps == true ? "ON" : "OFF"}
+            </span><br />
+            <b>Engine:</b> <span class="status-indicator ${
+                device.ignition == "true" ? "status-on" : "status-off" }">
+              ${device.ignition == "true" ? "ON" : "OFF"}
+            </span><br />
+            <b>Power:</b> <span class="status-indicator ${
+                device.power === "true" ? "status-on" : "status-off" }">
+              ${device.power === "true" ? "ON" : "OFF"}
+            </span><br />
+          </div>
+        </div>`;
+        const currentDate = new Date();
+        const deviceDate = new Date(device.date);
+        const minDifference = Math.floor(
+        (currentDate - deviceDate) / (1000 * 60)
+        );
+        const timeAgo = formatTimeDifference(minDifference);
+
+        popupContent.innerHTML = `
+        <b>Date:</b> ${
+        device.dateNew
+        } <span style="color: #666; font-size: 12px;">(${timeAgo})</span><br />
+        <b>Speed:</b> ${device.speed} km/h <br />
+        <b>Hold Time:</b> ${device.holdtime} <br />
+        <b>Status:</b> <span class="status-indicator-status ${
+      device.status == "Online" ? "status-on" : "status-off" }">${device.status}</span> <br />
+        <b>Battery:</b> ${device.battery}V <br />
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <b>Location:</b> <span id="location-popup-${
+          device.deviceId
+        }">${device.locationflag === "true" ? device.location : `<button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" style="background: none; border: none; padding: 0; color: #3498db; text-decoration: underline; cursor: pointer; font-size: 11px;">Get Location</button>`}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <b>Distance:</b> <span id="distance-value">0 km</span>
+        </div>
+        <div class="button-container" style="margin-top: 5px; gap: 5px;">
+          <button onclick="updateDistance('${
+          device.deviceId
+        }')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 8px;">Get Distance</button>
+
+          <button onclick="viewNearbyVehicles('${device.deviceId}', ${
+          device.coordinates[1]
+        }, ${
+          device.coordinates[0]
+        })" class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">View Nearby</button>
+          <button onclick="shareLocation(${
+          device.coordinates[1]
+        }, ${
+          device.coordinates[0]
+        })" class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">Share Location</button>
+        <button onclick="addPOIForDevice('${device.name}', ${device.coordinates[1]}, ${device.coordinates[0]})" 
+            class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">Add POI</button>
+        <div id="shareModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Share Location</h2>
+            <span class="close">&times;</span>
+        </div>
+        <div class="copy-section">
+            <input type="text" id="shareUrl" readonly>
+            <button id="copyButton">Copy Link</button>
+        </div>
+        <div class="share-options">
+            <button onclick="shareVia('whatsapp')" class="share-button">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
+                WhatsApp
+            </button>
+            <button onclick="shareVia('twitter')" class="share-button">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6f/Logo_of_Twitter.svg" alt="Twitter">
+                Twitter
+            </button>
+            <button onclick="shareVia('email')" class="share-button">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Email">
+                Email
+            </button>
+        </div>
+    </div>
+</div>
+        `;
+        popup.style.display = "block";
+        if (marker) updatePopupPosition(marker);
+      }
+
+      function updatePopupPosition(marker) {
+        if (!marker) return;
+        const coordinates = marker.getLngLat();
+        const mapPos = myMap.project(coordinates);
+        popup.style.left = `${mapPos.x}px`;
+        popup.style.top = `${mapPos.y - 50}px`;
+      }
+
+      async function updateDistance(deviceId) {
+        const distanceSpan = document.getElementById("distance-value");
+        if (!distanceSpan) return; // Guard clause in case element isn't found
+
+        // Show loading state
+        distanceSpan.innerHTML = '<span style="color: #666;">Loading...</span>';
+
+        try {
+          const distance = await fetchDistance(deviceId);
+          distanceSpan.innerHTML = `${distance} km`;
+        } catch (error) {
+          console.error("Error updating distance:", error);
+          distanceSpan.innerHTML = "0 km";
+        }
+      }
+
+      function initializeMarkers() {
+  // Remove existing markers
+  markers.forEach(marker => marker.remove());
+  markers = [];
+
+  devices.forEach((device, index) => {
+    if (device.coordinates[0] !== 0 || device.coordinates[1] !== 0) {
+      const customMarker = document.createElement('div');
+      customMarker.classList.add('customMarkerClass');
+
+      const carImage = document.createElement('img');
+      const currentDate = new Date();
+      const deviceDate = new Date(device.date);
+      const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+      const ignitionStatus = typeof device.ignition === 'string'
+        ? device.ignition.toLowerCase() === 'true'
+        : Boolean(device.ignition);
+
+      // Set marker icon based on status
+      if (hoursDifference > 2) {
+        carImage.src = '/deviceTracking/images/blackcar1.png';
+        carImage.style.width = '20px';
+        carImage.style.height = '27px';
+      } else if (!ignitionStatus) {
+        carImage.src = '/images/icon/red/car0.png';
+        carImage.style.width = '27px';
+        carImage.style.height = '27px';
+      } else if (ignitionStatus && device.speed > 0) {
+        carImage.src = '/deviceTracking/images/green.png';
+        carImage.style.width = '20px';
+        carImage.style.height = '40px';
+      } else if (ignitionStatus && device.speed === 0) {
+        carImage.src = '/deviceTracking/images/yellow.png';
+      } else {
+        carImage.src = '/deviceTracking/images/blackcar1.png';
+        carImage.style.width = '20px';
+        carImage.style.height = '27px';
+      }
+
+      carImage.style.transform = `rotate(${device.angle || 0}deg)`;
+      carImage.style.transformOrigin = 'center center';
+
+      customMarker.appendChild(carImage);
+
+      const marker = olaMaps
+        .addMarker({
+          element: customMarker,
+          offset: [0, -20],
+          anchor: 'center',
+        })
+        .setLngLat(device.coordinates);
+
+      marker.getElement().addEventListener('click', () => showPopup(index, marker));
+      markers.push(marker);
+    }
+  });
+
+  // Add only checked markers to clusterer
+  const visibleMarkers = markers.filter((marker, index) => {
+    const checkbox = document.querySelector(`.deviceCheckbox[data-index="${index}"]`);
+    return checkbox && checkbox.checked;
+  });
+  clusterer.addMarkers(visibleMarkers);
+}
+
+function createMarkerElement(device) {
+        const customMarker = document.createElement("div");
+        customMarker.classList.add("customMarkerClass");
+        // ... rest of your existing marker creation code ...
+        return customMarker;
+      }
+
+      function filterMarkers() {
+  // Create array of visible markers based on checkbox state
+  const visibleMarkers = markers.filter((marker, index) => {
+    const checkbox = document.querySelector(`.deviceCheckbox[data-index="${index}"]`);
+    return checkbox && checkbox.checked;
+  });
+
+  // Remove all markers from the map
+  markers.forEach(marker => marker.remove());
+
+  // Add only visible markers back to the map
+  visibleMarkers.forEach(marker => marker.addTo(myMap));
+
+  // Update clusters with only visible markers
+  clusterer.addMarkers(visibleMarkers);
+}
+
+      function setRefreshInterval() {
+        clearInterval(refreshTimer);
+        refreshTimer = setInterval(() => fetchDeviceData(), refreshInterval);
+      }
+
+      $(document).ready(function () {
+        $("#navbar-container").load("../navbarola.html", function () {
+          console.log("Navbar loaded successfully!");
+        });
+
+        $("#searchInput").on("input", filterDeviceList);
+        $(document).on("change", ".deviceCheckbox", filterMarkers);
+
+        if (performance.navigation.type === 1) { // Check if it's a manual refresh
+        isInitialLoad = true;
+        selectedDevices.clear();
+    }
+
+        myMap.on("move", () => {
+          if (popup.style.display === "block" && currentMarker) {
+            updatePopupPosition(currentMarker);
+          }
+        });
+
+        $("#refreshRate").on("change", function () {
+          refreshInterval = parseInt($(this).val());
+          setRefreshInterval();
+        });
+
+        fetchDeviceData();
+        setRefreshInterval();
+
+        // Check if 'mid' is available in localStorage otherwise ri-direct login page
+        if (!localStorage.getItem("mid")) {
+          // Redirect to login page if 'mid' is not found
+          window.location.href = "index.html";
+        }
+      });
+
+      //status box
+
+      function animateCount(element, start, end, duration = 1000) {
+        let startTimestamp = null;
+        const step = (timestamp) => {
+          if (!startTimestamp) startTimestamp = timestamp;
+          const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+          const currentCount = Math.floor(progress * (end - start) + start);
+          element.textContent = currentCount;
+
+          if (progress < 1) {
+            window.requestAnimationFrame(step);
+          } else {
+            element.textContent = end;
+          }
+        };
+        window.requestAnimationFrame(step);
+      }
+
+      // Add this HTML right after your navbar-container div
+      document.getElementById("navbar-container").insertAdjacentHTML(
+        "afterend",
+        `
+          <div class="status-box">
+              <div class="status-item all-status">
+                  <div class="status-icon all-vehicles-icon">
+                    <!-- Insert SVG code here -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                      <g fill="#2c3e50">
+                        <path d="M4,12 L8,12 L8,10 L9,8 L15,8 L16,10 L16,12 L20,12 L20,15 L18,15 L18,17 L8,17 L8,15 L4,15 Z" opacity="0.3"/>
+                        <path d="M2,10 L6,10 L6,8 L7,6 L13,6 L14,8 L14,10 L18,10 L18,13 L16,13 L16,15 L6,15 L6,13 L2,13 Z" opacity="0.6"/>
+                        <path d="M0,8 L4,8 L4,6 L5,4 L11,4 L12,6 L12,8 L16,8 L16,11 L14,11 L14,13 L4,13 L4,11 L0,11 Z"/>
+                        <circle cx="5" cy="12" r="1.5"/>
+                        <circle cx="15" cy="12" r="1.5"/>
+                      </g>
+                    </svg>
+                </div>
+                  <span class="status-count" id="allCount">0</span>
+              </div>
+              <div class="status-item">
+                  <img src="/deviceTracking/images/green.png" class="status-icon" alt="Moving" />
+                  <span class="status-count" id="movingCount">0</span>
+              </div>
+              <div class="status-item">
+                  <img src="/images/icon/red/car0.png" class="status-icon" alt="Stopped" />
+                  <span class="status-count" id="stoppedCount">0</span>
+              </div>
+              <div class="status-item">
+                  <img src="/deviceTracking/images/yellow.png" class="status-icon" alt="Idle" />
+                  <span class="status-count" id="idleCount">0</span>
+              </div>
+              <div class="status-item">
+                  <img src="/deviceTracking/images/blackcar1.png" class="status-icon" alt="Offline" />
+                  <span class="status-count" id="offlineCount">0</span>
+              </div>
+          </div>
+      `
+      );
+
+      // Add the counting function
+      function updateStatusCounts() {
+        const counts = {
+          all: devices.length,
+          moving: 0,
+          stopped: 0,
+          idle: 0,
+          offline: 0,
+        };
+
+        devices.forEach((device) => {
+          const currentDate = new Date();
+          const deviceDate = new Date(device.date);
+          const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+          const ignitionStatus =
+            typeof device.ignition === "string"
+              ? device.ignition.toLowerCase() === "true"
+              : Boolean(device.ignition);
+
+          if (hoursDifference > 2) {
+            counts.offline++;
+          } else if (!ignitionStatus) {
+            counts.stopped++;
+          } else if (ignitionStatus && device.speed > 0) {
+            counts.moving++;
+          } else if (ignitionStatus && device.speed === 0) {
+            counts.idle++;
+          } else {
+            counts.offline++;
+          }
+        });
+
+        // Animate each count
+        ['all', "moving", "stopped", "idle", "offline"].forEach((status) => {
+          const element = document.getElementById(`${status}Count`);
+          if (element) {
+            const currentCount = parseInt(element.textContent) || 0;
+            const newCount = counts[status];
+
+            if (currentCount !== newCount) {
+              element.classList.add("updating");
+              animateCount(element, currentCount, newCount, 500);
+
+              // Remove the scaling effect after animation
+              setTimeout(() => {
+                element.classList.remove("updating");
+              }, 500);
+            }
+          }
+        });
+      }
+
+      function showDeviceTable() {
+    const tablePopup = document.getElementById("tablePopup");
+    const tableBody = document.getElementById("deviceTableBody");
+    tableBody.innerHTML = "";
+
+    // First, create all rows
+    const deviceRows = devices.map(device => {
+        const row = document.createElement("tr");
+        const statusClass = device.status === "Online" ? "status-online" : "status-offline";
+
+        row.innerHTML = `
+            <td>${device.name}</td>
+            <td>${device.dateNew}</td>
+            <td><span class="status-cell ${statusClass}">${device.status}</span></td>
+            <td>${device.battery}V</td>
+            <td><span class="status-cell"><span class="status-indicator-list ${device.ac == "true" ? "status-on" : "status-off"}">${device.ac === "true" ? "On" : "Off"}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${device.gps === true ? "status-on" : "status-off"}">${device.gps === true ? "On" : "Off"}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${device.power == "true" ? "status-on" : "status-off"}">${device.power === "true" ? "On" : "Off"}</span></span></td>
+            <td><span class="status-cell"><span class="status-indicator-list ${device.ignition == "true" ? "status-on" : "status-off"}">${device.ignition === "true" ? "On" : "Off"}</span></span></td>
+            <td>${device.speed} km/h</td>
+            <td>${device.holdtime}</td>
+            <td id="location-${device.deviceId}">
+                ${device.locationflag === "true" ? device.location : `<button onclick="updateLocation('${device.deviceId}', '${device.latlang}')" class="distance-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+                    <i class="fas fa-map-marker-alt" style="margin-right: 0"></i>
+                </button>`}
+            </td>
+            <td>
+                <button onclick="viewTodayTrip('${device.name}')" class="view-trip-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+                    <i class="fas fa-route"></i>
+                </button>
+            </td>
+            <td>
+                <button onclick="viewLiveTracking('${device.name}')" class="view-live-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+                    <i class="fas fa-play-circle" style="margin-right: 0"></i>
+                </button>
+            </td>
+            <td>
+                <button onclick="viewPlaybackTrip('${device.deviceId}')" class="view-live-btn" style="margin: 0; font-size: 11px; padding: 4px 4px; min-width: 40px;">
+                    <i class="fas fa-history"></i>
+                </button>
+            </td>
+        `;
+        return row;
+    });
+
+    // Add all rows initially
+    deviceRows.forEach(row => tableBody.appendChild(row));
+    tablePopup.style.display = "block";
+
+    // Add search functionality
+    const searchInput = document.getElementById("tableSearchInput");
+    searchInput.value = ""; // Clear search input when opening table
+
+    searchInput.addEventListener("input", function() {
+        const searchTerm = this.value.toLowerCase();
+        
+        deviceRows.forEach(row => {
+            const deviceName = row.cells[0].textContent.toLowerCase();
+            row.style.display = deviceName.includes(searchTerm) ? "" : "none";
+        });
+    });
+}
+
+
+      function hideDeviceTable() {
+  document.getElementById("tablePopup").style.display = "none";
+  document.getElementById("tableSearchInput").value = ""; // Clear search when closing
+}
+      // Close popup when clicking outside
+      document
+        .getElementById("tablePopup")
+        .addEventListener("click", function (event) {
+          if (event.target === this) {
+            hideDeviceTable();
+          }
+        });
+
+      // Add this function to handle the redirection
+      function viewTodayTrip(deviceName) {
+        // Get today's date
+        const today = new Date();
+        const startDate = new Date(today);
+        const endDate = new Date(today);
+
+        // Format dates for URL parameters
+        function formatDate(date) {
+          return date.toISOString().split("T")[0];
+        }
+
+        // Construct URL with parameters
+        const params = new URLSearchParams({
+          device: deviceName,
+          from: formatDate(startDate),
+          to: formatDate(endDate),
+        });
+
+        // Redirect to playback page with parameters
+        window.open(`/drawable/drawableplayback.html?${params.toString()}`);
+      }
+
+      function viewPlaybackTrip(deviceName) {
+        // Get today's date
+        const today = new Date();
+        const startDate = new Date(today);
+        const endDate = new Date(today);
+
+        // Format dates for URL parameters
+        function formatDate(date) {
+          return date.toISOString().split("T")[0];
+        }
+
+        // Construct URL with parameters
+        const params = new URLSearchParams({
+          device: deviceName,
+          from: formatDate(startDate),
+          to: formatDate(endDate),
+        });
+
+        // Redirect to playback page with parameters
+        window.open(`/playback/playbackola.html?${params.toString()}`);
+      }
+
+
+      function viewLiveTracking(deviceName) {
+        // Construct URL with parameters
+        const params = new URLSearchParams({
+          device: deviceName,
+        });
+
+        // Redirect to playback page with parameters
+        window.open(`/livetracking/livetrackingola.html?${params.toString()}`)
+      }
+
+      async function fetchDistance(deviceId) {
+        // Get today's date
+        const today = new Date();
+        const formattedDate = today.toISOString().split("T")[0];
+
+        try {
+          const response = await fetch(
+            `${API}opr=fleetsummaryreport&fromdate=${formattedDate} 00:00&todate=${formattedDate} 23:59&did=${deviceId}`
+          );
+          const data = await response.json();
+
+          // Get the distance from the response
+          if (data && data.length > 0) {
+            return data[0].distance || "0";
+          }
+          return "0";
+        } catch (error) {
+          console.error("Error fetching distance:", error);
+          return "0";
+        }
+      }
+
+      function viewNearbyVehicles(deviceId, lat, lng) {
+        // Default radius is 12 km - can be modified as needed
+        const radius = 12;
+        const params = new URLSearchParams({
+          deviceId: deviceId,
+          lat: lat,
+          lng: lng,
+          radius: radius,
+        });
+        window.open(`/viewnearby/viewnearby.html?${params.toString()}`);
+      }
+
+      let currentLat, currentLng;
+
+      function shareLocation(lat, lng) {
+    currentLat = lat;
+    currentLng = lng;
+    
+    // Get modal elements
+    const modal = document.getElementById('shareModal');
+    const shareUrl = document.getElementById('shareUrl');
+    const copyButton = document.getElementById('copyButton');
+    
+    // Set URL
+    const url = `https://www.google.com/maps?q=${lat},${lng}`;
+    shareUrl.value = url;
+    
+    // Show modal
+    modal.style.display = 'block';
+
+    // Copy button click handler
+    copyButton.onclick = async function() {
+        try {
+            await navigator.clipboard.writeText(url);
+            // Show success notification
+            showNotification('Link copied to clipboard!', 'success');
+        } catch (err) {
+            console.error('Failed to copy:', err);
+            // Show error notification
+            showNotification('Failed to copy link', 'error');
+        }
+    };
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    };
+
+    // Close button functionality
+    const closeBtn = modal.querySelector('.close');
+    if (closeBtn) {
+        closeBtn.onclick = function() {
+            modal.style.display = 'none';
+        };
+    }
+}
+
+// Add notification function
+function showNotification(message, type) {
+    // Remove existing notification if any
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+
+    // Add to document
+    document.body.appendChild(notification);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// Share via different platforms
+function shareVia(platform) {
+    const url = `https://www.google.com/maps?q=${currentLat},${currentLng}`;
+    const encodedUrl = encodeURIComponent(url);
+
+    switch (platform) {
+        case 'whatsapp':
+            window.open(`https://web.whatsapp.com/send?text=${encodedUrl}`);
+            break;
+        case 'twitter':
+            window.open(`https://twitter.com/intent/tweet?url=${encodedUrl}`, '_blank');
+            break;
+        case 'email':
+            window.open(`mailto:?body=${encodedUrl}`, '_blank');
+            break;
+    }
+}
+
+// Tab switching functionality
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+    });
+});
+
+      // Create a source for the clustered data
+
+      // Add a layer for clusters
+      // const clusterLayer = olaMaps.layer.create({
+      //   id: 'device-clusters',
+      //   type: 'circle',
+      //   source: clusterSource,
+      //   cluster: true,
+      //   clusterOptions: clusterOptions,
+      //   paint: {
+      //     'circle-color': [
+      //       'case',
+      //       ['>=', ['get', 'point_count'], 100], '#f28cb1', // Large clusters
+      //       ['>=', ['get', 'point_count'], 20], '#f1f075',  // Medium clusters
+      //       '#51bbd6' // Small clusters
+      //     ],
+      //     'circle-radius': [
+      //       'case',
+      //       ['>=', ['get', 'point_count'], 100], 40,  // Large clusters
+      //       ['>=', ['get', 'point_count'], 20], 30,   // Medium clusters
+      //       20 // Small clusters
+      //     ]
+      //   }
+      // });
+
+      // myMap.addLayer(clusterLayer);
+
+      // myMap.addLayer({
+      //   id: 'cluster-count',
+      //   type: 'symbol',
+      //   source: 'clusters',
+      //   filter: ['has', 'point_count'],
+      //   layout: {
+      //     'text-field': '{point_count_abbreviated}',
+      //     'text-font': ['Arial Unicode MS Bold'],
+      //     'text-size': 12
+      //   },
+      //   paint: {
+      //     'text-color': '#ffffff'
+      //   }
+      // });
+
+      myMap.on("click", "device-clusters", (e) => {
+        const features = e.features;
+        if (!features) return;
+
+        const clusterId = features[0].properties.cluster_id;
+        const zoom = Math.max(myMap.getZoom() + 2, myMap.getMaxZoom());
+
+        myMap.flyTo({
+          center: features[0].geometry.coordinates,
+          zoom: zoom,
+          speed: 1.5,
+        });
+      });
+
+      // Add click handlers for clusters
+      // myMap.on('click', 'clusters', (e) => {
+      //   const features = myMap.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+      //   const clusterId = features[0].properties.cluster_id;
+
+      //   myMap.getSource('clusters').getClusterExpansionZoom(
+      //     clusterId,
+      //     (err, zoom) => {
+      //       if (err) return;
+
+      //       myMap.easeTo({
+      //         center: features[0].geometry.coordinates,
+      //         zoom: zoom
+      //       });
+      //     }
+      //   );
+      // });
+
+      // Change cursor on hover
+      myMap.on("mouseenter", "device-clusters", () => {
+        myMap.getCanvas().style.cursor = "pointer";
+      });
+
+      myMap.on("mouseleave", "device-clusters", () => {
+        myMap.getCanvas().style.cursor = "";
+      });
+
+      function getClusterStyle(count) {
+        let backgroundColor;
+        let size;
+
+        if (count >= 100) {
+          backgroundColor = "rgba(241, 128, 23, 0.9)"; // Orange for large clusters
+          size = "50px";
+        } else if (count >= 50) {
+          backgroundColor = "rgba(240, 52, 52, 0.9)"; // Red for medium-large clusters
+          size = "45px";
+        } else if (count >= 20) {
+          backgroundColor = "rgba(156, 39, 176, 0.9)"; // Purple for medium clusters
+          size = "40px";
+        } else if (count >= 10) {
+          backgroundColor = "rgba(33, 150, 243, 0.9)"; // Blue for small-medium clusters
+          size = "35px";
+        } else {
+          backgroundColor = "rgba(76, 175, 80, 0.9)"; // Green for small clusters
+          size = "30px";
+        }
+
+        return `
+    background-color: ${backgroundColor};
+    color: white;
+    border-radius: 50%;
+    width: ${size};
+    height: ${size};
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: ${count >= 100 ? "16px" : "14px"};
+    border: 2px solid white;
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    cursor: pointer;
+  `;
+      }
+
+
+      const deviceListHeader = document.querySelector('#deviceList h3');
+deviceListHeader.insertAdjacentHTML('afterend', `
+  <div class="deviceItem" style="margin-bottom: 10px;">
+    <input type="checkbox" id="selectAllCheckbox" checked />
+    <span style="margin-left: 10px;">Select All</span>
+  </div>
+`);
+
+// Function to copy the device table to clipboard using modern API
+async function copyDeviceTableToClipboard() {
+    const table = document.getElementById('deviceDataTable');
+    if (!table) {
+        alert('Table not found!');
+        return;
+    }
+
+    // Extract text content from table
+    let tableText = '';
+    const rows = table.querySelectorAll('tr');
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('th, td');
+        const cellTexts = Array.from(cells).map(cell => cell.textContent.trim());
+        tableText += cellTexts.join('\t') + '\n';
+    });
+
+    try {
+        await navigator.clipboard.writeText(tableText);
+        alert('Table copied to clipboard!');
+    } catch (err) {
+        console.error('Failed to copy table:', err);
+        alert('Failed to copy table.');
+    }
+}
+
+// Function to export the device table as CSV
+function exportDeviceTableCSV() {
+    const table = document.getElementById('deviceDataTable');
+    if (!table) {
+        alert('Table not found!');
+        return;
+    }
+
+    const rows = table.querySelectorAll('tr');
+    const csv = [];
+    rows.forEach(row => {
+        const rowData = [];
+        row.querySelectorAll('th, td').forEach(cell => {
+            const cellText = cell.textContent.replace(/"/g, '""');
+            rowData.push(`"${cellText}"`);
+        });
+        csv.push(rowData.join(','));
+    });
+    const csvContent = csv.join('\n');
+    downloadFile(csvContent, 'device_status_table.csv', 'text/csv');
+}
+
+// Function to export the device table as Excel
+function exportDeviceTableExcel() {
+    const table = document.getElementById('deviceDataTable');
+    if (!table) {
+        alert('Table not found!');
+        return;
+    }
+
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Device Status" });
+    XLSX.writeFile(wb, 'device_status_table.xlsx');
+}
+
+// Function to export the device table as PDF
+async function exportDeviceTablePDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4');
+
+    const table = document.getElementById('deviceDataTable');
+    if (!table) {
+        alert('Table not found!');
+        return;
+    }
+
+    // Add title
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.text("Device Status Table", doc.internal.pageSize.width / 2, 15, { align: 'center' });
+
+    // Add date/time
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const now = new Date();
+    doc.text(`Generated on: ${now.toLocaleString()}`, 15, 25);
+
+    // Prepare table data
+    const headers = [
+        [
+            'Vehicle Name',
+            'Last Updated',
+            'Status',
+            'Battery',
+            'Ac',
+            'Gps',
+            'Power',
+            'Ignition',
+            'Speed',
+            'Hold Time',
+            'Location',
+            "Today's Trip",
+            'Live Tracking',
+            'Playback'
+        ]
+    ];
+
+    const rows = Array.from(table.querySelectorAll('tbody tr')).map(row => {
+        const cells = Array.from(row.querySelectorAll('td'));
+        return cells.map(cell => cell.textContent.trim());
+    });
+
+    // If there's no data, just alert
+    if (rows.length === 0) {
+        alert('No data available to export.');
+        return;
+    }
+
+    doc.autoTable({
+        head: headers,
+        body: rows,
+        startY: 30,
+        theme: 'grid',
+        styles: {
+            fontSize: 8,
+            cellPadding: 2
+        },
+        headStyles: {
+            fillColor: [41, 128, 185],
+            textColor: 255,
+            fontSize: 9,
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        columnStyles: {
+            0: { cellWidth: 20 },  // Device Name
+            1: { cellWidth: 25 },  // Last Updated
+            2: { cellWidth: 15 },  // Status
+            3: { cellWidth: 15 },  // Battery
+            4: { cellWidth: 10 },  // Ac
+            5: { cellWidth: 10 },  // Gps
+            6: { cellWidth: 10 },  // Power
+            7: { cellWidth: 15 },  // Ignition
+            8: { cellWidth: 15 },  // Speed
+            9: { cellWidth: 20 },  // Hold Time
+            10: { cellWidth: 30 }, // Location
+            11: { cellWidth: 20 }, // Today's Trip
+            12: { cellWidth: 20 }, // Live Tracking
+            13: { cellWidth: 15 }  // Playback
+        },
+        didDrawPage: (data) => {
+            // Add footer with page numbers
+            const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
+            const totalPages = doc.internal.getNumberOfPages();
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "italic");
+            doc.text(`Page ${pageNumber} of ${totalPages}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+        }
+    });
+
+    doc.save('device_status_table.pdf');
+}
+
+// Function to print the device table
+
+// Function to save the device table as JSON
+function saveDeviceTable() {
+    const table = document.getElementById('deviceDataTable');
+    if (!table) {
+        alert('Table not found!');
+        return;
+    }
+
+    const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent.trim());
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    if (rows.length === 0) {
+        alert('No data available to save.');
+        return;
+    }
+
+    const data = rows.map(row => {
+        const cells = Array.from(row.querySelectorAll('td'));
+        const rowData = {};
+        cells.forEach((cell, index) => {
+            rowData[headers[index]] = cell.textContent.trim();
+        });
+        return rowData;
+    });
+
+    const jsonString = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = 'device_status_table.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// Reusable helper function to download a file
+function downloadFile(content, fileName, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// Update the checkbox change event handler
+function handleCheckboxChange(e) {
+    const checkbox = e.target;
+    const deviceIndex = parseInt(checkbox.dataset.index);
+    const device = devices[deviceIndex];
+    
+    // Update selectedDevices Set
+    if (checkbox.checked) {
+        selectedDevices.add(device.deviceId);
+    } else {
+        selectedDevices.delete(device.deviceId);
+    }
+    
+    // Update "Select All" checkbox state
+    const allDeviceCheckboxes = document.querySelectorAll('.deviceCheckbox');
+    const allChecked = Array.from(allDeviceCheckboxes).every(cb => cb.checked);
+    document.getElementById('selectAllCheckbox').checked = allChecked;
+    
+    filterMarkers();
+}
+
+function addPOIForDevice(deviceName, lat, lng) {
+    const params = new URLSearchParams({
+        deviceName: deviceName,
+        lat: lat,
+        lng: lng
+    });
+    window.open(`/poi/PointOfInterest.html?${params.toString()}`);
+}
+
+document.querySelectorAll('.status-item').forEach(item => {
+    item.addEventListener('click', function() {
+        const icon = this.querySelector('.status-icon');
+        const iconSrc = icon.getAttribute('src');
+        
+        // Clear existing selections
+        selectedDevices.clear();
+        
+        // Uncheck all checkboxes first
+        document.querySelectorAll('.deviceCheckbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        document.getElementById('selectAllCheckbox').checked = false;
+        
+        // Check if "All" is clicked
+        if (item.classList.contains('all-status')) {
+            // Select all devices
+            devices.forEach((device, index) => {
+                const checkbox = document.querySelector(`.deviceCheckbox[data-index="${index}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    selectedDevices.add(device.deviceId);
+                }
+            });
+            document.getElementById('selectAllCheckbox').checked = true;
+        } else {
+            // Original status-based selection logic
+            devices.forEach((device, index) => {
+                const checkbox = document.querySelector(`.deviceCheckbox[data-index="${index}"]`);
+                if (!checkbox) return;
+                
+                const currentDate = new Date();
+                const deviceDate = new Date(device.date);
+                const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+                const ignitionStatus = typeof device.ignition === 'string' 
+                    ? device.ignition.toLowerCase() === 'true' 
+                    : Boolean(device.ignition);
+                
+                let shouldCheck = false;
+                
+                if (iconSrc.includes('green.png') && ignitionStatus && device.speed > 0 && hoursDifference < 2) {
+                    shouldCheck = true;
+                } else if (iconSrc.includes('red/car0.png') && !ignitionStatus && hoursDifference < 2) {
+                    shouldCheck = true;
+                } else if (iconSrc.includes('yellow.png') && ignitionStatus && device.speed === 0 && hoursDifference < 2) {
+                    shouldCheck = true;
+                } else if (iconSrc.includes('blackcar1.png') && hoursDifference > 2) {
+                    shouldCheck = true;
+                }
+                
+                checkbox.checked = shouldCheck;
+                if (shouldCheck) {
+                    selectedDevices.add(device.deviceId);
+                }
+            });
+        }
+        
+        filterMarkers();
+    });
+});
+
+document.getElementById('selectAllCheckbox').addEventListener('change', function() {
+    const isChecked = this.checked;
+    const deviceCheckboxes = document.querySelectorAll('.deviceCheckbox');
+    
+    deviceCheckboxes.forEach((checkbox, index) => {
+        checkbox.checked = isChecked;
+        const device = devices[index];
+        
+        if (isChecked) {
+            selectedDevices.add(device.deviceId);
+        } else {
+            selectedDevices.delete(device.deviceId);
+        }
+    });
+    
+    filterMarkers();
+});
+
+window.addEventListener('beforeunload', () => {
+    localStorage.removeItem('selectedDevices'); // Clear selections on manual refresh
+});
+
+    </script>
+  </body>
+</html>

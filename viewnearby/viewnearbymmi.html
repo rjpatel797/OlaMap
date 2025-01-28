@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Tracking</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body,
+    html {
+      height: 100%;
+      font-family: Arial, sans-serif;
+      margin: 0;
+    }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 93vh;
+        }
+
+        #navbar-container {
+      width: 100%;
+      background-color: #333;
+      color: white;
+      padding: 0;
+    }
+
+        #map {
+            flex: 1;
+        }
+        .controls {
+            padding: 10px;
+            background: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 5px;
+            border-radius: 5px;
+        }
+        .radius-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+        }
+        .popup {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="navbar-container"></div>
+        <div class="controls">
+            <div class="radius-control">
+                <label>Search Radius:</label>
+                <input type="range" id="radiusSlider" min="1" max="50" value="12">
+                <span id="radiusValue">12 km</span>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+    <script src="../js/api.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const deviceId = urlParams.get('deviceId');  // 16448
+        const centerLat = parseFloat(urlParams.get('lat'));  // 21.074731111111113
+        const centerLng = parseFloat(urlParams.get('lng'));  // 72.64308777777778
+        let radius = parseFloat(urlParams.get('radius')) || 12;
+
+        let map;
+        let radiusCircle;
+        let markers = [];
+
+        $(document).ready(function () {
+          // Load navbar from external file
+          $("#navbar-container").load("../navbarola.html", function () {
+            console.log("Navbar loaded successfully!");
+          });
+
+          // Check if 'mid' is available in localStorage otherwise ri-direct login page
+          if (!localStorage.getItem('mid')) {
+            // Redirect to login page if 'mid' is not found
+            window.location.href = '../index.html';
+          }
+
+        });
+
+        // Load MapmyIndia SDK
+        const script = document.createElement('script');
+        script.src = `https://apis.mappls.com/advancedmaps/api/${localStorage.getItem("key")}/map_sdk?layer=vector&v=3.0&callback=initMap`;
+        script.defer = true;
+        script.async = true;
+        document.head.appendChild(script);
+
+        function initMap() {
+    if (!localStorage.getItem("mid")) {
+        window.location.href = "index.html";
+        return;
+    }
+
+    // Initialize map with the center from URL parameters
+    map = new mappls.Map('map', {
+    center: [centerLat, centerLng], // Using [lat, lng]
+    zoom: 12
+});
+
+    initializeControls();
+    fetchAndDisplayVehicles();
+}
+
+        function initializeControls() {
+            const slider = document.getElementById('radiusSlider');
+            const value = document.getElementById('radiusValue');
+            
+            slider.value = radius;
+            value.textContent = `${radius} km`;
+
+            slider.addEventListener('input', function() {
+                radius = parseInt(this.value);
+                value.textContent = `${radius} km`;
+                if (this.timeoutId) clearTimeout(this.timeoutId);
+                this.timeoutId = setTimeout(fetchAndDisplayVehicles, 300);
+            });
+        }
+
+        function fetchAndDisplayVehicles() {
+    const mid = localStorage.getItem("mid");
+    
+    fetch(`${API}opr=getVehileByMid&mid=${mid}`)
+        .then(response => response.json())
+        .then(vehicles => {
+            if (!Array.isArray(vehicles)) {
+                console.warn("Invalid response format");
+                return;
+            }
+
+            // Find selected vehicle
+            const selectedVehicle = vehicles.find(v => v.did == deviceId);
+            if (!selectedVehicle) {
+                console.error("Selected vehicle not found");
+                return;
+            }
+
+            // Get selected vehicle coordinates
+            const [selectedLat, selectedLng] = selectedVehicle.latlang.split(',').map(Number);
+
+            // Find all vehicles within radius
+            const nearbyVehicles = vehicles
+                .filter(vehicle => {
+                    if (vehicle.did == deviceId) return false;
+                    if (!vehicle.latlang) return false;
+
+                    const [vLat, vLng] = vehicle.latlang.split(',').map(Number);
+                    const distance = calculateDistance(
+                        selectedLat, selectedLng,
+                        vLat, vLng
+                    );
+                    vehicle.distance = distance;
+                    return distance <= radius;
+                })
+                .sort((a, b) => a.distance - b.distance);
+
+            // Display all vehicles
+            displayVehicles(selectedVehicle, nearbyVehicles);
+        })
+        .catch(error => console.error("Error fetching vehicles:", error));
+}
+
+function displayVehicles(selectedVehicle, nearbyVehicles) {
+    // Clear existing markers
+    markers.forEach(marker => marker.remove());
+    markers = [];
+
+    let selectedMarker = null;
+    let nearestMarker = null;
+
+    // Add selected vehicle marker first
+    if (selectedVehicle && selectedVehicle.latlang) {
+        const [lat, lng] = selectedVehicle.latlang.split(',').map(Number);
+        selectedMarker = addMarker(selectedVehicle, [lat, lng], 'selected', false);
+        drawRadiusCircle([lng, lat]);
+    }
+
+    // Add all nearby vehicles
+    nearbyVehicles.forEach((vehicle, index) => {
+        if (vehicle.latlang) {
+            const [lat, lng] = vehicle.latlang.split(',').map(Number);
+            const isNearest = index === 0;
+            const marker = addMarker(vehicle, [lat, lng], 'nearby', isNearest);
+            if (isNearest) {
+                nearestMarker = marker;
+            }
+        }
+    });
+
+    // Open popups for both selected and nearest vehicles
+    setTimeout(() => {
+        if (nearestMarker) nearestMarker.openPopup();
+
+        if (selectedMarker) selectedMarker.openPopup();
+    }, 100);
+
+    // Fit map bounds
+    if (markers.length > 0) {
+        const bounds = new mappls.LatLngBounds();
+        markers.forEach(marker => bounds.extend(marker.getLngLat()));
+        map.fitBounds(bounds, { padding: 50 });
+    }
+}
+
+function addMarker(vehicle, position, type, isNearest = false) {
+    const iconUrl = getVehicleIcon(vehicle);
+    let iconSize = [30, 30];
+    
+    // Make selected and nearest vehicles' icons slightly larger
+    if (type === 'selected' || isNearest) {
+        iconSize = [40, 40];
+    }
+    
+    const marker = new mappls.Marker({
+        map: map,
+        position: position,
+        icon: iconUrl,
+        iconSize: iconSize,
+        zIndexOffset: type === 'selected' ? 1000 : (isNearest ? 999 : 1),
+        popupHtml: createPopupContent(vehicle, type, isNearest)
+    });
+
+    // Add click handler to manage popups
+    marker.addListener('click', () => {
+        markers.forEach(m => m.closePopup());
+        marker.openPopup();
+    });
+
+    markers.push(marker);
+    return marker;
+}
+
+        function getVehicleIcon(vehicle) {
+            const currentDate = new Date();
+            const deviceDate = new Date(vehicle.ddate);
+            const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+            const ignitionStatus = vehicle.ignition?.toLowerCase() === 'true';
+            
+            if (hoursDifference > 2) return '../deviceTracking/images/blackcar1.png';
+            if (!ignitionStatus) return '../images/icon/red/car0.png';
+            return ignitionStatus && parseFloat(vehicle.speed) > 0 ? 
+                '../deviceTracking/images/green.png' : 
+                '../deviceTracking/images/yellow.png';
+        }
+
+        function createPopupContent(vehicle, type, isNearest = false) {
+    let headerText = 'Nearby Vehicle';
+    let borderStyle = 'border: 1px solid #ccc';
+    let headerStyle = '';
+
+    if (type === 'selected') {
+        headerText = 'Selected Vehicle';
+        borderStyle = 'border: 3px solid #FF4444';
+        headerStyle = 'color: #FF4444; font-weight: bold;';
+    } else if (isNearest) {
+        headerText = 'Nearest Vehicle';
+        borderStyle = 'border: 3px solid #4CAF50';
+        headerStyle = 'color: #4CAF50; font-weight: bold;';
+    }
+    
+    return `
+        <div class="popup" style="${borderStyle}; padding: 15px; min-width: 200px;">
+            <h3 style="margin: 0 0 10px 0; ${headerStyle}">${headerText}</h3>
+            <p style="margin: 5px 0"><strong>Name:</strong> ${vehicle.dname}</p>
+            ${isNearest || type !== 'selected' ? 
+                `<p style="margin: 5px 0"><strong>Distance:</strong> ${vehicle.distance.toFixed(2)} km</p>` : 
+                ''}
+            <p style="margin: 5px 0"><strong>Speed:</strong> ${vehicle.speed} km/h</p>
+            <p style="margin: 5px 0">
+                <strong>Status:</strong> ${vehicle.ignition === 'true' ? 
+                    '<span style="color: #4CAF50">Running</span>' : 
+                    '<span style="color: #FF4444">Stopped</span>'}
+            </p>
+        </div>`;
+}
+
+
+function drawRadiusCircle(center) {
+    if (radiusCircle) {
+        map.removeLayer(radiusCircle);
+    }
+
+    // Create circle with more prominent styling
+    radiusCircle = new mappls.Circle({
+    center: center,  // Using [lng, lat] format
+    map: map,
+    radius: radius * 1000,  // Correctly converting km to meters
+    strokeColor: "#2980b9",
+    strokeOpacity: 0.8,
+    strokeWeight: 2,
+    fillColor: "rgba(52, 152, 219, 0.2)",
+    fillOpacity: 0.2,
+    zIndex: -1
+});
+
+    // Add label for the circle
+    const radiusLabel = new mappls.Marker({
+        map: map,
+        position: center,
+        icon: createRadiusLabel(),
+        iconSize: [80, 30],
+        offset: [0, -radius * 1000], // Position label at the top of circle
+        popupHtml: `<div style="padding: 10px;">
+            <strong>Search Area</strong><br>
+            Radius: ${radius} km
+        </div>`
+    });
+}
+
+function createRadiusLabel() {
+    // Create a canvas element
+    const canvas = document.createElement('canvas');
+    canvas.width = 80;
+    canvas.height = 30;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Draw label background
+    ctx.fillStyle = 'rgba(255, 68, 68, 0.9)';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, 80, 30, 5);
+    ctx.fill();
+    
+    // Add text
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${radius} km`, 40, 15);
+    
+    // Convert canvas to data URL
+    return canvas.toDataURL();
+}
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth's radius in kilometers
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        function deg2rad(deg) {
+            return deg * (Math.PI/180);
+        }
+
+        // Check authentication on load
+        window.addEventListener('load', () => {
+            if (!localStorage.getItem("mid")) {
+                window.location.href = "index.html";
+            }
+        });
+    </script>
+</body>
+</html>
