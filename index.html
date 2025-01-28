@@ -246,7 +246,7 @@ async function loginajax() {
           localStorage.setItem("mid", data[0].data.managerid);
           localStorage.setItem("keyType", data[0].data.keyType);
           localStorage.setItem("key", data[0].data.key);
-          window.location.href = "dashboardliveola.html";
+          window.location.href = "/dashboard/dashboardliveola.html";
         } else {
           document.getElementById("uid").value = "";
             document.getElementById("password").value = "";
