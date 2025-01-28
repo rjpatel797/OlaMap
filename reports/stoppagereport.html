@@ -22,8 +22,8 @@
 
         <div class="content">
             <div class="report-controls">
-                 <!-- Device Selector -->
-                 <div class="device-selector">
+                <!-- Device Selector -->
+                <div class="device-selector">
                     <div class="dropdown-container">
                         <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
                             Select Vehicles
@@ -31,16 +31,11 @@
                         <div class="selected-devices" id="selectedDevicesList"></div>
                         <div class="dropdown-list" id="deviceDropdown">
                             <div class="dropdown-search">
-                                <input type="text" 
-                                    placeholder="Search vehicles..." 
-                                    id="vehicleSearch"
-                                    onclick="event.stopPropagation()"
-                                    onkeyup="filterVehicles(this.value)">
+                                <input type="text" placeholder="Search vehicles..." id="vehicleSearch"
+                                    onclick="event.stopPropagation()" onkeyup="filterVehicles(this.value)">
                             </div>
                             <div class="select-all-option">
-                                <input type="checkbox" 
-                                    id="selectAllCheckbox" 
-                                    onclick="toggleSelectAll(event)">
+                                <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll(event)">
                                 <label for="selectAllCheckbox">Select All</label>
                             </div>
                             <div class="dropdown-items" id="vehicleList"></div>
@@ -225,7 +220,7 @@
                 device.name.toLowerCase().includes(searchText.toLowerCase())
             );
             populateVehicleList(filteredDevices);
-            
+
             // Update Select All checkbox state based on filtered items
             updateSelectAllCheckbox();
         }
@@ -242,25 +237,25 @@
         function populateVehicleList(devicesList) {
             const vehicleList = document.getElementById('vehicleList');
             if (!vehicleList) return;
-            
+
             vehicleList.innerHTML = '';
-            
+
             devicesList.forEach(device => {
                 const item = document.createElement('div');
                 item.className = 'dropdown-item';
                 item.style.color = '#333';
-                
+
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.className = 'device-checkbox';
                 checkbox.checked = selectedDevices.has(device.did);
-                
+
                 const label = document.createElement('span');
                 label.textContent = device.name;
-                
+
                 item.appendChild(checkbox);
                 item.appendChild(label);
-                
+
                 item.onclick = (e) => {
                     e.stopPropagation();
                     checkbox.checked = !checkbox.checked;
@@ -272,7 +267,7 @@
                     updateSelectedDevicesDisplay();
                     updateSelectAllCheckbox();
                 };
-                
+
                 vehicleList.appendChild(item);
             });
         }
@@ -291,10 +286,10 @@
             if (event) {
                 event.stopPropagation();
             }
-            
+
             // Remove from selected devices
             selectedDevices.delete(did);
-            
+
             // Uncheck the checkbox in the dropdown list
             const checkboxes = document.querySelectorAll('#vehicleList input[type="checkbox"]');
             checkboxes.forEach(checkbox => {
@@ -305,13 +300,13 @@
                     checkbox.checked = false;
                 }
             });
-            
+
             // Update select all checkbox state
             updateSelectAllCheckbox();
-            
+
             // Update display
             updateDeviceDisplay();
-            
+
             // Keep dropdown open
             const dropdown = document.getElementById('deviceDropdown');
             if (dropdown) {
@@ -322,29 +317,29 @@
         function updateDeviceDisplay() {
             const selectedVehicle = document.getElementById('selectedVehicle');
             selectedVehicle.innerHTML = '';
-            
+
             if (selectedDevices.size === 0) {
                 selectedVehicle.textContent = 'Select Vehicle';
                 return;
             }
-            
+
             const container = document.createElement('div');
             container.style.display = 'flex';
             container.style.alignItems = 'center';
             container.style.flexWrap = 'wrap';
             container.style.gap = '4px';
-            
+
             const selectedArray = Array.from(selectedDevices.entries());
             const displayCount = 2; // Number of devices to display before showing count
-            
+
             // Show first two devices
             selectedArray.slice(0, displayCount).forEach(([did, name]) => {
                 const tag = document.createElement('div');
                 tag.className = 'device-tag';
-                
+
                 const nameSpan = document.createElement('span');
                 nameSpan.textContent = name;
-                
+
                 const removeButton = document.createElement('span');
                 removeButton.className = 'device-tag-remove';
                 removeButton.textContent = '×';
@@ -352,12 +347,12 @@
                     e.stopPropagation();
                     removeDevice(did);
                 };
-                
+
                 tag.appendChild(nameSpan);
                 tag.appendChild(removeButton);
                 container.appendChild(tag);
             });
-            
+
             // Add count if there are more devices
             if (selectedArray.length > displayCount) {
                 const remainingCount = selectedArray.length - displayCount;
@@ -366,7 +361,7 @@
                 countElement.textContent = `+${remainingCount}`;
                 container.appendChild(countElement);
             }
-            
+
             // Update the dropdown display
             selectedVehicle.appendChild(container);
         }
@@ -375,16 +370,16 @@
             event.stopPropagation();
             const selectAllCheckbox = document.getElementById('selectAllCheckbox');
             const isChecked = selectAllCheckbox.checked;
-            
+
             // Get all visible devices (respecting search filter)
             const visibleItems = Array.from(document.querySelectorAll('#vehicleList .dropdown-item'))
                 .filter(item => item.style.display !== 'none');
-            
+
             visibleItems.forEach(item => {
                 const checkbox = item.querySelector('input[type="checkbox"]');
                 const label = item.querySelector('span');
                 const device = devices.find(d => d.name === label.textContent);
-                
+
                 if (device) {
                     checkbox.checked = isChecked;
                     if (isChecked) {
@@ -394,19 +389,19 @@
                     }
                 }
             });
-            
+
             updateSelectedDevicesDisplay();
             updateSelectAllCheckbox();
         }
 
         function updateSelectedDevicesDisplay() {
             const selectedVehicle = document.getElementById('selectedVehicle');
-            
+
             if (selectedDevices.size === 0) {
                 selectedVehicle.textContent = 'Select Vehicle';
                 return;
             }
-            
+
             // Create container for device tags
             const container = document.createElement('div');
             container.style.display = 'flex';
@@ -416,7 +411,7 @@
             // Get first two devices
             const devices = Array.from(selectedDevices.entries());
             const firstTwoDevices = devices.slice(0, 2);
-            
+
             // Create tags for first two devices
             firstTwoDevices.forEach(([did, name]) => {
                 const tag = document.createElement('div');
@@ -427,10 +422,10 @@
                 tag.style.display = 'inline-flex';
                 tag.style.alignItems = 'center';
                 tag.style.whiteSpace = 'nowrap';
-                
+
                 const nameSpan = document.createElement('span');
                 nameSpan.textContent = name;
-                
+
                 const closeButton = document.createElement('span');
                 closeButton.textContent = ' ×';
                 closeButton.style.cursor = 'pointer';
@@ -440,7 +435,7 @@
                     e.stopPropagation();
                     removeDevice(did);
                 };
-                
+
                 tag.appendChild(nameSpan);
                 tag.appendChild(closeButton);
                 container.appendChild(tag);
@@ -458,7 +453,7 @@
                 countTag.textContent = `+${selectedDevices.size - 2}`;
                 container.appendChild(countTag);
             }
-            
+
             selectedVehicle.innerHTML = '';
             selectedVehicle.appendChild(container);
         }
@@ -467,12 +462,12 @@
         function updateSelectAllCheckbox() {
             const selectAllCheckbox = document.getElementById('selectAllCheckbox');
             const visibleCheckboxes = Array.from(document.querySelectorAll('#vehicleList .dropdown-item input[type="checkbox"]:not([style*="display: none"])'));
-            
+
             if (visibleCheckboxes.length === 0) return;
-            
+
             const allChecked = visibleCheckboxes.every(cb => cb.checked);
             const someChecked = visibleCheckboxes.some(cb => cb.checked);
-            
+
             selectAllCheckbox.checked = allChecked;
             selectAllCheckbox.indeterminate = someChecked && !allChecked;
         }
@@ -582,7 +577,7 @@
             const startTime = document.getElementById('startTime').value;
             const endDate = document.getElementById('endDate').value;
             const endTime = document.getElementById('endTime').value;
-           // const deviceId = document.getElementById('deviceSelect').value;
+            // const deviceId = document.getElementById('deviceSelect').value;
             const minStop = document.getElementById('minStop').value;
             const locationPoi = document.getElementById('locationPoi').checked;
 
@@ -617,7 +612,7 @@
                     console.error('Error:', error);
                     document.getElementById('reportData').innerHTML =
                         '<tr><td colspan="8" style="text-align: center; color: red;">Error loading report data</td></tr>';
-            });
+                });
         }
 
         function formatDateForApi(dateTimeString) {

@@ -1,133 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Vehicle Location Map</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Vehicle Location Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <link href="/dashboard/dashboardlivegoogle.css" rel="stylesheet" />
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <!-- Export Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+  <link href="/dashboard/dashboardlivegoogle.css" rel="stylesheet" />
+
+  <!-- Export Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 
 
-  </head>
-  <body>
-    <div class="container">
-      <!-- Navbar -->
-      <div id="navbar-container"></div>
+</head>
 
-      <!-- Main Content -->
-      <div class="content">
-          <!-- Device List -->
-          <div id="deviceList">
-              <h3>Vehicle List</h3>
-              <input type="text" id="searchInput" placeholder="Search Vehicle Here" />
-              <div id="deviceContainer"></div>
-          </div>
+<body>
+  <div class="container">
+    <!-- Navbar -->
+    <div id="navbar-container"></div>
 
-          <!-- Map Section -->
-          <div id="mapContainer">
-              <div class="refreshDropdown">
-                  <select id="refreshRate">
-                      <option value="5000">⟳ Refresh - 5 sec</option>
-                      <option value="10000">⟳ Refresh - 10 sec</option>
-                      <option value="20000">⟳ Refresh - 20 sec</option>
-                      <option value="30000">⟳ Refresh - 30 sec</option>
-                      <option value="60000" selected>⟳ Refresh - 1 minute</option>
-                      <option value="300000">⟳ Refresh - 5 minute</option>
-                      <option value="600000">⟳ Refresh - 10 minute</option>
-                  </select>
-              </div>
-              <div id="map"></div>
-          <div id="customPopup" class="popup">
-            <span class="close-btn" onclick="hidePopup()">✖</span>
-            <div id="popupTitle" class="popup-title"></div>
-            <div id="popupContent"></div>
-          </div>
+    <!-- Main Content -->
+    <div class="content">
+      <!-- Device List -->
+      <div id="deviceList">
+        <h3>Vehicle List</h3>
+        <input type="text" id="searchInput" placeholder="Search Vehicle Here" />
+        <div id="deviceContainer"></div>
+      </div>
+
+      <!-- Map Section -->
+      <div id="mapContainer">
+        <div class="refreshDropdown">
+          <select id="refreshRate">
+            <option value="5000">⟳ Refresh - 5 sec</option>
+            <option value="10000">⟳ Refresh - 10 sec</option>
+            <option value="20000">⟳ Refresh - 20 sec</option>
+            <option value="30000">⟳ Refresh - 30 sec</option>
+            <option value="60000" selected>⟳ Refresh - 1 minute</option>
+            <option value="300000">⟳ Refresh - 5 minute</option>
+            <option value="600000">⟳ Refresh - 10 minute</option>
+          </select>
         </div>
-        <div class="viewAllBtn">
-          <button onclick="showDeviceTable()" class="table-btn">
-            View All Vehicle
-          </button>
+        <div id="map"></div>
+        <div id="customPopup" class="popup">
+          <span class="close-btn" onclick="hidePopup()">✖</span>
+          <div id="popupTitle" class="popup-title"></div>
+          <div id="popupContent"></div>
         </div>
+      </div>
+      <div class="viewAllBtn">
+        <button onclick="showDeviceTable()" class="table-btn">
+          View All Vehicle
+        </button>
+      </div>
 
-        <!-- Add this new popup div for the table -->
-        <div id="tablePopup" class="table-popup">
-          <div class="table-popup-content">
-              <div class="table-popup-header">
-                  <h2>All Vehicles Status</h2>
-                  <div class="table-search">
-                      <input 
-                      type="text" 
-                      id="tableSearchInput" 
-                      placeholder="Search Vehicle name..." 
-                      class="table-search-input"
-                      >
-                  </div>
-              </div>
-              <span class="table-close-btn" onclick="hideDeviceTable()">✖</span>
-              <!-- Insert Export Buttons Here -->
-              <div class="export-buttons">
-                  <button onclick="copyDeviceTableToClipboard()">Copy</button>
-                  <button onclick="exportDeviceTableCSV()">CSV</button>
-                  <button onclick="exportDeviceTableExcel()">Excel</button>
-                  <button onclick="exportDeviceTablePDF()">PDF</button>
-                  <button onclick="printDeviceTable()">Print</button>
-                  <button onclick="saveDeviceTable()">Save</button>
-              </div>
-              <div class="table-container">
-                  <table id="deviceDataTable">
-                      <thead>
-                          <tr>
-                              <th>Vehicle Name</th>
-                              <th>Last Updated</th>
-                              <th>Status</th>
-                              <th>Battery</th>
-                              <th>Ac</th>
-                              <th>Gps</th>
-                              <th>Power</th>
-                              <th>Ignition</th>
-                              <th>Speed</th>
-                              <th>Hold Time</th>
-                              <th>Location</th>
-                              <th>Today's Trip</th>
-                              <th>Live Tracking</th>
-                              <th>Playback</th>
-                          </tr>
-                      </thead>
-                      <tbody id="deviceTableBody">
-                          <!-- Data will be populated here -->
-                      </tbody>
-                  </table>
-              </div>
+      <!-- Add this new popup div for the table -->
+      <div id="tablePopup" class="table-popup">
+        <div class="table-popup-content">
+          <div class="table-popup-header">
+            <h2>All Vehicles Status</h2>
+            <div class="table-search">
+              <input type="text" id="tableSearchInput" placeholder="Search Vehicle name..." class="table-search-input">
+            </div>
+          </div>
+          <span class="table-close-btn" onclick="hideDeviceTable()">✖</span>
+          <!-- Insert Export Buttons Here -->
+          <div class="export-buttons">
+            <button onclick="copyDeviceTableToClipboard()">Copy</button>
+            <button onclick="exportDeviceTableCSV()">CSV</button>
+            <button onclick="exportDeviceTableExcel()">Excel</button>
+            <button onclick="exportDeviceTablePDF()">PDF</button>
+            <button onclick="printDeviceTable()">Print</button>
+            <button onclick="saveDeviceTable()">Save</button>
+          </div>
+          <div class="table-container">
+            <table id="deviceDataTable">
+              <thead>
+                <tr>
+                  <th>Vehicle Name</th>
+                  <th>Last Updated</th>
+                  <th>Status</th>
+                  <th>Battery</th>
+                  <th>Ac</th>
+                  <th>Gps</th>
+                  <th>Power</th>
+                  <th>Ignition</th>
+                  <th>Speed</th>
+                  <th>Hold Time</th>
+                  <th>Location</th>
+                  <th>Today's Trip</th>
+                  <th>Live Tracking</th>
+                  <th>Playback</th>
+                </tr>
+              </thead>
+              <tbody id="deviceTableBody">
+                <!-- Data will be populated here -->
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <script src="../js/api.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap"
+  <script src="../js/api.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap"
     async defer></script>
-    <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
+  <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
   <script>
 
-let map;
-let devices = [];
-let markers = [];
-let refreshInterval = 60000;
-let refreshTimer;
-let selectedDevices = new Set();
-let isInitialLoad = true;
-let markerCluster;
+    let map;
+    let devices = [];
+    let markers = [];
+    let refreshInterval = 60000;
+    let refreshTimer;
+    let selectedDevices = new Set();
+    let isInitialLoad = true;
+    let markerCluster;
 
-function initMap() {
+    function initMap() {
       map = new google.maps.Map(document.getElementById('map'), {
         center: { lat: 23.0225, lng: 72.5714 },
         zoom: 15,
@@ -151,339 +148,339 @@ function initMap() {
     }
 
 
-function loadMapScript() {
-    const key = localStorage.getItem("key");
-    if (!key) {
+    function loadMapScript() {
+      const key = localStorage.getItem("key");
+      if (!key) {
         console.error("No API key found");
         return;
+      }
+
+      const script = document.createElement('script');
+      script.src = `https://apis.mappls.com/advancedmaps/api/${key}/map_sdk?layer=vector&v=3.0&callback=initMap`;
+      script.defer = true;
+      script.async = true;
+      document.head.appendChild(script);
     }
 
-    const script = document.createElement('script');
-    script.src = `https://apis.mappls.com/advancedmaps/api/${key}/map_sdk?layer=vector&v=3.0&callback=initMap`;
-    script.defer = true;
-    script.async = true;
-    document.head.appendChild(script);
-}
+    // const olaMaps = new OlaMapsSDK.OlaMaps({
+    //   apiKey: "0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9",
+    // });
 
-      // const olaMaps = new OlaMapsSDK.OlaMaps({
-      //   apiKey: "0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9",
-      // });
+    // const myMap = olaMaps.init({
+    //   style:
+    //     "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
+    //   container: "map",
+    //   center: [72.5714, 22.0225],
+    //   zoom: 6,
+    // });
 
-      // const myMap = olaMaps.init({
-      //   style:
-      //     "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
-      //   container: "map",
-      //   center: [72.5714, 22.0225],
-      //   zoom: 6,
-      // });
+    class MarkerClusterer {
+      constructor(map, options = {}) {
+        this.map = map;
+        this.markers = [];
+        this.clusters = [];
+        this.options = {
+          radius: options.radius || 100,
+          maxZoom: options.maxZoom || 5,
+          minPoints: options.minPoints || 2,
+        };
 
-      class MarkerClusterer {
-        constructor(map, options = {}) {
-          this.map = map;
-          this.markers = [];
-          this.clusters = [];
-          this.options = {
-            radius: options.radius || 100,
-            maxZoom: options.maxZoom || 5,
-            minPoints: options.minPoints || 2,
-          };
+        // Bind event handlers
+        this.map.on("zoom", () => this.updateClusters());
+        this.map.on("moveend", () => this.updateClusters());
+      }
 
-          // Bind event handlers
-          this.map.on("zoom", () => this.updateClusters());
-          this.map.on("moveend", () => this.updateClusters());
+      // Add markers to the clusterer
+      addMarkers(markers) {
+        this.markers = markers;
+        this.updateClusters();
+      }
+
+      // Calculate clusters based on current zoom and viewport
+      updateClusters() {
+        // Clear existing clusters
+        this.clusters.forEach((cluster) => cluster.remove());
+        this.clusters = [];
+
+        if (this.map.getZoom() >= this.options.maxZoom) {
+          // Show individual markers at high zoom levels
+          this.markers.forEach((marker) => marker.addTo(this.map));
+          return;
         }
 
-        // Add markers to the clusterer
-        addMarkers(markers) {
-          this.markers = markers;
-          this.updateClusters();
-        }
+        // Group nearby markers
+        const groups = this.groupMarkers();
 
-        // Calculate clusters based on current zoom and viewport
-        updateClusters() {
-          // Clear existing clusters
-          this.clusters.forEach((cluster) => cluster.remove());
-          this.clusters = [];
-
-          if (this.map.getZoom() >= this.options.maxZoom) {
-            // Show individual markers at high zoom levels
-            this.markers.forEach((marker) => marker.addTo(this.map));
-            return;
+        groups.forEach((group) => {
+          if (group.length >= this.options.minPoints) {
+            this.createCluster(group);
+          } else {
+            group.forEach((marker) => marker.addTo(this.map));
           }
+        });
+      }
 
-          // Group nearby markers
-          const groups = this.groupMarkers();
+      // Group markers based on proximity
+      groupMarkers() {
+        const groups = [];
+        const marked = new Set();
 
-          groups.forEach((group) => {
-            if (group.length >= this.options.minPoints) {
-              this.createCluster(group);
-            } else {
-              group.forEach((marker) => marker.addTo(this.map));
+        this.markers.forEach((marker, i) => {
+          if (marked.has(i)) return;
+
+          const group = [marker];
+          marked.add(i);
+
+          this.markers.forEach((otherMarker, j) => {
+            if (i !== j && !marked.has(j)) {
+              const distance = this.calculateDistance(
+                marker.getLngLat(),
+                otherMarker.getLngLat()
+              );
+
+              if (
+                distance <=
+                this.options.radius * Math.pow(2, -this.map.getZoom())
+              ) {
+                group.push(otherMarker);
+                marked.add(j);
+              }
             }
           });
-        }
 
-        // Group markers based on proximity
-        groupMarkers() {
-          const groups = [];
-          const marked = new Set();
+          groups.push(group);
+        });
 
-          this.markers.forEach((marker, i) => {
-            if (marked.has(i)) return;
-
-            const group = [marker];
-            marked.add(i);
-
-            this.markers.forEach((otherMarker, j) => {
-              if (i !== j && !marked.has(j)) {
-                const distance = this.calculateDistance(
-                  marker.getLngLat(),
-                  otherMarker.getLngLat()
-                );
-
-                if (
-                  distance <=
-                  this.options.radius * Math.pow(2, -this.map.getZoom())
-                ) {
-                  group.push(otherMarker);
-                  marked.add(j);
-                }
-              }
-            });
-
-            groups.push(group);
-          });
-
-          return groups;
-        }
-
-        // Create a visual cluster representation
-        createCluster(markers) {
-          // Remove individual markers
-          markers.forEach((marker) => marker.remove());
-
-          // Calculate cluster center
-          const center = this.calculateClusterCenter(markers);
-
-          // Create cluster element
-          const clusterElement = document.createElement("div");
-          clusterElement.className = "marker-cluster";
-          clusterElement.style.cssText = getClusterStyle(markers.length);
-          clusterElement.addEventListener("mouseenter", () => {
-            // clusterElement.style.transform = 'scale(1.1)';
-          });
-
-          clusterElement.addEventListener("mouseleave", () => {
-            // clusterElement.style.transform = 'scale(1)';
-          });
-          clusterElement.innerHTML = markers.length;
-
-          // Add click handler to zoom in
-          clusterElement.addEventListener("click", () => {
-            this.map.flyTo({
-              center: center,
-              zoom: Math.min(this.map.getZoom() + 2, this.options.maxZoom),
-              speed: 1.5,
-            });
-          });
-
-          // Create and add cluster marker
-          // const cluster = olaMaps
-          //   .addMarker({
-          //     element: clusterElement,
-          //     anchor: "center",
-          //   })
-          //   .setLngLat(center)
-          //   .addTo(this.map);
-
-          // this.clusters.push(cluster);
-        }
-
-        // Calculate distance between two points
-        calculateDistance(lngLat1, lngLat2) {
-          const R = 6371; // Earth's radius in km
-          const dLat = ((lngLat2.lat - lngLat1.lat) * Math.PI) / 180;
-          const dLon = ((lngLat2.lng - lngLat1.lng) * Math.PI) / 180;
-          const a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos((lngLat1.lat * Math.PI) / 180) *
-              Math.cos((lngLat2.lat * Math.PI) / 180) *
-              Math.sin(dLon / 2) *
-              Math.sin(dLon / 2);
-          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-          return R * c;
-        }
-
-        // Calculate center point of a cluster
-        calculateClusterCenter(markers) {
-          const coords = markers.map((m) => m.getLngLat());
-          const center = coords.reduce(
-            (acc, curr) => ({
-              lng: acc.lng + curr.lng,
-              lat: acc.lat + curr.lat,
-            }),
-            { lng: 0, lat: 0 }
-          );
-
-          return {
-            lng: center.lng / coords.length,
-            lat: center.lat / coords.length,
-          };
-        }
+        return groups;
       }
 
-      // Initialize clusterer after map loads
-      // const clusterer = new MarkerClusterer(myMap, {
-      //   radius: 5000,
-      //   maxZoom: 14,
-      //   minPoints: 2,
-      // });
+      // Create a visual cluster representation
+      createCluster(markers) {
+        // Remove individual markers
+        markers.forEach((marker) => marker.remove());
 
-      // myMap.on("styleimagemissing", function (e) {
-      //   if (e.id === "pedestrian_polygon") {
-      //     myMap.addImage("pedestrian_polygon", new Image(1, 1));
-      //   }
-      // });
+        // Calculate cluster center
+        const center = this.calculateClusterCenter(markers);
 
-      const popup = document.getElementById("customPopup");
-      const popupTitle = document.getElementById("popupTitle");
-      const popupContent = document.getElementById("popupContent");
-      let currentMarker = null;
-let isPopupOpen = false;
-let currentPopupDid = null;
-let lastPosition = null;
-let isAnimating = false;
+        // Create cluster element
+        const clusterElement = document.createElement("div");
+        clusterElement.className = "marker-cluster";
+        clusterElement.style.cssText = getClusterStyle(markers.length);
+        clusterElement.addEventListener("mouseenter", () => {
+          // clusterElement.style.transform = 'scale(1.1)';
+        });
 
-function formatHoldTime(ms) {
-        const hours = Math.floor(ms / 3600000);
-        const minutes = Math.floor((ms % 3600000) / 60000);
-        const seconds = Math.floor((ms % 60000) / 1000);
-        return `${hours}hr ${minutes}min ${seconds}sec`;
+        clusterElement.addEventListener("mouseleave", () => {
+          // clusterElement.style.transform = 'scale(1)';
+        });
+        clusterElement.innerHTML = markers.length;
+
+        // Add click handler to zoom in
+        clusterElement.addEventListener("click", () => {
+          this.map.flyTo({
+            center: center,
+            zoom: Math.min(this.map.getZoom() + 2, this.options.maxZoom),
+            speed: 1.5,
+          });
+        });
+
+        // Create and add cluster marker
+        // const cluster = olaMaps
+        //   .addMarker({
+        //     element: clusterElement,
+        //     anchor: "center",
+        //   })
+        //   .setLngLat(center)
+        //   .addTo(this.map);
+
+        // this.clusters.push(cluster);
       }
 
-      async function updateLocation(deviceId, latlang) {
-        const locationCell = document.getElementById(`location-${deviceId}`);
-        if (!locationCell) return;
-
-        locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
-
-        try {
-          const location = await fetchLocation(latlang);
-          locationCell.innerHTML = location;
-        } catch (error) {
-          console.error("Error updating location:", error);
-          locationCell.innerHTML = "Error fetching location";
-        }
+      // Calculate distance between two points
+      calculateDistance(lngLat1, lngLat2) {
+        const R = 6371; // Earth's radius in km
+        const dLat = ((lngLat2.lat - lngLat1.lat) * Math.PI) / 180;
+        const dLon = ((lngLat2.lng - lngLat1.lng) * Math.PI) / 180;
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos((lngLat1.lat * Math.PI) / 180) *
+          Math.cos((lngLat2.lat * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
       }
 
-      async function updateLocationPopup(deviceId, latlang) {
-    const locationCell = document.getElementById(`location-popup-${deviceId}`);
-    if (!locationCell) return;
+      // Calculate center point of a cluster
+      calculateClusterCenter(markers) {
+        const coords = markers.map((m) => m.getLngLat());
+        const center = coords.reduce(
+          (acc, curr) => ({
+            lng: acc.lng + curr.lng,
+            lat: acc.lat + curr.lat,
+          }),
+          { lng: 0, lat: 0 }
+        );
 
-    locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
+        return {
+          lng: center.lng / coords.length,
+          lat: center.lat / coords.length,
+        };
+      }
+    }
 
-    try {
+    // Initialize clusterer after map loads
+    // const clusterer = new MarkerClusterer(myMap, {
+    //   radius: 5000,
+    //   maxZoom: 14,
+    //   minPoints: 2,
+    // });
+
+    // myMap.on("styleimagemissing", function (e) {
+    //   if (e.id === "pedestrian_polygon") {
+    //     myMap.addImage("pedestrian_polygon", new Image(1, 1));
+    //   }
+    // });
+
+    const popup = document.getElementById("customPopup");
+    const popupTitle = document.getElementById("popupTitle");
+    const popupContent = document.getElementById("popupContent");
+    let currentMarker = null;
+    let isPopupOpen = false;
+    let currentPopupDid = null;
+    let lastPosition = null;
+    let isAnimating = false;
+
+    function formatHoldTime(ms) {
+      const hours = Math.floor(ms / 3600000);
+      const minutes = Math.floor((ms % 3600000) / 60000);
+      const seconds = Math.floor((ms % 60000) / 1000);
+      return `${hours}hr ${minutes}min ${seconds}sec`;
+    }
+
+    async function updateLocation(deviceId, latlang) {
+      const locationCell = document.getElementById(`location-${deviceId}`);
+      if (!locationCell) return;
+
+      locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
+
+      try {
         const location = await fetchLocation(latlang);
-        locationCell.innerHTML = `<span style="font-size: 10px; line-height: 5px">${location}</span>`;
-    } catch (error) {
+        locationCell.innerHTML = location;
+      } catch (error) {
         console.error("Error updating location:", error);
         locationCell.innerHTML = "Error fetching location";
+      }
     }
-}
 
-async function fetchLocation(latlang) {
-    try {
+    async function updateLocationPopup(deviceId, latlang) {
+      const locationCell = document.getElementById(`location-popup-${deviceId}`);
+      if (!locationCell) return;
+
+      locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
+
+      try {
+        const location = await fetchLocation(latlang);
+        locationCell.innerHTML = `<span style="font-size: 10px; line-height: 5px">${location}</span>`;
+      } catch (error) {
+        console.error("Error updating location:", error);
+        locationCell.innerHTML = "Error fetching location";
+      }
+    }
+
+    async function fetchLocation(latlang) {
+      try {
         if (!latlang) return "Location not available";
 
         const [lat, lng] = latlang
-            .split(",")
-            .map((coord) => parseFloat(coord));
+          .split(",")
+          .map((coord) => parseFloat(coord));
         if (isNaN(lat) || isNaN(lng)) return "Invalid coordinates";
-        
+
         const response = await fetch(
-            `${API}opr=getLoc&lat=${lat}&lang=${lng}`
+          `${API}opr=getLoc&lat=${lat}&lang=${lng}`
         );
         const data = await response.json();
         return data[0].location || "Location not available";
-    } catch (error) {
+      } catch (error) {
         console.error("Error fetching location:", error);
         return "Error fetching location";
+      }
     }
-}
 
 
-async function fetchDeviceData() {
-    const mid = localStorage.getItem("mid");
-    if (!mid) {
+    async function fetchDeviceData() {
+      const mid = localStorage.getItem("mid");
+      if (!mid) {
         console.error("No mid found");
         return;
-    }
+      }
 
-    try {
+      try {
         const response = await fetch(`${API}opr=getVehileByMid&mid=${mid}`);
         const data = await response.json();
         devices = data.map(item => ({
-            name: item.dname,
-            deviceId: item.did,
-            coordinates: item.latlang ? 
-                item.latlang.split(",").map(coord => parseFloat(coord)) : 
-                [0, 0],
-            speed: parseFloat(item.speed),
-            angle: parseFloat(item.angle) || 0,
-            status: new Date() - new Date(item.ddate) > 6 * 60 * 60 * 1000 ? 
-                "Offline" : "Online",
-            date: item.ddate,
-            dateNew: item.ddatenew,
-            battery: item.Battery,
-            ignition: item.ignition,
-            ac: item.ac,
-            gps: item.gps,
-            power: item.power,
-            latlang: item.latlang,
-            devicegroup: item.devicegroup,
-            holdtime: item.holdtime,
-            location: item.location,
-            locationflag: item.locationflag,
+          name: item.dname,
+          deviceId: item.did,
+          coordinates: item.latlang ?
+            item.latlang.split(",").map(coord => parseFloat(coord)) :
+            [0, 0],
+          speed: parseFloat(item.speed),
+          angle: parseFloat(item.angle) || 0,
+          status: new Date() - new Date(item.ddate) > 6 * 60 * 60 * 1000 ?
+            "Offline" : "Online",
+          date: item.ddate,
+          dateNew: item.ddatenew,
+          battery: item.Battery,
+          ignition: item.ignition,
+          ac: item.ac,
+          gps: item.gps,
+          power: item.power,
+          latlang: item.latlang,
+          devicegroup: item.devicegroup,
+          holdtime: item.holdtime,
+          location: item.location,
+          locationflag: item.locationflag,
         }));
 
         if (isInitialLoad) {
-            initializeSelectedDevices(devices);
-            isInitialLoad = false;
+          initializeSelectedDevices(devices);
+          isInitialLoad = false;
         }
-        
+
         initializeMarkers();
         createDeviceList();
         updateStatusCounts();
-    } catch (error) {
+      } catch (error) {
         console.error("Error fetching device data:", error);
+      }
     }
-}
 
-function initializeSelectedDevices(devices) {
-    selectedDevices = new Set(devices.map(device => device.deviceId));
-}
+    function initializeSelectedDevices(devices) {
+      selectedDevices = new Set(devices.map(device => device.deviceId));
+    }
 
-function createDeviceList() {
-    const deviceContainer = $("#deviceContainer");
-    deviceContainer.empty();
+    function createDeviceList() {
+      const deviceContainer = $("#deviceContainer");
+      deviceContainer.empty();
 
-    // Add "Select All" checkbox at the top
-    if (isInitialLoad) {
+      // Add "Select All" checkbox at the top
+      if (isInitialLoad) {
         document.getElementById('selectAllCheckbox').checked = true;
-    }
+      }
 
-    // Group devices by their devicegroup
-    const deviceGroups = {};
-    devices.forEach(device => {
+      // Group devices by their devicegroup
+      const deviceGroups = {};
+      devices.forEach(device => {
         const groupName = device.devicegroup || 'Ungrouped';
         if (!deviceGroups[groupName]) {
-            deviceGroups[groupName] = [];
+          deviceGroups[groupName] = [];
         }
         deviceGroups[groupName].push(device);
-    });
+      });
 
-    // Create HTML for each group
-    Object.entries(deviceGroups).forEach(([groupName, groupDevices]) => {
+      // Create HTML for each group
+      Object.entries(deviceGroups).forEach(([groupName, groupDevices]) => {
         // Create group header with checkbox
         const groupHeader = $(`
             <div class="group-header" style="
@@ -509,29 +506,29 @@ function createDeviceList() {
 
         // Add group checkbox handler
         const groupCheckbox = groupHeader.find('.group-checkbox');
-        groupCheckbox.on('change', function() {
-            const isChecked = this.checked;
-            const groupDeviceCheckboxes = deviceContainer
-                .find(`[data-group="${groupName}"]`)
-                .find('.deviceCheckbox');
-            
-            groupDeviceCheckboxes.each(function() {
-                this.checked = isChecked;
-                const deviceIndex = parseInt(this.dataset.index);
-                const device = devices[deviceIndex];
-                
-                if (isChecked) {
-                    selectedDevices.add(device.deviceId);
-                } else {
-                    selectedDevices.delete(device.deviceId);
-                }
-            });
-            
-            // Update main "Select All" checkbox
-            const allChecked = $('.deviceCheckbox').toArray().every(cb => cb.checked);
-            $('#selectAllCheckbox').prop('checked', allChecked);
-            
-            filterMarkers();
+        groupCheckbox.on('change', function () {
+          const isChecked = this.checked;
+          const groupDeviceCheckboxes = deviceContainer
+            .find(`[data-group="${groupName}"]`)
+            .find('.deviceCheckbox');
+
+          groupDeviceCheckboxes.each(function () {
+            this.checked = isChecked;
+            const deviceIndex = parseInt(this.dataset.index);
+            const device = devices[deviceIndex];
+
+            if (isChecked) {
+              selectedDevices.add(device.deviceId);
+            } else {
+              selectedDevices.delete(device.deviceId);
+            }
+          });
+
+          // Update main "Select All" checkbox
+          const allChecked = $('.deviceCheckbox').toArray().every(cb => cb.checked);
+          $('#selectAllCheckbox').prop('checked', allChecked);
+
+          filterMarkers();
         });
 
         deviceContainer.append(groupHeader);
@@ -541,8 +538,8 @@ function createDeviceList() {
 
         // Add devices in this group
         groupDevices.forEach((device, index) => {
-            const isChecked = isInitialLoad || selectedDevices.has(device.deviceId);
-            const item = $(`
+          const isChecked = isInitialLoad || selectedDevices.has(device.deviceId);
+          const item = $(`
                 <div class="deviceItem" id="device-${device.name.replace(/\s+/g, "-")}" style="margin-left: 10px;">
                     <input type="checkbox" class="deviceCheckbox" data-index="${devices.indexOf(device)}" ${isChecked ? 'checked' : ''} />
                     <span class="car-emoji">${getCarEmoji(device)}</span>
@@ -550,376 +547,376 @@ function createDeviceList() {
                 </div>
             `);
 
-            // Attach event listener to the checkbox
-            const checkbox = item.find('.deviceCheckbox')[0];
-            checkbox.addEventListener('change', function(e) {
-                handleCheckboxChange(e);
-                
-                // Update group checkbox state
-                const groupDevices = $(`[data-group="${groupName}"] .deviceCheckbox`);
-                const allGroupChecked = groupDevices.toArray().every(cb => cb.checked);
-                groupHeader.find('.group-checkbox').prop('checked', allGroupChecked);
-            });
+          // Attach event listener to the checkbox
+          const checkbox = item.find('.deviceCheckbox')[0];
+          checkbox.addEventListener('change', function (e) {
+            handleCheckboxChange(e);
 
-            item.on("click", function(e) {
-              if (!e.target.classList.contains('deviceCheckbox')) {
-                  const deviceIndex = parseInt(item.find('.deviceCheckbox').data('index'));
-                  const device = devices[deviceIndex];
-                  const correspondingMarker = markers[deviceIndex];
-
-                  if (currentMarker && currentMarker === correspondingMarker) {
-                      hidePopup();
-                  } else {
-                      // Show popup for the device
-                      // showPopup(deviceIndex, correspondingMarker);
-
-                      // Pan and zoom to the marker's location
-                      map.panTo({
-                          lat: device.coordinates[0],
-                          lng: device.coordinates[1]
-                      });
-                      map.setZoom(15);
-                  }
-              }
+            // Update group checkbox state
+            const groupDevices = $(`[data-group="${groupName}"] .deviceCheckbox`);
+            const allGroupChecked = groupDevices.toArray().every(cb => cb.checked);
+            groupHeader.find('.group-checkbox').prop('checked', allGroupChecked);
           });
 
-            groupContainer.append(item);
+          item.on("click", function (e) {
+            if (!e.target.classList.contains('deviceCheckbox')) {
+              const deviceIndex = parseInt(item.find('.deviceCheckbox').data('index'));
+              const device = devices[deviceIndex];
+              const correspondingMarker = markers[deviceIndex];
+
+              if (currentMarker && currentMarker === correspondingMarker) {
+                hidePopup();
+              } else {
+                // Show popup for the device
+                // showPopup(deviceIndex, correspondingMarker);
+
+                // Pan and zoom to the marker's location
+                map.panTo({
+                  lat: device.coordinates[0],
+                  lng: device.coordinates[1]
+                });
+                map.setZoom(15);
+              }
+            }
+          });
+
+          groupContainer.append(item);
         });
 
         deviceContainer.append(groupContainer);
-    });
+      });
 
-    // Update main "Select All" checkbox behavior
-    $('#selectAllCheckbox').off('change').on('change', function() {
+      // Update main "Select All" checkbox behavior
+      $('#selectAllCheckbox').off('change').on('change', function () {
         const isChecked = this.checked;
         $('.deviceCheckbox, .group-checkbox').prop('checked', isChecked);
-        
+
         if (isChecked) {
-            devices.forEach(device => selectedDevices.add(device.deviceId));
+          devices.forEach(device => selectedDevices.add(device.deviceId));
         } else {
-            selectedDevices.clear();
+          selectedDevices.clear();
         }
-        
+
         filterMarkers();
-    });
-}
+      });
+    }
 
-function getCarEmoji(device) {
-        // Convert ignition string to boolean if necessary
-        const ignitionStatus =
-          typeof device.ignition === "string"
-            ? device.ignition.toLowerCase() === "true"
-            : Boolean(device.ignition);
+    function getCarEmoji(device) {
+      // Convert ignition string to boolean if necessary
+      const ignitionStatus =
+        typeof device.ignition === "string"
+          ? device.ignition.toLowerCase() === "true"
+          : Boolean(device.ignition);
 
-        // Get current date and device date for comparison
-        const currentDate = new Date();
-        const deviceDate = new Date(device.date);
-        const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+      // Get current date and device date for comparison
+      const currentDate = new Date();
+      const deviceDate = new Date(device.date);
+      const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
 
-        // Create image element with common styles
-        const imgStyle =
-          "width: 20px; height: 20px; object-fit: contain; vertical-align: middle;";
-        // Special style for green image with vertical alignment adjustment
-        const imgStyleGreen =
-          "width: 30px; height: 30px; object-fit: contain; vertical-align: middle; margin: -10px 0;";
+      // Create image element with common styles
+      const imgStyle =
+        "width: 20px; height: 20px; object-fit: contain; vertical-align: middle;";
+      // Special style for green image with vertical alignment adjustment
+      const imgStyleGreen =
+        "width: 30px; height: 30px; object-fit: contain; vertical-align: middle; margin: -10px 0;";
 
-        if (hoursDifference > 2) {
-          // Offline - Black Car
-          return `<img src="/deviceTracking/images/blackcar1.png" style="${imgStyle}" alt="Offline"/>`;
-        } else if (!ignitionStatus) {
-          // Stopped - Red Car
-          return `<img src="/images/icon/red/car0.png" style="${imgStyle}" alt="Stopped"/>`;
-        } else if (ignitionStatus && device.speed > 0) {
-          // Moving - Green Car
-          return `<img src="/deviceTracking/images/green.png" style="${imgStyleGreen}" alt="Moving"/>`;
-        } else if (ignitionStatus && device.speed === 0) {
-          // Idle - Yellow Car
-          return `<img src="/deviceTracking/images/yellow.png" style="${imgStyle}" alt="Idle"/>`;
-        } else {
-          // Default - Black Car
-          return `<img src="/deviceTracking/images/blackcar1.png" style="${imgStyle}" alt="Default"/>`;
-        }
+      if (hoursDifference > 2) {
+        // Offline - Black Car
+        return `<img src="/deviceTracking/images/blackcar1.png" style="${imgStyle}" alt="Offline"/>`;
+      } else if (!ignitionStatus) {
+        // Stopped - Red Car
+        return `<img src="/images/icon/red/car0.png" style="${imgStyle}" alt="Stopped"/>`;
+      } else if (ignitionStatus && device.speed > 0) {
+        // Moving - Green Car
+        return `<img src="/deviceTracking/images/green.png" style="${imgStyleGreen}" alt="Moving"/>`;
+      } else if (ignitionStatus && device.speed === 0) {
+        // Idle - Yellow Car
+        return `<img src="/deviceTracking/images/yellow.png" style="${imgStyle}" alt="Idle"/>`;
+      } else {
+        // Default - Black Car
+        return `<img src="/deviceTracking/images/blackcar1.png" style="${imgStyle}" alt="Default"/>`;
       }
+    }
 
-function hidePopup() {
-    const popup = document.getElementById('customPopup');
-    popup.style.display = 'none';
-    isPopupOpen = false;
-    currentPopupDid = null;
-    currentMarker = null;
-}
+    function hidePopup() {
+      const popup = document.getElementById('customPopup');
+      popup.style.display = 'none';
+      isPopupOpen = false;
+      currentPopupDid = null;
+      currentMarker = null;
+    }
 
-      function filterDeviceList() {
-        const searchValue = $("#searchInput").val().toLowerCase();
-        $(".deviceItem").each(function () {
-          const deviceName = $(this).text().toLowerCase();
-          $(this).toggle(deviceName.includes(searchValue));
-        });
+    function filterDeviceList() {
+      const searchValue = $("#searchInput").val().toLowerCase();
+      $(".deviceItem").each(function () {
+        const deviceName = $(this).text().toLowerCase();
+        $(this).toggle(deviceName.includes(searchValue));
+      });
+    }
+
+    function formatTimeDifference(minutes) {
+      if (minutes < 1) {
+        return "just now";
       }
-
-      function formatTimeDifference(minutes) {
-        if (minutes < 1) {
-          return "just now";
-        }
-        if (minutes < 60) {
-          return `${minutes} min ago`;
-        }
-        const hours = Math.floor(minutes / 60);
-        const remainingMins = minutes % 60;
-        if (hours < 24) {
-          return `${hours}h ${remainingMins}m ago`;
-        }
-        const days = Math.floor(hours / 24);
-        const remainingHours = hours % 24;
-        return `${days}d ${remainingHours}h ago`;
+      if (minutes < 60) {
+        return `${minutes} min ago`;
       }
+      const hours = Math.floor(minutes / 60);
+      const remainingMins = minutes % 60;
+      if (hours < 24) {
+        return `${hours}h ${remainingMins}m ago`;
+      }
+      const days = Math.floor(hours / 24);
+      const remainingHours = hours % 24;
+      return `${days}d ${remainingHours}h ago`;
+    }
 
-//       function showPopup(index, marker) {
-//     console.log('Showing popup for index:', index);
+    //       function showPopup(index, marker) {
+    //     console.log('Showing popup for index:', index);
 
-//     if (!marker || !devices[index]) {
-//         console.error('Invalid marker or device index');
-//         return;
-//     }
+    //     if (!marker || !devices[index]) {
+    //         console.error('Invalid marker or device index');
+    //         return;
+    //     }
 
-//     const popup = document.getElementById('customPopup');
-//     const popupTitle = document.getElementById('popupTitle');
-//     const popupContent = document.getElementById('popupContent');
+    //     const popup = document.getElementById('customPopup');
+    //     const popupTitle = document.getElementById('popupTitle');
+    //     const popupContent = document.getElementById('popupContent');
 
-//     const device = devices[index];
-    
-//     // Set popup content
-//     popupTitle.innerHTML = `<div class="title">${
-//         device.name
-//     }<div class="status"><b>GPS:</b> <span class="status-indicator ${
-//         device.gps == true ? "status-on" : "status-off"
-//     }">
-//         ${device.gps == true ? "ON" : "OFF"}
-//     </span><br />
-//     <b>Engine:</b> <span class="status-indicator ${
-//         device.ignition == "true" ? "status-on" : "status-off"
-//     }">
-//         ${device.ignition == "true" ? "ON" : "OFF"}
-//     </span><br />
-//     <b>Power:</b> <span class="status-indicator ${
-//         device.power === "true" ? "status-on" : "status-off"
-//     }">
-//         ${device.power === "true" ? "ON" : "OFF"}
-//     </span></div></div>`;
+    //     const device = devices[index];
 
-//     popupContent.innerHTML = `
-//         <b>Date:</b> ${device.dateNew} <br />
-//         <b>Speed:</b> ${device.speed}asdasdasasd km/h <br />
-//         <b>Hold Time:</b> ${device.holdtime} <br />
-//         <b>Status:</b> <span class="status-indicator-status ${
-//             device.status == "Online" ? "status-on" : "status-off"
-//         }">${device.status}</span> <br />
-//         <b>Battery:</b> ${device.battery}V <br />
-//         <div style="display: flex; align-items: center; gap: 5px;">
-//             <b>Location:</b> <span id="location-popup-${device.deviceId}">
-//                 <button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" 
-//                     style="background: none; border: none; padding: 0; color: #3498db; text-decoration: underline; cursor: pointer; font-size: 11px;">
-//                     Get Location
-//                 </button>
-//             </span>
-//         </div>
-//     `;
+    //     // Set popup content
+    //     popupTitle.innerHTML = `<div class="title">${
+    //         device.name
+    //     }<div class="status"><b>GPS:</b> <span class="status-indicator ${
+    //         device.gps == true ? "status-on" : "status-off"
+    //     }">
+    //         ${device.gps == true ? "ON" : "OFF"}
+    //     </span><br />
+    //     <b>Engine:</b> <span class="status-indicator ${
+    //         device.ignition == "true" ? "status-on" : "status-off"
+    //     }">
+    //         ${device.ignition == "true" ? "ON" : "OFF"}
+    //     </span><br />
+    //     <b>Power:</b> <span class="status-indicator ${
+    //         device.power === "true" ? "status-on" : "status-off"
+    //     }">
+    //         ${device.power === "true" ? "ON" : "OFF"}
+    //     </span></div></div>`;
 
-//     // Show the popup
-//     popup.style.display = "block";
+    //     popupContent.innerHTML = `
+    //         <b>Date:</b> ${device.dateNew} <br />
+    //         <b>Speed:</b> ${device.speed}asdasdasasd km/h <br />
+    //         <b>Hold Time:</b> ${device.holdtime} <br />
+    //         <b>Status:</b> <span class="status-indicator-status ${
+    //             device.status == "Online" ? "status-on" : "status-off"
+    //         }">${device.status}</span> <br />
+    //         <b>Battery:</b> ${device.battery}V <br />
+    //         <div style="display: flex; align-items: center; gap: 5px;">
+    //             <b>Location:</b> <span id="location-popup-${device.deviceId}">
+    //                 <button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" 
+    //                     style="background: none; border: none; padding: 0; color: #3498db; text-decoration: underline; cursor: pointer; font-size: 11px;">
+    //                     Get Location
+    //                 </button>
+    //             </span>
+    //         </div>
+    //     `;
 
-//     try {
-//         // Get the marker's DOM element
-//         const markerElement = marker.getElement();
-//         if (markerElement) {
-//             // Get the marker's position relative to the map container
-//             const markerRect = markerElement.getBoundingClientRect();
-//             const mapContainer = map.getContainer();
-//             const mapRect = mapContainer.getBoundingClientRect();
+    //     // Show the popup
+    //     popup.style.display = "block";
 
-//             // Position the popup relative to the marker
-//             popup.style.left = `${markerRect.left - mapRect.left + markerRect.width / 2}px`;
-//             popup.style.top = `${markerRect.top - mapRect.top - popup.offsetHeight - 20}px`;
-//         }
-//     } catch (error) {
-//         console.error('Error positioning popup:', error);
+    //     try {
+    //         // Get the marker's DOM element
+    //         const markerElement = marker.getElement();
+    //         if (markerElement) {
+    //             // Get the marker's position relative to the map container
+    //             const markerRect = markerElement.getBoundingClientRect();
+    //             const mapContainer = map.getContainer();
+    //             const mapRect = mapContainer.getBoundingClientRect();
 
-//         // Fallback positioning
-//         const mapContainer = map.getContainer();
-//         const containerRect = mapContainer.getBoundingClientRect();
-//         popup.style.left = `${containerRect.width / 2}px`;
-//         popup.style.top = `${containerRect.height / 2}px`;
-//     }
+    //             // Position the popup relative to the marker
+    //             popup.style.left = `${markerRect.left - mapRect.left + markerRect.width / 2}px`;
+    //             popup.style.top = `${markerRect.top - mapRect.top - popup.offsetHeight - 20}px`;
+    //         }
+    //     } catch (error) {
+    //         console.error('Error positioning popup:', error);
 
-//     currentMarker = marker;
-//     isPopupOpen = true;
-//     currentPopupDid = device.deviceId;
-// }
+    //         // Fallback positioning
+    //         const mapContainer = map.getContainer();
+    //         const containerRect = mapContainer.getBoundingClientRect();
+    //         popup.style.left = `${containerRect.width / 2}px`;
+    //         popup.style.top = `${containerRect.height / 2}px`;
+    //     }
+
+    //     currentMarker = marker;
+    //     isPopupOpen = true;
+    //     currentPopupDid = device.deviceId;
+    // }
 
 
-function updatePopupPosition() {
-    if (!currentMarker || !popup.style.display === "block") return;
+    function updatePopupPosition() {
+      if (!currentMarker || !popup.style.display === "block") return;
 
-    try {
+      try {
         const position = currentMarker.getPosition();
         const point = map.getPixel(position);
-        
+
         // Get the map container dimensions
         const mapContainer = map.getContainer();
         const mapRect = mapContainer.getBoundingClientRect();
-        
+
         // Update popup position
         popup.style.left = `${point.x}px`;
         popup.style.top = `${point.y - 20}px`;
-        
+
         // Ensure popup stays within map bounds
         const popupRect = popup.getBoundingClientRect();
         if (point.x + popupRect.width > mapRect.width) {
-            popup.style.left = `${mapRect.width - popupRect.width - 10}px`;
+          popup.style.left = `${mapRect.width - popupRect.width - 10}px`;
         }
         if (point.y - popupRect.height < 0) {
-            popup.style.top = `${point.y + 30}px`; // Show below marker instead
+          popup.style.top = `${point.y + 30}px`; // Show below marker instead
         }
-    } catch (error) {
+      } catch (error) {
         console.error('Error updating popup position:', error);
-    }
-}
-
-      async function updateDistance(deviceId) {
-        const distanceSpan = document.getElementById("distance-value");
-        if (!distanceSpan) return; // Guard clause in case element isn't found
-
-        // Show loading state
-        distanceSpan.innerHTML = '<span style="color: #666;">Loading...</span>';
-
-        try {
-          const distance = await fetchDistance(deviceId);
-          distanceSpan.innerHTML = `${distance} km`;
-        } catch (error) {
-          console.error("Error updating distance:", error);
-          distanceSpan.innerHTML = "0 km";
-        }
       }
+    }
 
-      // function generatePopupContent(device) {
-      //   return `
-      //               <div class="popup-content" style="">
-      //                       <div class="status">
-      //                           <b></b> <span class="status-indicator ${device.gps == true ? "status-on" : "status-off"}">
-      //                               GPS
-      //                           </span><br/>
-      //                           <b></b> <span class="status-indicator ${device.ignition == "true" ? "status-on" : "status-off"}">
-      //                               Eng
-      //                           </span><br/>
-      //                           <b></b> <span class="status-indicator ${device.power === "true" ? "status-on" : "status-off"}">
-      //                               Pow
-      //                           </span><br/>
-      //                       </div>
-      //                   </div>
-      //                   <div class="popup-details">
-      //                       <b>Date:</b> ${device.dateNew}<br/>
-      //                       <b>Speed:</b> ${device.speed}adasdasd km/h<br/>
-      //                       <b>Hold Time:</b> ${formatHoldTime(parseInt(device.holdtime))}<br/>
-      //                       <b>Status:</b> <span class="status-indicator-status ${device.status == "Online" ? "status-on" : "status-off"}">${device.status}</span><br/>
-      //                       <div style="display: flex; align-items: center; gap: 5px;">
-      //                         <b>Battery:</b> <span>${device.battery}V</span>
-      //                       </div>
-      //                       <div style="display: flex; align-items: center; gap: 5px;">
-      //                           <b>Location:</b> 
-      //                           <span id="location-popup-${device.deviceId}" style="max-width: 140px">
-      //                               <button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" 
-      //                                   style="background: none; border: none; padding: 0; color: #3498db; 
-      //                                   text-decoration: underline; cursor: pointer; font-size: 11px;">
-      //                                   Get Location
-      //                               </button>
-      //                           </span>
-      //                       </div>
-      //                       <div style="display: flex; align-items: center; gap: 5px;">
-      //                           <b>Distance:</b> <span id="distance-value">0 km</span>
-      //                       </div>
-      //                       <div class="button-container" style="margin-top: 5px; gap: 5px;">
-      //                           <button onclick="updateDistance('${device.deviceId}')" class="distance-btn">
-      //                               Get Distance
-      //                           </button>
-      //                           <button onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[1]}, ${device.coordinates[0]})" 
-      //                               class="nearby-btn">
-      //                               View Nearby
-      //                           </button>
-      //                           <button onclick="shareLocation(${device.coordinates[1]}, ${device.coordinates[0]})" 
-      //                               class="nearby-btn">
-      //                               Share Location
-      //                           </button>
-      //                           <button onclick="addPOIForDevice('${device.name}', ${device.coordinates[1]}, ${device.coordinates[0]})" 
-      //                               class="nearby-btn">
-      //                               Add POI
-      //                           </button>
-      //                       </div>
-      //                   </div>
-      //               </div>
-      //           `;
-      // }
+    async function updateDistance(deviceId) {
+      const distanceSpan = document.getElementById("distance-value");
+      if (!distanceSpan) return; // Guard clause in case element isn't found
 
-function initializeMarkers() {
-    // Remove existing markers
-    markers.forEach(marker => {
+      // Show loading state
+      distanceSpan.innerHTML = '<span style="color: #666;">Loading...</span>';
+
+      try {
+        const distance = await fetchDistance(deviceId);
+        distanceSpan.innerHTML = `${distance} km`;
+      } catch (error) {
+        console.error("Error updating distance:", error);
+        distanceSpan.innerHTML = "0 km";
+      }
+    }
+
+    // function generatePopupContent(device) {
+    //   return `
+    //               <div class="popup-content" style="">
+    //                       <div class="status">
+    //                           <b></b> <span class="status-indicator ${device.gps == true ? "status-on" : "status-off"}">
+    //                               GPS
+    //                           </span><br/>
+    //                           <b></b> <span class="status-indicator ${device.ignition == "true" ? "status-on" : "status-off"}">
+    //                               Eng
+    //                           </span><br/>
+    //                           <b></b> <span class="status-indicator ${device.power === "true" ? "status-on" : "status-off"}">
+    //                               Pow
+    //                           </span><br/>
+    //                       </div>
+    //                   </div>
+    //                   <div class="popup-details">
+    //                       <b>Date:</b> ${device.dateNew}<br/>
+    //                       <b>Speed:</b> ${device.speed}adasdasd km/h<br/>
+    //                       <b>Hold Time:</b> ${formatHoldTime(parseInt(device.holdtime))}<br/>
+    //                       <b>Status:</b> <span class="status-indicator-status ${device.status == "Online" ? "status-on" : "status-off"}">${device.status}</span><br/>
+    //                       <div style="display: flex; align-items: center; gap: 5px;">
+    //                         <b>Battery:</b> <span>${device.battery}V</span>
+    //                       </div>
+    //                       <div style="display: flex; align-items: center; gap: 5px;">
+    //                           <b>Location:</b> 
+    //                           <span id="location-popup-${device.deviceId}" style="max-width: 140px">
+    //                               <button onclick="updateLocationPopup('${device.deviceId}', '${device.latlang}')" 
+    //                                   style="background: none; border: none; padding: 0; color: #3498db; 
+    //                                   text-decoration: underline; cursor: pointer; font-size: 11px;">
+    //                                   Get Location
+    //                               </button>
+    //                           </span>
+    //                       </div>
+    //                       <div style="display: flex; align-items: center; gap: 5px;">
+    //                           <b>Distance:</b> <span id="distance-value">0 km</span>
+    //                       </div>
+    //                       <div class="button-container" style="margin-top: 5px; gap: 5px;">
+    //                           <button onclick="updateDistance('${device.deviceId}')" class="distance-btn">
+    //                               Get Distance
+    //                           </button>
+    //                           <button onclick="viewNearbyVehicles('${device.deviceId}', ${device.coordinates[1]}, ${device.coordinates[0]})" 
+    //                               class="nearby-btn">
+    //                               View Nearby
+    //                           </button>
+    //                           <button onclick="shareLocation(${device.coordinates[1]}, ${device.coordinates[0]})" 
+    //                               class="nearby-btn">
+    //                               Share Location
+    //                           </button>
+    //                           <button onclick="addPOIForDevice('${device.name}', ${device.coordinates[1]}, ${device.coordinates[0]})" 
+    //                               class="nearby-btn">
+    //                               Add POI
+    //                           </button>
+    //                       </div>
+    //                   </div>
+    //               </div>
+    //           `;
+    // }
+
+    function initializeMarkers() {
+      // Remove existing markers
+      markers.forEach(marker => {
         marker.setMap(null);
         marker.setVisible(false)
 
         marker = null;
         console.log("called")
-    });
+      });
 
-    markers = null;
-    markers = [];
+      markers = null;
+      markers = [];
 
-    console.log('Total devices:', devices.length);
-    console.log('Selected devices:', selectedDevices.size);
+      console.log('Total devices:', devices.length);
+      console.log('Selected devices:', selectedDevices.size);
 
-    try {
+      try {
         // Prepare data for clustering by marker type
         const markersByType = {
-            offline: { icon: '/deviceTracking/images/blackcar1.png', markers: [] },
-            stopped: { icon: '/images/icon/red/car0.png', markers: [] },
-            moving: { icon: '/deviceTracking/images/green.png', markers: [] },
-            idle: { icon: '/deviceTracking/images/yellow.png', markers: [] }
+          offline: { icon: '/deviceTracking/images/blackcar1.png', markers: [] },
+          stopped: { icon: '/images/icon/red/car0.png', markers: [] },
+          moving: { icon: '/deviceTracking/images/green.png', markers: [] },
+          idle: { icon: '/deviceTracking/images/yellow.png', markers: [] }
         };
 
         // Filter and create markers for valid devices
         const validMarkers = devices
-            .filter(device => {
-                return device.coordinates && 
-                       device.coordinates[0] !== 0 && 
-                       device.coordinates[1] !== 0 &&
-                       selectedDevices.has(device.deviceId);
-            })
-            .map(device => {
-                const currentDate = new Date();
-                const deviceDate = new Date(device.date);
-                const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-                const ignitionStatus = typeof device.ignition === 'string' 
-                    ? device.ignition.toLowerCase() === 'true' 
-                    : Boolean(device.ignition);
+          .filter(device => {
+            return device.coordinates &&
+              device.coordinates[0] !== 0 &&
+              device.coordinates[1] !== 0 &&
+              selectedDevices.has(device.deviceId);
+          })
+          .map(device => {
+            const currentDate = new Date();
+            const deviceDate = new Date(device.date);
+            const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+            const ignitionStatus = typeof device.ignition === 'string'
+              ? device.ignition.toLowerCase() === 'true'
+              : Boolean(device.ignition);
 
-                const markerType = hoursDifference > 2 ? 'offline' :
-                                  !ignitionStatus ? 'stopped' :
-                                  ignitionStatus && device.speed > 0 ? 'moving' : 'idle';
+            const markerType = hoursDifference > 2 ? 'offline' :
+              !ignitionStatus ? 'stopped' :
+                ignitionStatus && device.speed > 0 ? 'moving' : 'idle';
 
-                const marker = new google.maps.Marker({
-                    position: {
-                        lat: device.coordinates[0],
-                        lng: device.coordinates[1]
-                    },
-                    icon:getMarkerIcon(device),
-                    map: map,
-                    deviceId: device.deviceId,
-                    title: device.name,
-                    // visible: true
-                });
+            const marker = new google.maps.Marker({
+              position: {
+                lat: device.coordinates[0],
+                lng: device.coordinates[1]
+              },
+              icon: getMarkerIcon(device),
+              map: map,
+              deviceId: device.deviceId,
+              title: device.name,
+              // visible: true
+            });
 
-                const minDifference = Math.floor((currentDate - deviceDate) / (1000 * 60));
-                const timeAgo = formatTimeDifference(minDifference);
+            const minDifference = Math.floor((currentDate - deviceDate) / (1000 * 60));
+            const timeAgo = formatTimeDifference(minDifference);
 
-                const infoContent = `
+            const infoContent = `
                     <div class="info-window">
                         <div class="title">${device.name}
                             <div class="status">
@@ -970,11 +967,9 @@ function initializeMarkers() {
                                     class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">
                                     View Nearby
                                 </button>
-                                <button onclick="shareLocation(${
-                                    device.coordinates[0]
-                                  }, ${
-                                    device.coordinates[1]
-                                  })" class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">Share Location</button>
+                                <button onclick="shareLocation(${device.coordinates[0]
+              }, ${device.coordinates[1]
+              })" class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">Share Location</button>
                                 <button onclick="addPOIForDevice('${device.name}', ${device.coordinates[0]}, ${device.coordinates[1]})" 
                                     class="nearby-btn" style="font-size: 11px; padding: 4px 8px;">
                                     Add POI
@@ -1010,258 +1005,258 @@ function initializeMarkers() {
                     </div>
                 `;
 
-                const infoWindow = new google.maps.InfoWindow({
-                    content: infoContent
-                });
-
-                marker.addListener('click', () => {
-                    infoWindow.open(map, marker);
-                });
-
-                return marker;
+            const infoWindow = new google.maps.InfoWindow({
+              content: infoContent
             });
 
+            marker.addListener('click', () => {
+              infoWindow.open(map, marker);
+            });
+
+            return marker;
+          });
+
         // Create a single MarkerClusterer for all markers
-       markerCluster = new markerClusterer.MarkerClusterer({
-            map,
-            markers: validMarkers,
-            algorithm: new markerClusterer.SuperClusterAlgorithm({
-                maxZoom: 14,
-                radius: 80
-            }),
-            renderer: {
-                render: ({ count, position }) => {
-                  // if (count <= 0) return null;
-                    // Custom cluster marker styling
-                    return new google.maps.Marker({
-                        position,
-                        label: {
-                            text: String(count),
-                            color: '#ffffff',
-                            fontSize: count === 0 ? '0px' : '14px'
-                        },
-                        icon: {
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: count === 0? 0 : 20,
-                            fillColor: getClusterColor(count),
-                            fillOpacity: count === 0 ? 0 : 0.9,
-                            strokeWeight: 2,
-                            strokeColor: '#ffffff'
-                        },
-                        zIndex: Number(google.maps.Marker.MAX_ZINDEX) + count
-                    });
-                }
+        markerCluster = new markerClusterer.MarkerClusterer({
+          map,
+          markers: validMarkers,
+          algorithm: new markerClusterer.SuperClusterAlgorithm({
+            maxZoom: 14,
+            radius: 80
+          }),
+          renderer: {
+            render: ({ count, position }) => {
+              // if (count <= 0) return null;
+              // Custom cluster marker styling
+              return new google.maps.Marker({
+                position,
+                label: {
+                  text: String(count),
+                  color: '#ffffff',
+                  fontSize: count === 0 ? '0px' : '14px'
+                },
+                icon: {
+                  path: google.maps.SymbolPath.CIRCLE,
+                  scale: count === 0 ? 0 : 20,
+                  fillColor: getClusterColor(count),
+                  fillOpacity: count === 0 ? 0 : 0.9,
+                  strokeWeight: 2,
+                  strokeColor: '#ffffff'
+                },
+                zIndex: Number(google.maps.Marker.MAX_ZINDEX) + count
+              });
             }
+          }
         });
 
         markers = validMarkers;
 
         // Fit bounds if markers existw
         if (markers.length > 0) {
-            const bounds = new google.maps.LatLngBounds();
-            markers.forEach(marker => bounds.extend(marker.getPosition()));
-            map.fitBounds(bounds);
+          const bounds = new google.maps.LatLngBounds();
+          markers.forEach(marker => bounds.extend(marker.getPosition()));
+          map.fitBounds(bounds);
         }
-    } catch (error) {
+      } catch (error) {
         console.error('Error creating markers:', error);
+      }
     }
-}
 
-function deleteOverlays() {
-          
-  markerCluster.clearMarkers();
-                
-                }
+    function deleteOverlays() {
 
-function getClusterColor(count) {
-    if (count > 50) return '#ff6961';  // Red for large clusters
-    if (count > 20) return '#FFA726';  // Yellow for medium-large
-    if (count > 5) return '#77dd77';   // Green for small
-    return '#108cff';                  // Blue for tiny clusters
-}
-// Modify getMarkerIcon to work with a device object
-function getMarkerIcon(device) {
-    const currentDate = new Date();
-    const deviceDate = new Date(device.date);
-    const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-    const ignitionStatus = typeof device.ignition === 'string' 
-        ? device.ignition.toLowerCase() === 'true' 
+      markerCluster.clearMarkers();
+
+    }
+
+    function getClusterColor(count) {
+      if (count > 50) return '#ff6961';  // Red for large clusters
+      if (count > 20) return '#FFA726';  // Yellow for medium-large
+      if (count > 5) return '#77dd77';   // Green for small
+      return '#108cff';                  // Blue for tiny clusters
+    }
+    // Modify getMarkerIcon to work with a device object
+    function getMarkerIcon(device) {
+      const currentDate = new Date();
+      const deviceDate = new Date(device.date);
+      const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+      const ignitionStatus = typeof device.ignition === 'string'
+        ? device.ignition.toLowerCase() === 'true'
         : Boolean(device.ignition);
 
-    if (hoursDifference > 2) {
+      if (hoursDifference > 2) {
         return { url: '/deviceTracking/images/blackcar1.png', scaledSize: new google.maps.Size(32, 32) };
-    } else if (!ignitionStatus) {
+      } else if (!ignitionStatus) {
         return { url: '/images/icon/red/car0.png', scaledSize: new google.maps.Size(32, 32) };
-    } else if (ignitionStatus && device.speed > 0) {
+      } else if (ignitionStatus && device.speed > 0) {
         return { url: '/deviceTracking/images/green.png', scaledSize: new google.maps.Size(32, 32) };
-    } else {
+      } else {
         return { url: '/deviceTracking/images/yellow.png', scaledSize: new google.maps.Size(32, 32) };
+      }
     }
-}
 
 
-function safelyRotateMarker(marker, angle) {
-    try {
+    function safelyRotateMarker(marker, angle) {
+      try {
         if (marker && typeof marker.setRotation === 'function') {
-            marker.setRotation(angle);
+          marker.setRotation(angle);
         }
-    } catch (e) {
+      } catch (e) {
         console.warn('Failed to rotate marker:', e);
+      }
     }
-}
 
-// Helper function to update marker rotations
-function updateMarkersRotation() {
-    markers.forEach(marker => {
+    // Helper function to update marker rotations
+    function updateMarkersRotation() {
+      markers.forEach(marker => {
         if (marker && marker.getLayers) {
-            const layers = marker.getLayers();
-            if (layers) {
-                layers.forEach(layer => {
-                    if (layer && layer.feature && layer.feature.properties.angle) {
-                        safelyRotateMarker(layer, layer.feature.properties.angle);
-                    }
-                });
-            }
+          const layers = marker.getLayers();
+          if (layers) {
+            layers.forEach(layer => {
+              if (layer && layer.feature && layer.feature.properties.angle) {
+                safelyRotateMarker(layer, layer.feature.properties.angle);
+              }
+            });
+          }
         }
-    });
-}
+      });
+    }
 
-// Function to get cluster icon based on cluster size
-function getClusterIcon(count) {
-    // Return cluster icon URL or SVG based on count
-    return {
+    // Function to get cluster icon based on cluster size
+    function getClusterIcon(count) {
+      // Return cluster icon URL or SVG based on count
+      return {
         url: count > 10 ? '/cluster-large.png' :
-             count > 5 ? '/cluster-medium.png' :
-             '/cluster-small.png',
+          count > 5 ? '/cluster-medium.png' :
+            '/cluster-small.png',
         size: {
-            width: count > 100 ? 50 : count > 50 ? 40 : 30,
-            height: count > 100 ? 50 : count > 50 ? 40 : 30
+          width: count > 100 ? 50 : count > 50 ? 40 : 30,
+          height: count > 100 ? 50 : count > 50 ? 40 : 30
         }
-    };
-}
+      };
+    }
 
-// function getPopupContent(feature) {
-//     const device = feature.properties;
-//     return generatePopupContent(device);
-// }
+    // function getPopupContent(feature) {
+    //     const device = feature.properties;
+    //     return generatePopupContent(device);
+    // }
 
-// function createMarker(device) {
-//     const customElement = document.createElement('div');
-//     customElement.className = 'customMarkerClass';
-    
-//     const carImage = document.createElement('img');
-//     // Set image based on device status
-//     const currentDate = new Date();
-//     const deviceDate = new Date(device.date);
-//     const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-//     const ignitionStatus = typeof device.ignition === 'string' ? 
-//         device.ignition.toLowerCase() === 'true' : Boolean(device.ignition);
+    // function createMarker(device) {
+    //     const customElement = document.createElement('div');
+    //     customElement.className = 'customMarkerClass';
 
-//     if (hoursDifference > 2) {
-//         carImage.src = '/deviceTracking/images/blackcar1.png';
-//     } else if (!ignitionStatus) {
-//         carImage.src = '/images/icon/red/car0.png';
-//     } else if (ignitionStatus && device.speed > 0) {
-//         carImage.src = '/deviceTracking/images/green.png';
-//     } else {
-//         carImage.src = '/deviceTracking/images/yellow.png';
-//     }
+    //     const carImage = document.createElement('img');
+    //     // Set image based on device status
+    //     const currentDate = new Date();
+    //     const deviceDate = new Date(device.date);
+    //     const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+    //     const ignitionStatus = typeof device.ignition === 'string' ? 
+    //         device.ignition.toLowerCase() === 'true' : Boolean(device.ignition);
 
-//     carImage.style.transform = `rotate(${device.angle || 0}deg)`;
-//     customElement.appendChild(carImage);
+    //     if (hoursDifference > 2) {
+    //         carImage.src = '/deviceTracking/images/blackcar1.png';
+    //     } else if (!ignitionStatus) {
+    //         carImage.src = '/images/icon/red/car0.png';
+    //     } else if (ignitionStatus && device.speed > 0) {
+    //         carImage.src = '/deviceTracking/images/green.png';
+    //     } else {
+    //         carImage.src = '/deviceTracking/images/yellow.png';
+    //     }
 
-//     const marker = new mappls.Marker({
-//         map: map,
-//         position: {
-//             lat: device.coordinates[0],
-//             lng: device.coordinates[1]
-//         },
-//         icon: customElement,
-//         draggable: false
-//     });
+    //     carImage.style.transform = `rotate(${device.angle || 0}deg)`;
+    //     customElement.appendChild(carImage);
 
-//     // Add click event
-//     // marker.addListener('click', () => showPopup(device, marker));
-//     return marker;
-// }
+    //     const marker = new mappls.Marker({
+    //         map: map,
+    //         position: {
+    //             lat: device.coordinates[0],
+    //             lng: device.coordinates[1]
+    //         },
+    //         icon: customElement,
+    //         draggable: false
+    //     });
 
-function filterMarkers() {
-  deleteOverlays();
+    //     // Add click event
+    //     // marker.addListener('click', () => showPopup(device, marker));
+    //     return marker;
+    // }
 
-  initializeMarkers();
+    function filterMarkers() {
+      deleteOverlays();
 
-    // Filter features based on selected devices
-    const filteredData = devices
+      initializeMarkers();
+
+      // Filter features based on selected devices
+      const filteredData = devices
         .filter(device => selectedDevices.has(device.deviceId))
         .map(device => ({
-            type: "Feature",
-            properties: {
-                deviceId: device.deviceId,
-                name: device.name,
-                // ... other properties
-            },
-            geometry: {
-                type: "Point",
-                coordinates: [device.coordinates[0], device.coordinates[1]]
-            }
+          type: "Feature",
+          properties: {
+            deviceId: device.deviceId,
+            name: device.name,
+            // ... other properties
+          },
+          geometry: {
+            type: "Point",
+            coordinates: [device.coordinates[0], device.coordinates[1]]
+          }
         }));
 
-    // Update cluster markers with filtered data
-    if (markers[0]) {
+      // Update cluster markers with filtered data
+      if (markers[0]) {
         markers[0].setData({
-            type: "FeatureCollection",
-            features: filteredData
+          type: "FeatureCollection",
+          features: filteredData
         });
+      }
     }
-}
 
-function setRefreshInterval() {
-        clearInterval(refreshTimer);
-        refreshTimer = setInterval(() => fetchDeviceData(), refreshInterval);
+    function setRefreshInterval() {
+      clearInterval(refreshTimer);
+      refreshTimer = setInterval(() => fetchDeviceData(), refreshInterval);
+    }
+
+    $(document).ready(function () {
+      if (!localStorage.getItem("mid")) {
+        window.location.href = "index.html";
       }
 
-      $(document).ready(function() {
-    if (!localStorage.getItem("mid")) {
-        window.location.href = "index.html";
-    }
+      $("#navbar-container").load("../navbarola.html");
+      loadMapScript();
 
-    $("#navbar-container").load("../navbarola.html");
-    loadMapScript();
-    
-    // Event listeners
-    $("#searchInput").on("input", filterDeviceList);
-    $("#refreshRate").on("change", function() {
+      // Event listeners
+      $("#searchInput").on("input", filterDeviceList);
+      $("#refreshRate").on("change", function () {
         refreshInterval = parseInt($(this).val());
         setRefreshInterval();
+      });
+
+      fetchDeviceData();
+      setRefreshInterval();
     });
 
-    fetchDeviceData();
-    setRefreshInterval();
-});
+    //status box
 
-//status box
+    function animateCount(element, start, end, duration = 1000) {
+      let startTimestamp = null;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const currentCount = Math.floor(progress * (end - start) + start);
+        element.textContent = currentCount;
 
-      function animateCount(element, start, end, duration = 1000) {
-        let startTimestamp = null;
-        const step = (timestamp) => {
-          if (!startTimestamp) startTimestamp = timestamp;
-          const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-          const currentCount = Math.floor(progress * (end - start) + start);
-          element.textContent = currentCount;
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        } else {
+          element.textContent = end;
+        }
+      };
+      window.requestAnimationFrame(step);
+    }
 
-          if (progress < 1) {
-            window.requestAnimationFrame(step);
-          } else {
-            element.textContent = end;
-          }
-        };
-        window.requestAnimationFrame(step);
-      }
-
-      // Add this HTML right after your navbar-container div
-      document.getElementById("navbar-container").insertAdjacentHTML(
-        "afterend",
-        `
+    // Add this HTML right after your navbar-container div
+    document.getElementById("navbar-container").insertAdjacentHTML(
+      "afterend",
+      `
           <div class="status-box">
               <div class="status-item all-status">
                   <div class="status-icon all-vehicles-icon">
@@ -1296,67 +1291,67 @@ function setRefreshInterval() {
               </div>
           </div>
       `
-      );
+    );
 
-      // Add the counting function
-      function updateStatusCounts() {
-        const counts = {
-          all: devices.length,
-          moving: 0,
-          stopped: 0,
-          idle: 0,
-          offline: 0,
-        };
+    // Add the counting function
+    function updateStatusCounts() {
+      const counts = {
+        all: devices.length,
+        moving: 0,
+        stopped: 0,
+        idle: 0,
+        offline: 0,
+      };
 
-        devices.forEach((device) => {
-          const currentDate = new Date();
-          const deviceDate = new Date(device.date);
-          const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-          const ignitionStatus =
-            typeof device.ignition === "string"
-              ? device.ignition.toLowerCase() === "true"
-              : Boolean(device.ignition);
+      devices.forEach((device) => {
+        const currentDate = new Date();
+        const deviceDate = new Date(device.date);
+        const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+        const ignitionStatus =
+          typeof device.ignition === "string"
+            ? device.ignition.toLowerCase() === "true"
+            : Boolean(device.ignition);
 
-          if (hoursDifference > 2) {
-            counts.offline++;
-          } else if (!ignitionStatus) {
-            counts.stopped++;
-          } else if (ignitionStatus && device.speed > 0) {
-            counts.moving++;
-          } else if (ignitionStatus && device.speed === 0) {
-            counts.idle++;
-          } else {
-            counts.offline++;
+        if (hoursDifference > 2) {
+          counts.offline++;
+        } else if (!ignitionStatus) {
+          counts.stopped++;
+        } else if (ignitionStatus && device.speed > 0) {
+          counts.moving++;
+        } else if (ignitionStatus && device.speed === 0) {
+          counts.idle++;
+        } else {
+          counts.offline++;
+        }
+      });
+
+      // Animate each count
+      ['all', "moving", "stopped", "idle", "offline"].forEach((status) => {
+        const element = document.getElementById(`${status}Count`);
+        if (element) {
+          const currentCount = parseInt(element.textContent) || 0;
+          const newCount = counts[status];
+
+          if (currentCount !== newCount) {
+            element.classList.add("updating");
+            animateCount(element, currentCount, newCount, 500);
+
+            // Remove the scaling effect after animation
+            setTimeout(() => {
+              element.classList.remove("updating");
+            }, 500);
           }
-        });
+        }
+      });
+    }
 
-        // Animate each count
-        ['all', "moving", "stopped", "idle", "offline"].forEach((status) => {
-          const element = document.getElementById(`${status}Count`);
-          if (element) {
-            const currentCount = parseInt(element.textContent) || 0;
-            const newCount = counts[status];
+    function showDeviceTable() {
+      const tablePopup = document.getElementById("tablePopup");
+      const tableBody = document.getElementById("deviceTableBody");
+      tableBody.innerHTML = "";
 
-            if (currentCount !== newCount) {
-              element.classList.add("updating");
-              animateCount(element, currentCount, newCount, 500);
-
-              // Remove the scaling effect after animation
-              setTimeout(() => {
-                element.classList.remove("updating");
-              }, 500);
-            }
-          }
-        });
-      }
-
-      function showDeviceTable() {
-    const tablePopup = document.getElementById("tablePopup");
-    const tableBody = document.getElementById("deviceTableBody");
-    tableBody.innerHTML = "";
-
-    // First, create all rows
-    const deviceRows = devices.map(device => {
+      // First, create all rows
+      const deviceRows = devices.map(device => {
         const row = document.createElement("tr");
         const statusClass = device.status === "Online" ? "status-online" : "status-offline";
 
@@ -1394,332 +1389,332 @@ function setRefreshInterval() {
             </td>
         `;
         return row;
-    });
+      });
 
-    // Add all rows initially
-    deviceRows.forEach(row => tableBody.appendChild(row));
-    tablePopup.style.display = "block";
+      // Add all rows initially
+      deviceRows.forEach(row => tableBody.appendChild(row));
+      tablePopup.style.display = "block";
 
-    // Add search functionality
-    const searchInput = document.getElementById("tableSearchInput");
-    searchInput.value = ""; // Clear search input when opening table
+      // Add search functionality
+      const searchInput = document.getElementById("tableSearchInput");
+      searchInput.value = ""; // Clear search input when opening table
 
-    searchInput.addEventListener("input", function() {
+      searchInput.addEventListener("input", function () {
         const searchTerm = this.value.toLowerCase();
-        
+
         deviceRows.forEach(row => {
-            const deviceName = row.cells[0].textContent.toLowerCase();
-            row.style.display = deviceName.includes(searchTerm) ? "" : "none";
+          const deviceName = row.cells[0].textContent.toLowerCase();
+          row.style.display = deviceName.includes(searchTerm) ? "" : "none";
         });
-    });
-}
+      });
+    }
 
 
-      function hideDeviceTable() {
-  document.getElementById("tablePopup").style.display = "none";
-  document.getElementById("tableSearchInput").value = ""; // Clear search when closing
-}
-      // Close popup when clicking outside
-      document
-        .getElementById("tablePopup")
-        .addEventListener("click", function (event) {
-          if (event.target === this) {
-            hideDeviceTable();
-          }
-        });
-
-      // Add this function to handle the redirection
-      function viewTodayTrip(deviceName) {
-        // Get today's date
-        const today = new Date();
-        const startDate = new Date(today);
-        const endDate = new Date(today);
-
-        // Format dates for URL parameters
-        function formatDate(date) {
-          return date.toISOString().split("T")[0];
+    function hideDeviceTable() {
+      document.getElementById("tablePopup").style.display = "none";
+      document.getElementById("tableSearchInput").value = ""; // Clear search when closing
+    }
+    // Close popup when clicking outside
+    document
+      .getElementById("tablePopup")
+      .addEventListener("click", function (event) {
+        if (event.target === this) {
+          hideDeviceTable();
         }
+      });
 
-        // Construct URL with parameters
-        const params = new URLSearchParams({
-          device: deviceName,
-          from: formatDate(startDate),
-          to: formatDate(endDate),
-        });
+    // Add this function to handle the redirection
+    function viewTodayTrip(deviceName) {
+      // Get today's date
+      const today = new Date();
+      const startDate = new Date(today);
+      const endDate = new Date(today);
 
-        // Redirect to playback page with parameters
-        window.open(`/drawable/drawableplaybackgoogle.html?${params.toString()}`);
+      // Format dates for URL parameters
+      function formatDate(date) {
+        return date.toISOString().split("T")[0];
       }
 
-      function viewPlaybackTrip(deviceName) {
-        // Get today's date
-        const today = new Date();
-        const startDate = new Date(today);
-        const endDate = new Date(today);
+      // Construct URL with parameters
+      const params = new URLSearchParams({
+        device: deviceName,
+        from: formatDate(startDate),
+        to: formatDate(endDate),
+      });
 
-        // Format dates for URL parameters
-        function formatDate(date) {
-          return date.toISOString().split("T")[0];
+      // Redirect to playback page with parameters
+      window.open(`/drawable/drawableplaybackgoogle.html?${params.toString()}`);
+    }
+
+    function viewPlaybackTrip(deviceName) {
+      // Get today's date
+      const today = new Date();
+      const startDate = new Date(today);
+      const endDate = new Date(today);
+
+      // Format dates for URL parameters
+      function formatDate(date) {
+        return date.toISOString().split("T")[0];
+      }
+
+      // Construct URL with parameters
+      const params = new URLSearchParams({
+        device: deviceName,
+        from: formatDate(startDate),
+        to: formatDate(endDate),
+      });
+
+      // Redirect to playback page with parameters
+      window.open(`/playback/playbackgoogle.html?${params.toString()}`);
+    }
+
+
+    function viewLiveTracking(deviceName) {
+      // Construct URL with parameters
+      const params = new URLSearchParams({
+        device: deviceName,
+      });
+
+      // Redirect to playback page with parameters
+      window.open(`/livetracking/livetrackinggoogle.html?${params.toString()}`)
+    }
+
+    async function fetchDistance(deviceId) {
+      // Get today's date
+      const today = new Date();
+      const formattedDate = today.toISOString().split("T")[0];
+
+      try {
+        const response = await fetch(
+          `${API}opr=fleetsummaryreport&fromdate=${formattedDate} 00:00&todate=${formattedDate} 23:59&did=${deviceId}`
+        );
+        const data = await response.json();
+
+        // Get the distance from the response
+        if (data && data.length > 0) {
+          return data[0].distance || "0";
         }
-
-        // Construct URL with parameters
-        const params = new URLSearchParams({
-          device: deviceName,
-          from: formatDate(startDate),
-          to: formatDate(endDate),
-        });
-
-        // Redirect to playback page with parameters
-        window.open(`/playback/playbackgoogle.html?${params.toString()}`);
+        return "0";
+      } catch (error) {
+        console.error("Error fetching distance:", error);
+        return "0";
       }
+    }
 
+    function viewNearbyVehicles(deviceId, lat, lng) {
+      // Default radius is 12 km - can be modified as needed
+      const radius = 12;
+      const params = new URLSearchParams({
+        deviceId: deviceId,
+        lat: lat,
+        lng: lng,
+        radius: radius,
+      });
+      window.open(`/viewnearby/viewnearbygoogle.html?${params.toString()}`);
+    }
 
-      function viewLiveTracking(deviceName) {
-        // Construct URL with parameters
-        const params = new URLSearchParams({
-          device: deviceName,
-        });
+    let currentLat, currentLng;
 
-        // Redirect to playback page with parameters
-        window.open(`/livetracking/livetrackinggoogle.html?${params.toString()}`)
-      }
+    function shareLocation(lat, lng) {
+      currentLat = lat;
+      currentLng = lng;
 
-      async function fetchDistance(deviceId) {
-        // Get today's date
-        const today = new Date();
-        const formattedDate = today.toISOString().split("T")[0];
+      // Get modal elements
+      const modal = document.getElementById('shareModal');
+      const shareUrl = document.getElementById('shareUrl');
+      const copyButton = document.getElementById('copyButton');
 
+      // Set URL
+      const url = `https://www.google.com/maps?q=${lat},${lng}`;
+      shareUrl.value = url;
+
+      // Show modal
+      modal.style.display = 'block';
+
+      // Copy button click handler
+      copyButton.onclick = async function () {
         try {
-          const response = await fetch(
-            `${API}opr=fleetsummaryreport&fromdate=${formattedDate} 00:00&todate=${formattedDate} 23:59&did=${deviceId}`
-          );
-          const data = await response.json();
-
-          // Get the distance from the response
-          if (data && data.length > 0) {
-            return data[0].distance || "0";
-          }
-          return "0";
-        } catch (error) {
-          console.error("Error fetching distance:", error);
-          return "0";
-        }
-      }
-
-      function viewNearbyVehicles(deviceId, lat, lng) {
-        // Default radius is 12 km - can be modified as needed
-        const radius = 12;
-        const params = new URLSearchParams({
-          deviceId: deviceId,
-          lat: lat,
-          lng: lng,
-          radius: radius,
-        });
-        window.open(`/viewnearby/viewnearbygoogle.html?${params.toString()}`);
-      }
-
-      let currentLat, currentLng;
-
-      function shareLocation(lat, lng) {
-    currentLat = lat;
-    currentLng = lng;
-    
-    // Get modal elements
-    const modal = document.getElementById('shareModal');
-    const shareUrl = document.getElementById('shareUrl');
-    const copyButton = document.getElementById('copyButton');
-    
-    // Set URL
-    const url = `https://www.google.com/maps?q=${lat},${lng}`;
-    shareUrl.value = url;
-    
-    // Show modal
-    modal.style.display = 'block';
-
-    // Copy button click handler
-    copyButton.onclick = async function() {
-        try {
-            await navigator.clipboard.writeText(url);
-            // Show success notification
-            showNotification('Link copied to clipboard!', 'success');
+          await navigator.clipboard.writeText(url);
+          // Show success notification
+          showNotification('Link copied to clipboard!', 'success');
         } catch (err) {
-            console.error('Failed to copy:', err);
-            // Show error notification
-            showNotification('Failed to copy link', 'error');
+          console.error('Failed to copy:', err);
+          // Show error notification
+          showNotification('Failed to copy link', 'error');
         }
-    };
+      };
 
-    // Close modal when clicking outside
-    window.onclick = function(event) {
+      // Close modal when clicking outside
+      window.onclick = function (event) {
         if (event.target === modal) {
-            modal.style.display = 'none';
+          modal.style.display = 'none';
         }
-    };
+      };
 
-    // Close button functionality
-    const closeBtn = modal.querySelector('.close');
-    if (closeBtn) {
-        closeBtn.onclick = function() {
-            modal.style.display = 'none';
+      // Close button functionality
+      const closeBtn = modal.querySelector('.close');
+      if (closeBtn) {
+        closeBtn.onclick = function () {
+          modal.style.display = 'none';
         };
+      }
     }
-}
 
 
 
-// Add notification function
-function showNotification(message, type) {
-    // Remove existing notification if any
-    const existingNotification = document.querySelector('.notification');
-    if (existingNotification) {
+    // Add notification function
+    function showNotification(message, type) {
+      // Remove existing notification if any
+      const existingNotification = document.querySelector('.notification');
+      if (existingNotification) {
         existingNotification.remove();
-    }
+      }
 
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
+      // Create notification element
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.textContent = message;
 
-    // Add to document
-    document.body.appendChild(notification);
+      // Add to document
+      document.body.appendChild(notification);
 
-    // Remove after 3 seconds
-    setTimeout(() => {
+      // Remove after 3 seconds
+      setTimeout(() => {
         notification.remove();
-    }, 3000);
-}
-
-// Share via different platforms
-function shareVia(platform) {
-    const url = `https://www.google.com/maps?q=${currentLat},${currentLng}`;
-    const encodedUrl = encodeURIComponent(url);
-
-    switch (platform) {
-        case 'whatsapp':
-            window.open(`https://web.whatsapp.com/send?text=${encodedUrl}`);
-            break;
-        case 'twitter':
-            window.open(`https://twitter.com/intent/tweet?url=${encodedUrl}`, '_blank');
-            break;
-        case 'email':
-            window.open(`mailto:?body=${encodedUrl}`, '_blank');
-            break;
+      }, 3000);
     }
-}
 
-// Tab switching functionality
-document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
+    // Share via different platforms
+    function shareVia(platform) {
+      const url = `https://www.google.com/maps?q=${currentLat},${currentLng}`;
+      const encodedUrl = encodeURIComponent(url);
+
+      switch (platform) {
+        case 'whatsapp':
+          window.open(`https://web.whatsapp.com/send?text=${encodedUrl}`);
+          break;
+        case 'twitter':
+          window.open(`https://twitter.com/intent/tweet?url=${encodedUrl}`, '_blank');
+          break;
+        case 'email':
+          window.open(`mailto:?body=${encodedUrl}`, '_blank');
+          break;
+      }
+    }
+
+    // Tab switching functionality
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
+      });
     });
-});
 
-      // Create a source for the clustered data
+    // Create a source for the clustered data
 
-      // Add a layer for clusters
-      // const clusterLayer = olaMaps.layer.create({
-      //   id: 'device-clusters',
-      //   type: 'circle',
-      //   source: clusterSource,
-      //   cluster: true,
-      //   clusterOptions: clusterOptions,
-      //   paint: {
-      //     'circle-color': [
-      //       'case',
-      //       ['>=', ['get', 'point_count'], 100], '#f28cb1', // Large clusters
-      //       ['>=', ['get', 'point_count'], 20], '#f1f075',  // Medium clusters
-      //       '#51bbd6' // Small clusters
-      //     ],
-      //     'circle-radius': [
-      //       'case',
-      //       ['>=', ['get', 'point_count'], 100], 40,  // Large clusters
-      //       ['>=', ['get', 'point_count'], 20], 30,   // Medium clusters
-      //       20 // Small clusters
-      //     ]
-      //   }
-      // });
+    // Add a layer for clusters
+    // const clusterLayer = olaMaps.layer.create({
+    //   id: 'device-clusters',
+    //   type: 'circle',
+    //   source: clusterSource,
+    //   cluster: true,
+    //   clusterOptions: clusterOptions,
+    //   paint: {
+    //     'circle-color': [
+    //       'case',
+    //       ['>=', ['get', 'point_count'], 100], '#f28cb1', // Large clusters
+    //       ['>=', ['get', 'point_count'], 20], '#f1f075',  // Medium clusters
+    //       '#51bbd6' // Small clusters
+    //     ],
+    //     'circle-radius': [
+    //       'case',
+    //       ['>=', ['get', 'point_count'], 100], 40,  // Large clusters
+    //       ['>=', ['get', 'point_count'], 20], 30,   // Medium clusters
+    //       20 // Small clusters
+    //     ]
+    //   }
+    // });
 
-      // myMap.addLayer(clusterLayer);
+    // myMap.addLayer(clusterLayer);
 
-      // myMap.addLayer({
-      //   id: 'cluster-count',
-      //   type: 'symbol',
-      //   source: 'clusters',
-      //   filter: ['has', 'point_count'],
-      //   layout: {
-      //     'text-field': '{point_count_abbreviated}',
-      //     'text-font': ['Arial Unicode MS Bold'],
-      //     'text-size': 12
-      //   },
-      //   paint: {
-      //     'text-color': '#ffffff'
-      //   }
-      // });
+    // myMap.addLayer({
+    //   id: 'cluster-count',
+    //   type: 'symbol',
+    //   source: 'clusters',
+    //   filter: ['has', 'point_count'],
+    //   layout: {
+    //     'text-field': '{point_count_abbreviated}',
+    //     'text-font': ['Arial Unicode MS Bold'],
+    //     'text-size': 12
+    //   },
+    //   paint: {
+    //     'text-color': '#ffffff'
+    //   }
+    // });
 
-      // myMap.on("click", "device-clusters", (e) => {
-      //   const features = e.features;
-      //   if (!features) return;
+    // myMap.on("click", "device-clusters", (e) => {
+    //   const features = e.features;
+    //   if (!features) return;
 
-      //   const clusterId = features[0].properties.cluster_id;
-      //   const zoom = Math.max(myMap.getZoom() + 2, myMap.getMaxZoom());
+    //   const clusterId = features[0].properties.cluster_id;
+    //   const zoom = Math.max(myMap.getZoom() + 2, myMap.getMaxZoom());
 
-      //   myMap.flyTo({
-      //     center: features[0].geometry.coordinates,
-      //     zoom: zoom,
-      //     speed: 1.5,
-      //   });
-      // });
+    //   myMap.flyTo({
+    //     center: features[0].geometry.coordinates,
+    //     zoom: zoom,
+    //     speed: 1.5,
+    //   });
+    // });
 
-      // Add click handlers for clusters
-      // myMap.on('click', 'clusters', (e) => {
-      //   const features = myMap.queryRenderedFeatures(e.point, { layers: ['clusters'] });
-      //   const clusterId = features[0].properties.cluster_id;
+    // Add click handlers for clusters
+    // myMap.on('click', 'clusters', (e) => {
+    //   const features = myMap.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+    //   const clusterId = features[0].properties.cluster_id;
 
-      //   myMap.getSource('clusters').getClusterExpansionZoom(
-      //     clusterId,
-      //     (err, zoom) => {
-      //       if (err) return;
+    //   myMap.getSource('clusters').getClusterExpansionZoom(
+    //     clusterId,
+    //     (err, zoom) => {
+    //       if (err) return;
 
-      //       myMap.easeTo({
-      //         center: features[0].geometry.coordinates,
-      //         zoom: zoom
-      //       });
-      //     }
-      //   );
-      // });
+    //       myMap.easeTo({
+    //         center: features[0].geometry.coordinates,
+    //         zoom: zoom
+    //       });
+    //     }
+    //   );
+    // });
 
-      // Change cursor on hover
-      // myMap.on("mouseenter", "device-clusters", () => {
-      //   myMap.getCanvas().style.cursor = "pointer";
-      // });
+    // Change cursor on hover
+    // myMap.on("mouseenter", "device-clusters", () => {
+    //   myMap.getCanvas().style.cursor = "pointer";
+    // });
 
-      // myMap.on("mouseleave", "device-clusters", () => {
-      //   myMap.getCanvas().style.cursor = "";
-      // });
+    // myMap.on("mouseleave", "device-clusters", () => {
+    //   myMap.getCanvas().style.cursor = "";
+    // });
 
-      function getClusterStyle(count) {
-        let backgroundColor;
-        let size;
+    function getClusterStyle(count) {
+      let backgroundColor;
+      let size;
 
-        if (count >= 100) {
-          backgroundColor = "rgba(241, 128, 23, 0.9)"; // Orange for large clusters
-          size = "50px";
-        } else if (count >= 50) {
-          backgroundColor = "rgba(240, 52, 52, 0.9)"; // Red for medium-large clusters
-          size = "45px";
-        } else if (count >= 20) {
-          backgroundColor = "rgba(156, 39, 176, 0.9)"; // Purple for medium clusters
-          size = "40px";
-        } else if (count >= 10) {
-          backgroundColor = "rgba(33, 150, 243, 0.9)"; // Blue for small-medium clusters
-          size = "35px";
-        } else {
-          backgroundColor = "rgba(76, 175, 80, 0.9)"; // Green for small clusters
-          size = "30px";
-        }
+      if (count >= 100) {
+        backgroundColor = "rgba(241, 128, 23, 0.9)"; // Orange for large clusters
+        size = "50px";
+      } else if (count >= 50) {
+        backgroundColor = "rgba(240, 52, 52, 0.9)"; // Red for medium-large clusters
+        size = "45px";
+      } else if (count >= 20) {
+        backgroundColor = "rgba(156, 39, 176, 0.9)"; // Purple for medium clusters
+        size = "40px";
+      } else if (count >= 10) {
+        backgroundColor = "rgba(33, 150, 243, 0.9)"; // Blue for small-medium clusters
+        size = "35px";
+      } else {
+        backgroundColor = "rgba(76, 175, 80, 0.9)"; // Green for small clusters
+        size = "30px";
+      }
 
-        return `
+      return `
     background-color: ${backgroundColor};
     color: white;
     border-radius: 50%;
@@ -1734,346 +1729,346 @@ document.querySelectorAll('.tab').forEach(tab => {
     box-shadow: 0 0 5px rgba(0,0,0,0.3);
     cursor: pointer;
   `;
-      }
+    }
 
 
-      const deviceListHeader = document.querySelector('#deviceList h3');
-deviceListHeader.insertAdjacentHTML('afterend', `
+    const deviceListHeader = document.querySelector('#deviceList h3');
+    deviceListHeader.insertAdjacentHTML('afterend', `
   <div class="deviceItem" style="margin-bottom: 10px;">
     <input type="checkbox" id="selectAllCheckbox" checked />
     <span style="margin-left: 10px;">Select All</span>
   </div>
 `);
 
-// Function to copy the device table to clipboard using modern API
-async function copyDeviceTableToClipboard() {
-    const table = document.getElementById('deviceDataTable');
-    if (!table) {
+    // Function to copy the device table to clipboard using modern API
+    async function copyDeviceTableToClipboard() {
+      const table = document.getElementById('deviceDataTable');
+      if (!table) {
         alert('Table not found!');
         return;
-    }
+      }
 
-    // Extract text content from table
-    let tableText = '';
-    const rows = table.querySelectorAll('tr');
-    rows.forEach(row => {
+      // Extract text content from table
+      let tableText = '';
+      const rows = table.querySelectorAll('tr');
+      rows.forEach(row => {
         const cells = row.querySelectorAll('th, td');
         const cellTexts = Array.from(cells).map(cell => cell.textContent.trim());
         tableText += cellTexts.join('\t') + '\n';
-    });
+      });
 
-    try {
+      try {
         await navigator.clipboard.writeText(tableText);
         alert('Table copied to clipboard!');
-    } catch (err) {
+      } catch (err) {
         console.error('Failed to copy table:', err);
         alert('Failed to copy table.');
+      }
     }
-}
 
-// Function to export the device table as CSV
-function exportDeviceTableCSV() {
-    const table = document.getElementById('deviceDataTable');
-    if (!table) {
+    // Function to export the device table as CSV
+    function exportDeviceTableCSV() {
+      const table = document.getElementById('deviceDataTable');
+      if (!table) {
         alert('Table not found!');
         return;
-    }
+      }
 
-    const rows = table.querySelectorAll('tr');
-    const csv = [];
-    rows.forEach(row => {
+      const rows = table.querySelectorAll('tr');
+      const csv = [];
+      rows.forEach(row => {
         const rowData = [];
         row.querySelectorAll('th, td').forEach(cell => {
-            const cellText = cell.textContent.replace(/"/g, '""');
-            rowData.push(`"${cellText}"`);
+          const cellText = cell.textContent.replace(/"/g, '""');
+          rowData.push(`"${cellText}"`);
         });
         csv.push(rowData.join(','));
-    });
-    const csvContent = csv.join('\n');
-    downloadFile(csvContent, 'device_status_table.csv', 'text/csv');
-}
-
-// Function to export the device table as Excel
-function exportDeviceTableExcel() {
-    const table = document.getElementById('deviceDataTable');
-    if (!table) {
-        alert('Table not found!');
-        return;
+      });
+      const csvContent = csv.join('\n');
+      downloadFile(csvContent, 'device_status_table.csv', 'text/csv');
     }
 
-    const wb = XLSX.utils.table_to_book(table, { sheet: "Device Status" });
-    XLSX.writeFile(wb, 'device_status_table.xlsx');
-}
-
-// Function to export the device table as PDF
-async function exportDeviceTablePDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4');
-
-    const table = document.getElementById('deviceDataTable');
-    if (!table) {
+    // Function to export the device table as Excel
+    function exportDeviceTableExcel() {
+      const table = document.getElementById('deviceDataTable');
+      if (!table) {
         alert('Table not found!');
         return;
+      }
+
+      const wb = XLSX.utils.table_to_book(table, { sheet: "Device Status" });
+      XLSX.writeFile(wb, 'device_status_table.xlsx');
     }
 
-    // Add title
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
-    doc.text("Device Status Table", doc.internal.pageSize.width / 2, 15, { align: 'center' });
+    // Function to export the device table as PDF
+    async function exportDeviceTablePDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('l', 'mm', 'a4');
 
-    // Add date/time
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    const now = new Date();
-    doc.text(`Generated on: ${now.toLocaleString()}`, 15, 25);
+      const table = document.getElementById('deviceDataTable');
+      if (!table) {
+        alert('Table not found!');
+        return;
+      }
 
-    // Prepare table data
-    const headers = [
+      // Add title
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(20);
+      doc.text("Device Status Table", doc.internal.pageSize.width / 2, 15, { align: 'center' });
+
+      // Add date/time
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      const now = new Date();
+      doc.text(`Generated on: ${now.toLocaleString()}`, 15, 25);
+
+      // Prepare table data
+      const headers = [
         [
-            'Vehicle Name',
-            'Last Updated',
-            'Status',
-            'Battery',
-            'Ac',
-            'Gps',
-            'Power',
-            'Ignition',
-            'Speed',
-            'Hold Time',
-            'Location',
-            "Today's Trip",
-            'Live Tracking',
-            'Playback'
+          'Vehicle Name',
+          'Last Updated',
+          'Status',
+          'Battery',
+          'Ac',
+          'Gps',
+          'Power',
+          'Ignition',
+          'Speed',
+          'Hold Time',
+          'Location',
+          "Today's Trip",
+          'Live Tracking',
+          'Playback'
         ]
-    ];
+      ];
 
-    const rows = Array.from(table.querySelectorAll('tbody tr')).map(row => {
+      const rows = Array.from(table.querySelectorAll('tbody tr')).map(row => {
         const cells = Array.from(row.querySelectorAll('td'));
         return cells.map(cell => cell.textContent.trim());
-    });
+      });
 
-    // If there's no data, just alert
-    if (rows.length === 0) {
+      // If there's no data, just alert
+      if (rows.length === 0) {
         alert('No data available to export.');
         return;
-    }
+      }
 
-    doc.autoTable({
+      doc.autoTable({
         head: headers,
         body: rows,
         startY: 30,
         theme: 'grid',
         styles: {
-            fontSize: 8,
-            cellPadding: 2
+          fontSize: 8,
+          cellPadding: 2
         },
         headStyles: {
-            fillColor: [41, 128, 185],
-            textColor: 255,
-            fontSize: 9,
-            fontStyle: 'bold',
-            halign: 'center'
+          fillColor: [41, 128, 185],
+          textColor: 255,
+          fontSize: 9,
+          fontStyle: 'bold',
+          halign: 'center'
         },
         columnStyles: {
-            0: { cellWidth: 20 },  // Device Name
-            1: { cellWidth: 25 },  // Last Updated
-            2: { cellWidth: 15 },  // Status
-            3: { cellWidth: 15 },  // Battery
-            4: { cellWidth: 10 },  // Ac
-            5: { cellWidth: 10 },  // Gps
-            6: { cellWidth: 10 },  // Power
-            7: { cellWidth: 15 },  // Ignition
-            8: { cellWidth: 15 },  // Speed
-            9: { cellWidth: 20 },  // Hold Time
-            10: { cellWidth: 30 }, // Location
-            11: { cellWidth: 20 }, // Today's Trip
-            12: { cellWidth: 20 }, // Live Tracking
-            13: { cellWidth: 15 }  // Playback
+          0: { cellWidth: 20 },  // Device Name
+          1: { cellWidth: 25 },  // Last Updated
+          2: { cellWidth: 15 },  // Status
+          3: { cellWidth: 15 },  // Battery
+          4: { cellWidth: 10 },  // Ac
+          5: { cellWidth: 10 },  // Gps
+          6: { cellWidth: 10 },  // Power
+          7: { cellWidth: 15 },  // Ignition
+          8: { cellWidth: 15 },  // Speed
+          9: { cellWidth: 20 },  // Hold Time
+          10: { cellWidth: 30 }, // Location
+          11: { cellWidth: 20 }, // Today's Trip
+          12: { cellWidth: 20 }, // Live Tracking
+          13: { cellWidth: 15 }  // Playback
         },
         didDrawPage: (data) => {
-            // Add footer with page numbers
-            const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
-            const totalPages = doc.internal.getNumberOfPages();
-            doc.setFontSize(8);
-            doc.setFont("helvetica", "italic");
-            doc.text(`Page ${pageNumber} of ${totalPages}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+          // Add footer with page numbers
+          const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
+          const totalPages = doc.internal.getNumberOfPages();
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "italic");
+          doc.text(`Page ${pageNumber} of ${totalPages}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
         }
-    });
+      });
 
-    doc.save('device_status_table.pdf');
-}
+      doc.save('device_status_table.pdf');
+    }
 
-// Function to print the device table
+    // Function to print the device table
 
-// Function to save the device table as JSON
-function saveDeviceTable() {
-    const table = document.getElementById('deviceDataTable');
-    if (!table) {
+    // Function to save the device table as JSON
+    function saveDeviceTable() {
+      const table = document.getElementById('deviceDataTable');
+      if (!table) {
         alert('Table not found!');
         return;
-    }
+      }
 
-    const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent.trim());
-    const rows = Array.from(table.querySelectorAll('tbody tr'));
-    if (rows.length === 0) {
+      const headers = Array.from(table.querySelectorAll('th')).map(th => th.textContent.trim());
+      const rows = Array.from(table.querySelectorAll('tbody tr'));
+      if (rows.length === 0) {
         alert('No data available to save.');
         return;
-    }
+      }
 
-    const data = rows.map(row => {
+      const data = rows.map(row => {
         const cells = Array.from(row.querySelectorAll('td'));
         const rowData = {};
         cells.forEach((cell, index) => {
-            rowData[headers[index]] = cell.textContent.trim();
+          rowData[headers[index]] = cell.textContent.trim();
         });
         return rowData;
-    });
+      });
 
-    const jsonString = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+      const jsonString = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
 
-    link.href = url;
-    link.download = 'device_status_table.json';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-}
-
-// Reusable helper function to download a file
-function downloadFile(content, fileName, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-}
-
-// Update the checkbox change event handler
-function handleCheckboxChange(e) {
-    const checkbox = e.target;
-    const deviceIndex = parseInt(checkbox.dataset.index);
-    const device = devices[deviceIndex];
-    
-    // Update selectedDevices Set
-    if (checkbox.checked) {
-        selectedDevices.add(device.deviceId);
-    } else {
-        selectedDevices.delete(device.deviceId);
+      link.href = url;
+      link.download = 'device_status_table.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     }
-    
-    // Update "Select All" checkbox state
-    const allDeviceCheckboxes = document.querySelectorAll('.deviceCheckbox');
-    const allChecked = Array.from(allDeviceCheckboxes).every(cb => cb.checked);
-    document.getElementById('selectAllCheckbox').checked = allChecked;
-    
-    filterMarkers();
-}
 
-function addPOIForDevice(deviceName, lat, lng) {
-    const params = new URLSearchParams({
+    // Reusable helper function to download a file
+    function downloadFile(content, fileName, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    // Update the checkbox change event handler
+    function handleCheckboxChange(e) {
+      const checkbox = e.target;
+      const deviceIndex = parseInt(checkbox.dataset.index);
+      const device = devices[deviceIndex];
+
+      // Update selectedDevices Set
+      if (checkbox.checked) {
+        selectedDevices.add(device.deviceId);
+      } else {
+        selectedDevices.delete(device.deviceId);
+      }
+
+      // Update "Select All" checkbox state
+      const allDeviceCheckboxes = document.querySelectorAll('.deviceCheckbox');
+      const allChecked = Array.from(allDeviceCheckboxes).every(cb => cb.checked);
+      document.getElementById('selectAllCheckbox').checked = allChecked;
+
+      filterMarkers();
+    }
+
+    function addPOIForDevice(deviceName, lat, lng) {
+      const params = new URLSearchParams({
         deviceName: deviceName,
         lat: lat,
         lng: lng
-    });
-    window.open(`/poi/PointOfInterestgoogle.html?${params.toString()}`);
-}
+      });
+      window.open(`/poi/PointOfInterestgoogle.html?${params.toString()}`);
+    }
 
-document.querySelectorAll('.status-item').forEach(item => {
-    item.addEventListener('click', function() {
+    document.querySelectorAll('.status-item').forEach(item => {
+      item.addEventListener('click', function () {
         const icon = this.querySelector('.status-icon');
         const iconSrc = icon.getAttribute('src');
-        
+
         // Clear existing selections
         selectedDevices.clear();
-        
+
         // Uncheck all checkboxes first
         document.querySelectorAll('.deviceCheckbox').forEach(checkbox => {
-            checkbox.checked = false;
+          checkbox.checked = false;
         });
         document.getElementById('selectAllCheckbox').checked = false;
-        
+
         // Check if "All" is clicked
         if (item.classList.contains('all-status')) {
-            // Select all devices
-            devices.forEach((device, index) => {
-                const checkbox = document.querySelector(`.deviceCheckbox[data-index="${index}"]`);
-                if (checkbox) {
-                    checkbox.checked = true;
-                    selectedDevices.add(device.deviceId);
-                }
-            });
-            document.getElementById('selectAllCheckbox').checked = true;
+          // Select all devices
+          devices.forEach((device, index) => {
+            const checkbox = document.querySelector(`.deviceCheckbox[data-index="${index}"]`);
+            if (checkbox) {
+              checkbox.checked = true;
+              selectedDevices.add(device.deviceId);
+            }
+          });
+          document.getElementById('selectAllCheckbox').checked = true;
         } else {
-            // Original status-based selection logic
-            devices.forEach((device, index) => {
-                const checkbox = document.querySelector(`.deviceCheckbox[data-index="${index}"]`);
-                if (!checkbox) return;
-                
-                const currentDate = new Date();
-                const deviceDate = new Date(device.date);
-                const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-                const ignitionStatus = typeof device.ignition === 'string' 
-                    ? device.ignition.toLowerCase() === 'true' 
-                    : Boolean(device.ignition);
-                
-                let shouldCheck = false;
-                
-                if (iconSrc.includes('green.png') && ignitionStatus && device.speed > 0 && hoursDifference < 2) {
-                    shouldCheck = true;
-                } else if (iconSrc.includes('red/car0.png') && !ignitionStatus && hoursDifference < 2) {
-                    shouldCheck = true;
-                } else if (iconSrc.includes('yellow.png') && ignitionStatus && device.speed === 0 && hoursDifference < 2) {
-                    shouldCheck = true;
-                } else if (iconSrc.includes('blackcar1.png') && hoursDifference > 2) {
-                    shouldCheck = true;
-                }
-                
-                checkbox.checked = shouldCheck;
-                if (shouldCheck) {
-                    selectedDevices.add(device.deviceId);
-                }
-            });
-        }
-        
-        filterMarkers();
-    });
-});
+          // Original status-based selection logic
+          devices.forEach((device, index) => {
+            const checkbox = document.querySelector(`.deviceCheckbox[data-index="${index}"]`);
+            if (!checkbox) return;
 
-document.getElementById('selectAllCheckbox').addEventListener('change', function() {
-    const isChecked = this.checked;
-    const deviceCheckboxes = document.querySelectorAll('.deviceCheckbox');
-    
-    deviceCheckboxes.forEach((checkbox, index) => {
+            const currentDate = new Date();
+            const deviceDate = new Date(device.date);
+            const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
+            const ignitionStatus = typeof device.ignition === 'string'
+              ? device.ignition.toLowerCase() === 'true'
+              : Boolean(device.ignition);
+
+            let shouldCheck = false;
+
+            if (iconSrc.includes('green.png') && ignitionStatus && device.speed > 0 && hoursDifference < 2) {
+              shouldCheck = true;
+            } else if (iconSrc.includes('red/car0.png') && !ignitionStatus && hoursDifference < 2) {
+              shouldCheck = true;
+            } else if (iconSrc.includes('yellow.png') && ignitionStatus && device.speed === 0 && hoursDifference < 2) {
+              shouldCheck = true;
+            } else if (iconSrc.includes('blackcar1.png') && hoursDifference > 2) {
+              shouldCheck = true;
+            }
+
+            checkbox.checked = shouldCheck;
+            if (shouldCheck) {
+              selectedDevices.add(device.deviceId);
+            }
+          });
+        }
+
+        filterMarkers();
+      });
+    });
+
+    document.getElementById('selectAllCheckbox').addEventListener('change', function () {
+      const isChecked = this.checked;
+      const deviceCheckboxes = document.querySelectorAll('.deviceCheckbox');
+
+      deviceCheckboxes.forEach((checkbox, index) => {
         checkbox.checked = isChecked;
         const device = devices[index];
-        
+
         if (isChecked) {
-            selectedDevices.add(device.deviceId);
+          selectedDevices.add(device.deviceId);
         } else {
-            selectedDevices.delete(device.deviceId);
+          selectedDevices.delete(device.deviceId);
         }
+      });
+
+      filterMarkers();
     });
-    
-    filterMarkers();
-});
 
-window.addEventListener('beforeunload', () => {
-    localStorage.removeItem('selectedDevices'); // Clear selections on manual refresh
-});
+    window.addEventListener('beforeunload', () => {
+      localStorage.removeItem('selectedDevices'); // Clear selections on manual refresh
+    });
 
-function animateMarkerMovement(start, end, targetAngle) {
-    isAnimating = true;
-    const duration = 1000; // 1 second animation
-    const startTime = performance.now();
+    function animateMarkerMovement(start, end, targetAngle) {
+      isAnimating = true;
+      const duration = 1000; // 1 second animation
+      const startTime = performance.now();
 
-    function animate(currentTime) {
+      function animate(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
 
@@ -2083,8 +2078,8 @@ function animateMarkerMovement(start, end, targetAngle) {
 
         // Update marker position
         currentMarker.setPosition({
-            lat: currentLat,
-            lng: currentLng
+          lat: currentLat,
+          lng: currentLng
         });
 
         // Interpolate rotation
@@ -2093,225 +2088,226 @@ function animateMarkerMovement(start, end, targetAngle) {
 
         // Continue animation if not complete
         if (progress < 1) {
-            requestAnimationFrame(animate);
+          requestAnimationFrame(animate);
         } else {
-            isAnimating = false;
+          isAnimating = false;
         }
+      }
+
+      requestAnimationFrame(animate);
     }
 
-    requestAnimationFrame(animate);
-}
+    // Interpolate rotation with shortest path
+    function interpolateRotation(start, end, progress) {
+      // Ensure angles are between 0 and 360
+      start = (start + 360) % 360;
+      end = (end + 360) % 360;
 
-// Interpolate rotation with shortest path
-function interpolateRotation(start, end, progress) {
-    // Ensure angles are between 0 and 360
-    start = (start + 360) % 360;
-    end = (end + 360) % 360;
+      // Calculate shortest rotation path
+      let rotation;
+      const diff = end - start;
 
-    // Calculate shortest rotation path
-    let rotation;
-    const diff = end - start;
-    
-    if (Math.abs(diff) > 180) {
+      if (Math.abs(diff) > 180) {
         // Rotate the other way around the circle
         if (end > start) {
-            start += 360;
+          start += 360;
         } else {
-            end += 360;
+          end += 360;
         }
+      }
+
+      rotation = start + (end - start) * progress;
+      return rotation % 360;
     }
 
-    rotation = start + (end - start) * progress;
-    return rotation % 360;
-}
-
-// // Format hold time in hours, minutes, seconds
-// function formatHoldTime(ms) {
-//     const hours = Math.floor(ms / 3600000);
-//     const minutes = Math.floor((ms % 3600000) / 60000);
-//     const seconds = Math.floor((ms % 60000) / 1000);
-//     return `${hours}hr ${minutes}min ${seconds}sec`;
-// }
+    // // Format hold time in hours, minutes, seconds
+    // function formatHoldTime(ms) {
+    //     const hours = Math.floor(ms / 3600000);
+    //     const minutes = Math.floor((ms % 3600000) / 60000);
+    //     const seconds = Math.floor((ms % 60000) / 1000);
+    //     return `${hours}hr ${minutes}min ${seconds}sec`;
+    // }
 
 
-function calculateBearing(start, end) {
-    const startLat = toRadians(start.lat);
-    const startLng = toRadians(start.lng);
-    const endLat = toRadians(end.lat);
-    const endLng = toRadians(end.lng);
+    function calculateBearing(start, end) {
+      const startLat = toRadians(start.lat);
+      const startLng = toRadians(start.lng);
+      const endLat = toRadians(end.lat);
+      const endLng = toRadians(end.lng);
 
-    const dLng = endLng - startLng;
+      const dLng = endLng - startLng;
 
-    const y = Math.sin(dLng) * Math.cos(endLat);
-    const x = Math.cos(startLat) * Math.sin(endLat) - 
-              Math.sin(startLat) * Math.cos(endLat) * Math.cos(dLng);
+      const y = Math.sin(dLng) * Math.cos(endLat);
+      const x = Math.cos(startLat) * Math.sin(endLat) -
+        Math.sin(startLat) * Math.cos(endLat) * Math.cos(dLng);
 
-    let bearing = Math.atan2(y, x);
-    bearing = toDegrees(bearing);
-    return (bearing + 360) % 360;
-}
+      let bearing = Math.atan2(y, x);
+      bearing = toDegrees(bearing);
+      return (bearing + 360) % 360;
+    }
 
 
-// Convert degrees to radians
-function toRadians(degrees) {
-    return degrees * (Math.PI / 180);
-}
+    // Convert degrees to radians
+    function toRadians(degrees) {
+      return degrees * (Math.PI / 180);
+    }
 
-// Convert radians to degrees
-function toDegrees(radians) {
-    return radians * (180 / Math.PI);
-}
+    // Convert radians to degrees
+    function toDegrees(radians) {
+      return radians * (180 / Math.PI);
+    }
 
-// function updateVehicleMarker(vehicleData) {
-//     if (!vehicleData || vehicleData.length === 0) return;
+    // function updateVehicleMarker(vehicleData) {
+    //     if (!vehicleData || vehicleData.length === 0) return;
 
-//     const data = vehicleData[0];
-//     if (!data.latlang) {
-//         console.error('No position data available');
-//         return;
-//     }
+    //     const data = vehicleData[0];
+    //     if (!data.latlang) {
+    //         console.error('No position data available');
+    //         return;
+    //     }
 
-//     try {
-//         const [lat, lng] = data.latlang.split(",").map(coord => parseFloat(coord));
-//         const position = {
-//             lat: lat || 23.0225,
-//             lng: lng || 72.5714
-//         };
+    //     try {
+    //         const [lat, lng] = data.latlang.split(",").map(coord => parseFloat(coord));
+    //         const position = {
+    //             lat: lat || 23.0225,
+    //             lng: lng || 72.5714
+    //         };
 
-//         const initialAngle = parseFloat(data.angle) || 0;
+    //         const initialAngle = parseFloat(data.angle) || 0;
 
-//         if (!currentMarker) {
-//             // Create new marker
-//             currentMarker = new mappls.Marker({
-//                 map: map,
-//                 position: {
-//                     lat: position.lat,
-//                     lng: position.lng
-//                 },
-//                 icon: '/deviceTracking/images/car_image_transparent.png',
-//                 width: 40,
-//                 height: 40,
-//                 rotateWithMap: true
-//             });
+    //         if (!currentMarker) {
+    //             // Create new marker
+    //             currentMarker = new mappls.Marker({
+    //                 map: map,
+    //                 position: {
+    //                     lat: position.lat,
+    //                     lng: position.lng
+    //                 },
+    //                 icon: '/deviceTracking/images/car_image_transparent.png',
+    //                 width: 40,
+    //                 height: 40,
+    //                 rotateWithMap: true
+    //             });
 
-//             // Center map on marker
-//             map.setCenter({ lat: position.lat, lng: position.lng });
-//             map.setZoom(15);
-            
-//             lastPosition = position;
-//         } else {
-//             // Update existing marker position and rotation
-//             if (lastPosition && !isAnimating) {
-//                 let targetAngle = initialAngle;
-                
-//                 if (lastPosition.lat !== position.lat || lastPosition.lng !== position.lng) {
-//                     targetAngle = calculateBearing(lastPosition, position);
-//                     animateMarkerMovement(lastPosition, position, targetAngle);
-//                 } else {
-//                     currentMarker.setRotation(initialAngle);
-//                 }
-//             } else {
-//                 currentMarker.setPosition({
-//                     lat: position.lat,
-//                     lng: position.lng
-//                 });
-//                 currentMarker.setRotation(initialAngle);
-//             }
-            
-//             lastPosition = { ...position };
-//         }
+    //             // Center map on marker
+    //             map.setCenter({ lat: position.lat, lng: position.lng });
+    //             map.setZoom(15);
 
-//         // Add click event to marker
-//         currentMarker.addListener('click', () => {
-//             // showVehiclePopup(data);
-//         });
-//     } catch (error) {
-//         console.error('Error updating vehicle marker:', error);
-//     }
-// }
+    //             lastPosition = position;
+    //         } else {
+    //             // Update existing marker position and rotation
+    //             if (lastPosition && !isAnimating) {
+    //                 let targetAngle = initialAngle;
 
-// function showVehiclePopup(data) {
-//     const popup = document.getElementById('customPopup');
-//     const currentDate = new Date();
-//     const deviceDate = new Date(data.date);
-//     const timeDiff = Math.floor((currentDate - deviceDate) / 60000); // minutes
-//     const timeAgo = timeDiff === 0 ? 'just now' : `${timeDiff} min ago`;
+    //                 if (lastPosition.lat !== position.lat || lastPosition.lng !== position.lng) {
+    //                     targetAngle = calculateBearing(lastPosition, position);
+    //                     animateMarkerMovement(lastPosition, position, targetAngle);
+    //                 } else {
+    //                     currentMarker.setRotation(initialAngle);
+    //                 }
+    //             } else {
+    //                 currentMarker.setPosition({
+    //                     lat: position.lat,
+    //                     lng: position.lng
+    //                 });
+    //                 currentMarker.setRotation(initialAngle);
+    //             }
 
-//     popup.innerHTML = `
-//         <div class="popup-header">
-//             <div class="vehicle-id">${data.deviceId}</div>
-//             <div class="status-group">
-//                 GPS: <div class="status-indicator ${data.gps ? 'status-on' : 'status-off'}"></div>
-//                 Engine: <div class="status-indicator ${data.ignition === 'true' ? 'status-on' : 'status-off'}"></div>
-//                 Power: <div class="status-indicator ${data.power === 'true' ? 'status-on' : 'status-off'}"></div>
-//             </div>
-//         </div>
-//         <div class="popup-content">
-//             <div class="info-row">
-//                 <span class="info-label">Date:</span>
-//                 <span class="info-value">${data.dateNew} <span class="time-ago">(${timeAgo})</span></span>
-//             </div>
-//             <div class="info-row" style="display: flex; align-items: center; gap: 5px;">
-//                 <span class="info-label">Speed:</span>
-//                 <span class="info-value">${data.speed}asdasdasdasdasd km/h</span>
-//             </div>
-//             <div class="info-row">
-//                 <span class="info-label">Hold Time:</span>
-//                 <span class="info-value">${formatHoldTime(parseInt(data.holdtime))}</span>
-//             </div>
-//             <div class="info-row">
-//                 <span class="info-label">Status:</span>
-//                 <span class="status-text">Online</span>
-//             </div>
-//             <div class="info-row">
-//                 <span class="info-label">Battery:</span>
-//                 <span class="info-value">${data.battery}V</span>
-//             </div>
-//             <div class="info-row">
-//                 <span class="info-label">Location:</span>
-//                 <span class="info-value">
-//                     <a href="#" onclick="updateLocationPopup('${data.deviceId}', '${data.latlang}')">Get Location</a>
-//                 </span>
-//             </div>
-//             <div class="info-row">
-//                 <span class="info-label">Distance:</span>
-//                 <span class="info-value">0 km</span>
-//             </div>
-//             <div class="action-buttons">
-//                 <button onclick="updateDistance('${data.deviceId}')" class="action-button">Get Distance</button>
-//                 <button onclick="viewNearbyVehicles('${data.deviceId}', ${data.coordinates[0]}, ${data.coordinates[1]})" class="action-button">View Nearby</button>
-//                 <button onclick="shareLocation(${data.coordinates[0]}, ${data.coordinates[1]})" class="action-button">Share Location</button>
-//                 <button onclick="addPOIForDevice('${data.name}', ${data.coordinates[0]}, ${data.coordinates[1]})" class="action-button">Add POI</button>
-//             </div>
-//         </div>
-//     `;
+    //             lastPosition = { ...position };
+    //         }
 
-//     popup.style.display = 'block';
+    //         // Add click event to marker
+    //         currentMarker.addListener('click', () => {
+    //             // showVehiclePopup(data);
+    //         });
+    //     } catch (error) {
+    //         console.error('Error updating vehicle marker:', error);
+    //     }
+    // }
 
-//     // Position popup relative to marker
-//     if (currentMarker) {
-//         const markerPosition = currentMarker.getPosition();
-//         const point = map.getPixel(markerPosition);
-//         popup.style.left = `${point.x}px`;
-//         popup.style.top = `${point.y - popup.offsetHeight - 20}px`;
-//     }
-// }
+    // function showVehiclePopup(data) {
+    //     const popup = document.getElementById('customPopup');
+    //     const currentDate = new Date();
+    //     const deviceDate = new Date(data.date);
+    //     const timeDiff = Math.floor((currentDate - deviceDate) / 60000); // minutes
+    //     const timeAgo = timeDiff === 0 ? 'just now' : `${timeDiff} min ago`;
 
-document.addEventListener('click', function(event) {
-    const popup = document.getElementById('customPopup');
-    const popupCloseBtn = popup.querySelector('.close-btn');
-    
-    if (popup.style.display === 'block' && 
-        !popup.contains(event.target) && 
+    //     popup.innerHTML = `
+    //         <div class="popup-header">
+    //             <div class="vehicle-id">${data.deviceId}</div>
+    //             <div class="status-group">
+    //                 GPS: <div class="status-indicator ${data.gps ? 'status-on' : 'status-off'}"></div>
+    //                 Engine: <div class="status-indicator ${data.ignition === 'true' ? 'status-on' : 'status-off'}"></div>
+    //                 Power: <div class="status-indicator ${data.power === 'true' ? 'status-on' : 'status-off'}"></div>
+    //             </div>
+    //         </div>
+    //         <div class="popup-content">
+    //             <div class="info-row">
+    //                 <span class="info-label">Date:</span>
+    //                 <span class="info-value">${data.dateNew} <span class="time-ago">(${timeAgo})</span></span>
+    //             </div>
+    //             <div class="info-row" style="display: flex; align-items: center; gap: 5px;">
+    //                 <span class="info-label">Speed:</span>
+    //                 <span class="info-value">${data.speed}asdasdasdasdasd km/h</span>
+    //             </div>
+    //             <div class="info-row">
+    //                 <span class="info-label">Hold Time:</span>
+    //                 <span class="info-value">${formatHoldTime(parseInt(data.holdtime))}</span>
+    //             </div>
+    //             <div class="info-row">
+    //                 <span class="info-label">Status:</span>
+    //                 <span class="status-text">Online</span>
+    //             </div>
+    //             <div class="info-row">
+    //                 <span class="info-label">Battery:</span>
+    //                 <span class="info-value">${data.battery}V</span>
+    //             </div>
+    //             <div class="info-row">
+    //                 <span class="info-label">Location:</span>
+    //                 <span class="info-value">
+    //                     <a href="#" onclick="updateLocationPopup('${data.deviceId}', '${data.latlang}')">Get Location</a>
+    //                 </span>
+    //             </div>
+    //             <div class="info-row">
+    //                 <span class="info-label">Distance:</span>
+    //                 <span class="info-value">0 km</span>
+    //             </div>
+    //             <div class="action-buttons">
+    //                 <button onclick="updateDistance('${data.deviceId}')" class="action-button">Get Distance</button>
+    //                 <button onclick="viewNearbyVehicles('${data.deviceId}', ${data.coordinates[0]}, ${data.coordinates[1]})" class="action-button">View Nearby</button>
+    //                 <button onclick="shareLocation(${data.coordinates[0]}, ${data.coordinates[1]})" class="action-button">Share Location</button>
+    //                 <button onclick="addPOIForDevice('${data.name}', ${data.coordinates[0]}, ${data.coordinates[1]})" class="action-button">Add POI</button>
+    //             </div>
+    //         </div>
+    //     `;
+
+    //     popup.style.display = 'block';
+
+    //     // Position popup relative to marker
+    //     if (currentMarker) {
+    //         const markerPosition = currentMarker.getPosition();
+    //         const point = map.getPixel(markerPosition);
+    //         popup.style.left = `${point.x}px`;
+    //         popup.style.top = `${point.y - popup.offsetHeight - 20}px`;
+    //     }
+    // }
+
+    document.addEventListener('click', function (event) {
+      const popup = document.getElementById('customPopup');
+      const popupCloseBtn = popup.querySelector('.close-btn');
+
+      if (popup.style.display === 'block' &&
+        !popup.contains(event.target) &&
         event.target !== popupCloseBtn) {
         hidePopup();
-    }
-});
+      }
+    });
 
-// Close button functionality
-document.querySelector('#customPopup .close-btn').addEventListener('click', hidePopup);
+    // Close button functionality
+    document.querySelector('#customPopup .close-btn').addEventListener('click', hidePopup);
 
 
-    </script>
-  </body>
+  </script>
+</body>
+
 </html>

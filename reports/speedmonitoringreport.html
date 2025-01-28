@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -14,6 +15,7 @@
 
     <link href="/reports/speedmonitoringreport.css" rel="stylesheet" />
 </head>
+
 <body>
     <div class="container">
         <!-- Navbar -->
@@ -29,11 +31,8 @@
                         </div>
                         <div class="dropdown-list" id="deviceDropdown">
                             <div class="dropdown-search">
-                                <input type="text" 
-                                       placeholder="Search vehicle..." 
-                                       id="vehicleSearch"
-                                       onclick="event.stopPropagation()"
-                                       onkeyup="filterVehicles(this.value)">
+                                <input type="text" placeholder="Search vehicle..." id="vehicleSearch"
+                                    onclick="event.stopPropagation()" onkeyup="filterVehicles(this.value)">
                             </div>
                             <div class="dropdown-items" id="vehicleList">
                                 <!-- Vehicles will be populated here -->
@@ -48,14 +47,14 @@
                     <input type="date" id="startDate">
                     <input type="time" id="startTime" value="00:00">
                 </div>
-            
+
                 <!-- End DateTime -->
                 <div class="date-group">
                     <label>End DateTime:</label>
                     <input type="date" id="endDate">
                     <input type="time" id="endTime" value="23:59">
                 </div>
-            
+
                 <!-- Trip Time -->
                 <div class="speed-limit">
                     <label>Speed Limit (km/h):</label>
@@ -67,10 +66,10 @@
                         <option value="70">70 km/h</option>
                     </select>
                 </div>
-            
+
                 <!-- Buttons -->
                 <button class="submit-btn">Submit</button>
-                <button class="reset-btn" >Reset</button>
+                <button class="reset-btn">Reset</button>
             </div>
 
             <div class="export-buttons">
@@ -111,17 +110,17 @@
         let selectedDeviceId = null;
         let devices = [];
 
-        $(document).ready(function() {
+        $(document).ready(function () {
 
             // Check if 'mid' is available in localStorage otherwise ri-direct login page
             if (!localStorage.getItem('mid')) {
                 // Redirect to login page if 'mid' is not found
-                window.location.href = '../index.html';  
+                window.location.href = '../index.html';
             }
 
             console.log("Document ready, initializing..."); // Debug log
 
-            $("#navbar-container").load("../navbarola.html", function() {
+            $("#navbar-container").load("../navbarola.html", function () {
                 console.log("Navbar loaded successfully!");
             });
 
@@ -129,12 +128,12 @@
             fetchDeviceData();
 
             // Add event listener for form submission
-            $('.submit-btn').click(function() {
+            $('.submit-btn').click(function () {
                 generateReport();
             });
 
             // Add event listener for reset
-            $('.reset-btn').click(function() {
+            $('.reset-btn').click(function () {
                 resetForm();
             });
         });
@@ -143,28 +142,28 @@
             // Reset device selection
             selectedDeviceId = null;
             document.getElementById('selectedVehicle').textContent = 'Select Vehicle';
-            
+
             // Reset date and time inputs
             setDefaultDates();
-            
+
             // Reset speed limit to first option
             document.getElementById('speedLimit').value = '30';
-            
+
             // Clear search input if exists
             const searchInput = document.getElementById('vehicleSearch');
             if (searchInput) {
                 searchInput.value = '';
             }
-            
+
             // Hide dropdown if open
             const dropdown = document.getElementById('deviceDropdown');
             if (dropdown) {
                 dropdown.style.display = 'none';
             }
-            
+
             // Clear the report data
             document.getElementById('reportData').innerHTML = '';
-            
+
             // If using selectedDevices Map (for multi-select)
             if (typeof selectedDevices !== 'undefined') {
                 selectedDevices.clear();
@@ -175,10 +174,10 @@
         function setDefaultDates() {
             const now = new Date();
             const today = now.toISOString().split('T')[0];
-            
+
             document.getElementById('endDate').value = today;
             document.getElementById('endTime').value = '23:59';
-            
+
             document.getElementById('startDate').value = today;
             document.getElementById('startTime').value = '00:00';
         }
@@ -190,7 +189,7 @@
 
         function filterVehicles(searchText) {
             const vehicleList = document.getElementById('vehicleList');
-            const filteredDevices = devices.filter(device => 
+            const filteredDevices = devices.filter(device =>
                 device.dname.toLowerCase().includes(searchText.toLowerCase())
             );
             populateVehicleList(filteredDevices);
@@ -201,7 +200,7 @@
             const visibleCheckboxes = Array.from(document.querySelectorAll('#vehicleList .dropdown-item input[type="checkbox"]:not([style*="display: none"])'));
             const allChecked = visibleCheckboxes.every(cb => cb.checked);
             const someChecked = visibleCheckboxes.some(cb => cb.checked);
-            
+
             selectAllCheckbox.checked = allChecked;
             selectAllCheckbox.indeterminate = someChecked && !allChecked;
         }
@@ -217,7 +216,7 @@
         function populateVehicleList(devicesList) {
             const vehicleList = document.getElementById('vehicleList');
             vehicleList.innerHTML = '';
-            
+
             devicesList.forEach(device => {
                 const item = document.createElement('div');
                 item.className = 'dropdown-item';
@@ -240,12 +239,12 @@
 
         function updateSelectedDevicesDisplay() {
             const selectedVehicle = document.getElementById('selectedVehicle');
-            
+
             if (selectedDevices.size === 0) {
                 selectedVehicle.textContent = 'Select Vehicle';
                 return;
             }
-            
+
             // Create container for device tags
             const container = document.createElement('div');
             container.style.display = 'flex';
@@ -255,7 +254,7 @@
             // Get first two devices
             const devices = Array.from(selectedDevices.entries());
             const firstTwoDevices = devices.slice(0, 2);
-            
+
             // Create tags for first two devices
             firstTwoDevices.forEach(([did, name]) => {
                 const tag = document.createElement('div');
@@ -265,7 +264,7 @@
                 tag.style.fontSize = '12px';
                 tag.style.display = 'inline-flex';
                 tag.style.alignItems = 'center';
-                
+
                 const closeButton = document.createElement('span');
                 closeButton.textContent = '×';
                 closeButton.style.cursor = 'pointer';
@@ -275,7 +274,7 @@
                     e.stopPropagation(); // Stop event from bubbling up
                     removeDevice(did);
                 };
-                
+
                 tag.textContent = name;
                 tag.appendChild(closeButton);
                 container.appendChild(tag);
@@ -291,7 +290,7 @@
                 moreCount.textContent = `+${selectedDevices.size - 2}`;
                 container.appendChild(moreCount);
             }
-            
+
             // Clear previous content and add new tags
             selectedVehicle.innerHTML = '';
             selectedVehicle.appendChild(container);
@@ -302,14 +301,14 @@
             if (event) {
                 event.stopPropagation();
             }
-            
+
             // Remove the device from selected devices
             selectedDevices.delete(did);
-            
+
             // Update displays
             updateSelectedDevicesDisplay();
             populateVehicleList(devices);
-            
+
             // Keep dropdown open
             const dropdown = document.getElementById('deviceDropdown');
             if (dropdown) {
@@ -321,7 +320,7 @@
             event.stopPropagation();
             const selectAllCheckbox = document.getElementById('selectAllCheckbox');
             const isChecked = selectAllCheckbox.checked;
-            
+
             // Get all visible devices (respecting search filter)
             const visibleDevices = Array.from(document.querySelectorAll('#vehicleList .dropdown-item'))
                 .map(item => {
@@ -349,10 +348,10 @@
         }
 
         // Close dropdown when clicking outside
-        document.addEventListener("click", function(event) {
+        document.addEventListener("click", function (event) {
             const dropdown = document.getElementById("deviceDropdown");
             const deviceSelect = document.getElementById("deviceSelect");
-            
+
             if (!event.target.closest(".device-selector")) {
                 dropdown.style.display = "none";
             }
@@ -373,7 +372,7 @@
             const searchInput = document.getElementById('vehicleSearch');
             const deviceDropdown = document.getElementById('deviceDropdown');
             const selectedVehicle = document.getElementById('selectedVehicle');
-            
+
             if (!searchInput.contains(e.target) && !deviceDropdown.contains(e.target) && !selectedVehicle.contains(e.target)) {
                 deviceDropdown.style.display = 'none';
             }
@@ -382,7 +381,7 @@
         // document.addEventListener('click', function(event) {
         //     const dropdown = document.getElementById('deviceDropdown');
         //     const selectedVehicle = document.getElementById('selectedVehicle');
-            
+
         //     if (!event.target.closest('.device-selector') && 
         //         event.target !== selectedVehicle) {
         //         dropdown.style.display = 'none';
@@ -472,13 +471,13 @@
             const day = String(date.getDate()).padStart(2, '0');
             const hours = String(date.getHours()).padStart(2, '0');
             const minutes = String(date.getMinutes()).padStart(2, '0');
-            
+
             return `${year}-${month}-${day} ${hours}:${minutes}`;
         }
 
         function fetchSpeedReport(fromdate, todate, deviceid, speedlimit) {
             console.log("Fetching speed report data...");
-            
+
             const reportBody = document.getElementById('reportData');
             reportBody.innerHTML = `
                 <tr>
@@ -487,7 +486,7 @@
             `;
 
             const url = `${API}opr=getspeedmoniteringReport&speedlimit=${speedlimit}&fromdate=${fromdate}&todate=${todate}&deviceid=${deviceid}`;
-            
+
             fetch(url)
                 .then(response => response.text())
                 .then(data => {
@@ -495,7 +494,7 @@
                         // Parse the JSON response directly without any text manipulation
                         const parsedData = JSON.parse(data);
                         console.log("Parsed Speed Report Data:", parsedData);
-                        
+
                         if (Array.isArray(parsedData)) {
                             displaySpeedReportData(parsedData);
                         } else {
@@ -566,7 +565,7 @@
 
         function displaySpeedReportData(data) {
             const reportBody = document.getElementById('reportData');
-            
+
             if (!data || data.length === 0) {
                 reportBody.innerHTML = `
                     <tr>
@@ -579,7 +578,7 @@
             reportBody.innerHTML = data.map((item, index) => {
                 const startLocation = formatLocation(item.startlocaitonlatitude, item.startlocaitonlangitude);
                 const endLocation = formatLocation(item.endlocationlatitude, item.endlocationlangitude);
-                
+
                 return `
                     <tr>
                         <td>${index + 1}</td>
@@ -599,12 +598,12 @@
         // Format time from milliseconds/seconds to hours and minutes
         function formatTime(time) {
             if (!time || isNaN(time)) return '0 hours 0 mins';
-            
+
             // Convert to minutes first (assuming time is in milliseconds)
             let minutes = Math.floor(time / (1000 * 60));
             const hours = Math.floor(minutes / 60);
             minutes = minutes % 60;
-            
+
             return `${hours} hours ${minutes} mins`;
         }
 
@@ -629,7 +628,7 @@
         function exportExcel() {
             // Get headers
             const headers = ['vehicle Group', 'vehicle Name', 'Distance Travelled(km)', 'Max. Speed(km/h)', 'Drive Time', 'Stoppage Time'];
-            
+
             // Get data rows
             const rows = document.querySelectorAll('#reportData tr');
             const data = Array.from(rows).map(row => {
@@ -667,7 +666,7 @@
 
             // Get current date for filename
             const date = new Date().toLocaleDateString().replace(/\//g, '-');
-            
+
             // Generate Excel file
             XLSX.writeFile(wb, `fleet_report_${date}.xlsx`);
         }
@@ -678,7 +677,7 @@
             const table = document.querySelector('.report-table');
             const rows = table.querySelectorAll('tr');
             let csv = [];
-            
+
             // Convert table to CSV format
             rows.forEach(row => {
                 const rowData = [];
@@ -692,7 +691,7 @@
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
-            
+
             link.setAttribute('href', url);
             link.setAttribute('download', 'fleet_report.csv');
             link.style.visibility = 'hidden';
@@ -719,7 +718,7 @@
                 const endDate = document.getElementById('endDate').value;
                 const endTime = document.getElementById('endTime').value;
                 const speedLimit = document.getElementById('speedLimit').value;
-                
+
                 doc.text(`Report Period: ${startDate} ${startTime} to ${endDate} ${endTime}`, 15, 25);
                 doc.text(`Speed Limit: ${speedLimit} km/h`, 15, 30);
 
@@ -786,8 +785,9 @@
                 console.error('Error generating PDF:', error);
                 alert(`Error generating PDF: ${error.message}\nPlease check the console for more details.`);
             }
-        }  
-    
+        }
+
     </script>
 </body>
+
 </html>

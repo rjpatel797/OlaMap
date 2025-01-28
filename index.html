@@ -1,242 +1,228 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>GPS Based Vehicle Tracking System</title>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-      name="viewport"
-    />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-      rel="stylesheet"
-    />
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      }
 
-      body {
-        background: linear-gradient(135deg, #87ceeb 0%, #4682b4 100%);
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .login-container {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 20px;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-        padding: 40px;
-        width: 90%;
-        max-width: 400px;
-        backdrop-filter: blur(10px);
-      }
-
-      .login-header {
-        text-align: center;
-        margin-bottom: 30px;
-      }
-
-      .login-header h1 {
-        color: #2d3748;
-        font-size: 24px;
-        font-weight: 700;
-        margin-bottom: 10px;
-      }
-
-      .form-group {
-        margin-bottom: 20px;
-        position: relative;
-      }
-
-      .form-group input {
-        width: 100%;
-        padding: 12px 40px 12px 15px;
-        border: 2px solid #e3f2fd;
-        border-radius: 10px;
-        font-size: 16px;
-        transition: all 0.3s ease;
-        background: #f8fbfe;
-      }
-
-      .form-group input:focus {
-        border-color: #87ceeb;
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(135, 206, 235, 0.2);
-      }
-
-      .form-group i {
-        position: absolute;
-        right: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #87ceeb;
-      }
-
-      .submit-btn {
-        width: 100%;
-        padding: 12px;
-        background: #2d3748;
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-      }
-
-      .submit-btn:hover {
-        background: #1a202c;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      }
-
-      .demo-credentials {
-        margin-top: 20px;
-        text-align: center;
-        padding: 15px;
-        background: #f8fbfe;
-        border-radius: 10px;
-        border: 1px solid #e3f2fd;
-      }
-
-      .demo-credentials h3 {
-        color: #4a5568;
-        font-size: 16px;
-        margin-bottom: 10px;
-      }
-
-      .demo-credentials p {
-        color: #718096;
-        margin: 5px 0;
-        font-size: 14px;
-      }
-
-      .download-btn {
-        display: flex;
-        justify-content: center;
-        margin-top: 5px;
-      }
-
-      .download-text {
-        font-size: 14px;
-      }
-
-      #errordiv {
-        text-align: center;
-        margin-top: 15px;
-        padding: 8px 12px;
-        border-radius: 8px;
-        background-color: #fef2f2;
-        border: 1px solid #fca5a5;
-        color: #dc2626;
-        font-size: 14px;
-        display: none;
-      }
-
-      #errordiv.show {
-        display: block;
-      }
-
-      #errordiv i {
-        margin-right: 6px;
-      }
-
-      @media (max-width: 480px) {
-        .login-container {
-          padding: 30px 20px;
-        }
-      }
-
-      label.error {
-        color: #dc2626;
-        font-size: 14px;
-        margin-top: 5px;
-        display: block;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="login-container">
-      <div class="login-header">
-        <h1>GPS Tracker Login</h1>
-      </div>
-
-      <form method="POST" id="form-horizontal" action="">
-        <div class="form-group">
-          <input type="text" name="uid" id="uid" placeholder="Username" />
-          <i class="fas fa-user"></i>
-        </div>
-
-        <div class="form-group">
-          <input
-            type="password"
-            id="password"
-            name="passwd"
-            placeholder="Password"
-          />
-          <i class="fas fa-lock"></i>
-        </div>
-        <button type="submit" name="submit" class="submit-btn">Sign In</button>
-        <div class="download-btn">
-
-          <a class="download-text" href="https://ttsgps.in/APP/TTSGPS.apk">Click here to download application</a>
-        </div>
-
-        <div id="errordiv"></div>
-      </form>
-    </div>
-
-    <input
-      type="hidden"
-      name="ipaddress"
-      value="192.168.1.134"
-      id="ipaddress"
-    />
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="js/jquery.validate.min.js"></script>
-    <script src="js/api.js"></script>
-    <script>
-
-async function loginajax() {
-    const username = document.getElementById("uid").value;
-    const password = document.getElementById("password").value;
-    const ip = document.getElementById("ipaddress").value;
-
-    if (username.length == 0) {
-        showError("Please enter valid ID/Password.");
-        return false;
-    } else if (password.length == 0) {
-        showError("Please enter valid ID/Password.");
-        return false;
+<head>
+  <title>GPS Based Vehicle Tracking System</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    try {
+    body {
+      background: linear-gradient(135deg, #87ceeb 0%, #4682b4 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+      width: 90%;
+      max-width: 400px;
+      backdrop-filter: blur(10px);
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .login-header h1 {
+      color: #2d3748;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 40px 12px 15px;
+      border: 2px solid #e3f2fd;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background: #f8fbfe;
+    }
+
+    .form-group input:focus {
+      border-color: #87ceeb;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(135, 206, 235, 0.2);
+    }
+
+    .form-group i {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #87ceeb;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: #2d3748;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .submit-btn:hover {
+      background: #1a202c;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .demo-credentials {
+      margin-top: 20px;
+      text-align: center;
+      padding: 15px;
+      background: #f8fbfe;
+      border-radius: 10px;
+      border: 1px solid #e3f2fd;
+    }
+
+    .demo-credentials h3 {
+      color: #4a5568;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .demo-credentials p {
+      color: #718096;
+      margin: 5px 0;
+      font-size: 14px;
+    }
+
+    .download-btn {
+      display: flex;
+      justify-content: center;
+      margin-top: 5px;
+    }
+
+    .download-text {
+      font-size: 14px;
+    }
+
+    #errordiv {
+      text-align: center;
+      margin-top: 15px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background-color: #fef2f2;
+      border: 1px solid #fca5a5;
+      color: #dc2626;
+      font-size: 14px;
+      display: none;
+    }
+
+    #errordiv.show {
+      display: block;
+    }
+
+    #errordiv i {
+      margin-right: 6px;
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 30px 20px;
+      }
+    }
+
+    label.error {
+      color: #dc2626;
+      font-size: 14px;
+      margin-top: 5px;
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="login-container">
+    <div class="login-header">
+      <h1>GPS Tracker Login</h1>
+    </div>
+
+    <form method="POST" id="form-horizontal" action="">
+      <div class="form-group">
+        <input type="text" name="uid" id="uid" placeholder="Username" />
+        <i class="fas fa-user"></i>
+      </div>
+
+      <div class="form-group">
+        <input type="password" id="password" name="passwd" placeholder="Password" />
+        <i class="fas fa-lock"></i>
+      </div>
+      <button type="submit" name="submit" class="submit-btn">Sign In</button>
+      <div class="download-btn">
+
+        <a class="download-text" href="https://ttsgps.in/APP/TTSGPS.apk">Click here to download application</a>
+      </div>
+
+      <div id="errordiv"></div>
+    </form>
+  </div>
+
+  <input type="hidden" name="ipaddress" value="192.168.1.134" id="ipaddress" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="js/jquery.validate.min.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+
+    async function loginajax() {
+      const username = document.getElementById("uid").value;
+      const password = document.getElementById("password").value;
+      const ip = document.getElementById("ipaddress").value;
+
+      if (username.length == 0) {
+        showError("Please enter valid ID/Password.");
+        return false;
+      } else if (password.length == 0) {
+        showError("Please enter valid ID/Password.");
+        return false;
+      }
+
+      try {
         // Create URL parameters the correct way
         const params = new URLSearchParams({
-            opr: 'andro_login',
-            uid: username,
-            passwd: password,
-            ip: ip
+          opr: 'andro_login',
+          uid: username,
+          passwd: password,
+          ip: ip
         });
 
         const response = await fetch(`${API}${params.toString()}`, {
-            method: 'GET', // Changed to GET if your API expects GET requests
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            }
+          method: 'GET', // Changed to GET if your API expects GET requests
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          }
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json(); // Use text() instead of json() if API returns plain text
@@ -249,60 +235,61 @@ async function loginajax() {
           window.location.href = "/dashboard/dashboardliveola.html";
         } else {
           document.getElementById("uid").value = "";
-            document.getElementById("password").value = "";
-            showError("Please enter valid ID/Password.");
+          document.getElementById("password").value = "";
+          showError("Please enter valid ID/Password.");
 
         }
 
-    } catch (error) {
+      } catch (error) {
         console.error("Login Error:", error);
         showError("Connection error. Please try again.");
+      }
+
+      return false;
     }
 
-    return false;
-}
 
+    // Update the form validation setup
+    $(document).ready(function () {
+      $("#uid").focus();
 
-// Update the form validation setup
-$(document).ready(function () {
-    $("#uid").focus();
-    
-    // Prevent form submission on enter key
-    $("#form-horizontal input").on("keypress", function(e) {
+      // Prevent form submission on enter key
+      $("#form-horizontal input").on("keypress", function (e) {
         if (e.which === 13) {
-            e.preventDefault();
-            loginajax();
+          e.preventDefault();
+          loginajax();
         }
-    });
+      });
 
-    $("#form-horizontal").validate({
+      $("#form-horizontal").validate({
         rules: {
-            uid: { required: true },
-            passwd: { required: true }
+          uid: { required: true },
+          passwd: { required: true }
         },
         messages: {
-            uid: { required: "Please enter username" },
-            passwd: { required: "Please enter password" }
+          uid: { required: "Please enter username" },
+          passwd: { required: "Please enter password" }
         },
         submitHandler: function (form) {
-            loginajax();
-            return false;
+          loginajax();
+          return false;
         }
+      });
     });
-});
 
 
-function showError(message) {
-    const errorDiv = $("#errordiv");
-    errorDiv.html("<i class='fas fa-exclamation-circle'></i> " + message)
-           .addClass("show");
-    
-    // Hide error message after 5 seconds
-    setTimeout(() => {
+    function showError(message) {
+      const errorDiv = $("#errordiv");
+      errorDiv.html("<i class='fas fa-exclamation-circle'></i> " + message)
+        .addClass("show");
+
+      // Hide error message after 5 seconds
+      setTimeout(() => {
         errorDiv.removeClass("show");
-    }, 5000);
-}
+      }, 5000);
+    }
 
-</script>
-  </body>
+  </script>
+</body>
+
 </html>

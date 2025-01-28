@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <link href="/poi/pointofinterestmmi.css" rel="stylesheet">
 </head>
+
 <body>
     <div class="container">
         <div id="navbar-container"></div>
@@ -56,21 +58,21 @@
 
     <script src="../js/api.js"></script>
     <script>
-       // Initialize MapMyIndia map and variables
-const mid = localStorage.getItem("mid");
-let markers = [];
-let searchMarker = null;
-let markerLayer = null;
-let styleLoaded = false;
-let map;
+        // Initialize MapMyIndia map and variables
+        const mid = localStorage.getItem("mid");
+        let markers = [];
+        let searchMarker = null;
+        let markerLayer = null;
+        let styleLoaded = false;
+        let map;
 
-const script2 = document.createElement('script');
-script2.src = `https://apis.mappls.com/advancedmaps/api/${localStorage.getItem("key")}/map_sdk_plugins?v=3.0&libraries=search`;
-script2.defer = true;
-script2.async = true;
-document.head.appendChild(script2);
+        const script2 = document.createElement('script');
+        script2.src = `https://apis.mappls.com/advancedmaps/api/${localStorage.getItem("key")}/map_sdk_plugins?v=3.0&libraries=search`;
+        script2.defer = true;
+        script2.async = true;
+        document.head.appendChild(script2);
 
-const script = document.createElement('script');
+        const script = document.createElement('script');
         script.src = `https://apis.mappls.com/advancedmaps/api/${localStorage.getItem("key")}/map_sdk?layer=vector&v=3.0&callback=initializeMap`;
         script.defer = true;
         script.async = true;
@@ -83,7 +85,7 @@ const script = document.createElement('script');
             });
 
             // Initialize map controls and layers
-            map.on('load', function() {
+            map.on('load', function () {
                 fetchPOIs();
             });
         }
@@ -104,33 +106,33 @@ const script = document.createElement('script');
             }
         }
 
-// Add new POI
-async function addPOI() {
-    const location = document.getElementById('location').value;
-    const latitude = document.getElementById('latitude').value;
-    const longitude = document.getElementById('longitude').value;
-    const address = document.getElementById('address').value;
-    const status = document.getElementById('status').value;
+        // Add new POI
+        async function addPOI() {
+            const location = document.getElementById('location').value;
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
+            const address = document.getElementById('address').value;
+            const status = document.getElementById('status').value;
 
-    const url = `${API}opr=addpoi&latitude=${latitude}&longitude=${longitude}&status=${status}&location=${location}&address=${address}&mid=${mid}`;
+            const url = `${API}opr=addpoi&latitude=${latitude}&longitude=${longitude}&status=${status}&location=${location}&address=${address}&mid=${mid}`;
 
-    try {
-        const response = await fetch(url);
-        if (response.ok) {
-            fetchPOIs();
-            clearInputs();
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    fetchPOIs();
+                    clearInputs();
+                }
+            } catch (error) {
+                console.error('Error adding POI:', error);
+            }
         }
-    } catch (error) {
-        console.error('Error adding POI:', error);
-    }
-}
 
-function updatePOITable(pois) {
-    const tbody = document.getElementById('poiTableBody');
-    tbody.innerHTML = '';
+        function updatePOITable(pois) {
+            const tbody = document.getElementById('poiTableBody');
+            tbody.innerHTML = '';
 
-    pois.forEach((poi, index) => {
-        const row = `
+            pois.forEach((poi, index) => {
+                const row = `
             <tr>
                 <td>${index + 1}</td>
                 <td>${poi.location}</td>
@@ -145,167 +147,188 @@ function updatePOITable(pois) {
                 </td>
             </tr>
         `;
-        tbody.insertAdjacentHTML('beforeend', row);
-    });
-}
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
 
-function updateMapMarkers(pois) {
-    // Remove existing markers
-    markers.forEach(marker => marker.remove());
-    markers = [];
+        function updateMapMarkers(pois) {
+            // Remove existing markers
+            markers.forEach(marker => marker.remove());
+            markers = [];
 
-    // Add new markers
-    pois.forEach(poi => {
-        const marker = new mappls.Marker({
-            map: map,
-            position: { lat: poi.latitude, lng: poi.longitude },
-            draggable: false,
-            popupHtml: poi.location,
-            icon: {
-                url: poi.status === 'Enable' ? 'green-marker.png' : 'red-marker.png',
-                height: 30,
-                width: 22
+            // Add new markers
+            pois.forEach(poi => {
+                const marker = new mappls.Marker({
+                    map: map,
+                    position: { lat: poi.latitude, lng: poi.longitude },
+                    draggable: false,
+                    popupHtml: poi.location,
+                    icon: {
+                        url: poi.status === 'Enable' ? 'green-marker.png' : 'red-marker.png',
+                        height: 30,
+                        width: 22
+                    }
+                });
+                markers.push(marker);
+            });
+        }
+
+        async function updateStatus(id, status) {
+            try {
+                const response = await fetch(`${API}opr=updatepoi&id=${id}&status=${status}&mid=${mid}`);
+                if (response.ok) {
+                    fetchPOIs();
+                }
+            } catch (error) {
+                console.error('Error updating POI status:', error);
             }
+        }
+
+        async function deletePOI(id) {
+            if (confirm('Are you sure you want to delete this POI?')) {
+                try {
+                    const response = await fetch(`${API}opr=deletepoi&id=${id}&mid=${mid}`);
+                    if (response.ok) {
+                        fetchPOIs();
+                    }
+                } catch (error) {
+                    console.error('Error deleting POI:', error);
+                }
+            }
+        }
+
+        function enableAll() {
+            document.querySelectorAll('.poi-table tbody tr').forEach(row => {
+                const id = row.getAttribute('data-id');
+                updateStatus(id, 'Enable');
+            });
+        }
+
+        function disableAll() {
+            document.querySelectorAll('.poi-table tbody tr').forEach(row => {
+                const id = row.getAttribute('data-id');
+                updateStatus(id, 'Disable');
+            });
+        }
+
+        $(document).ready(function () {
+            $("#navbar-container").load("../navbarola.html", function () {
+                console.log("Navbar loaded successfully!");
+            });
+
+            if (!localStorage.getItem("mid")) {
+                window.location.href = "../index.html";
+            }
+
+            // Initialize the map
+            initializeMap();
         });
-        markers.push(marker);
-    });
-}
 
-async function updateStatus(id, status) {
-    try {
-        const response = await fetch(`${API}opr=updatepoi&id=${id}&status=${status}&mid=${mid}`);
-        if (response.ok) {
-            fetchPOIs();
+        function clearInputs() {
+            document.getElementById('location').value = '';
+            document.getElementById('latitude').value = '';
+            document.getElementById('longitude').value = '';
+            document.getElementById('address').value = '';
+            document.getElementById('status').value = 'Enable';
         }
-    } catch (error) {
-        console.error('Error updating POI status:', error);
-    }
-}
 
-async function deletePOI(id) {
-    if (confirm('Are you sure you want to delete this POI?')) {
-        try {
-            const response = await fetch(`${API}opr=deletepoi&id=${id}&mid=${mid}`);
-            if (response.ok) {
-                fetchPOIs();
+        let searchTimeout;
+
+        document.getElementById('placeSearch').addEventListener('input', function (e) {
+            clearTimeout(searchTimeout);
+            const query = e.target.value.trim();
+
+            if (query.length < 3) {
+                document.getElementById('searchResults').style.display = 'none';
+                return;
             }
-        } catch (error) {
-            console.error('Error deleting POI:', error);
+
+            searchTimeout = setTimeout(() => {
+                searchPlaces(query);
+            }, 300);
+        });
+
+        async function searchPlaces(query) {
+            try {
+                // Create a new instance of the search plugin
+                const mapplsSearch = new mappls.search({ bridge: true });
+
+                // Use the instance to search
+                const searchData = {
+                    query: query,
+                    bridge: true,
+                    location: map.getCenter(),
+                    zoom: map.getZoom(),
+                    pod: "city,street,village,locality"
+                };
+
+                const response = await mapplsSearch.search(searchData);
+                showSearchResults(response.suggestedLocations || []);
+            } catch (error) {
+                console.error('Error searching places:', error);
+            }
         }
-    }
-}
 
-function enableAll() {
-    document.querySelectorAll('.poi-table tbody tr').forEach(row => {
-        const id = row.getAttribute('data-id');
-        updateStatus(id, 'Enable');
-    });
-}
+        function showSearchResults(predictions) {
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = '';
 
-function disableAll() {
-    document.querySelectorAll('.poi-table tbody tr').forEach(row => {
-        const id = row.getAttribute('data-id');
-        updateStatus(id, 'Disable');
-    });
-}
+            if (predictions.length === 0) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
 
-$(document).ready(function() {
-    $("#navbar-container").load("../navbarola.html", function() {
-        console.log("Navbar loaded successfully!");
-    });
+            predictions.forEach(place => {
+                const div = document.createElement('div');
+                div.className = 'search-item';
+                div.textContent = `${place.placeName}${place.placeAddress ? ', ' + place.placeAddress : ''}`;
+                div.onclick = () => selectPlace(place);
+                resultsDiv.appendChild(div);
+            });
 
-    if (!localStorage.getItem("mid")) {
-        window.location.href = "../index.html";
-    }
+            resultsDiv.style.display = 'block';
+        }
 
-    // Initialize the map
-    initializeMap();
-});
+        function selectPlace(place) {
+            const searchInput = document.getElementById('placeSearch');
+            searchInput.value = `${place.placeName}${place.placeAddress ? ', ' + place.placeAddress : ''}`;
+            document.getElementById('searchResults').style.display = 'none';
 
-function clearInputs() {
-    document.getElementById('location').value = '';
-    document.getElementById('latitude').value = '';
-    document.getElementById('longitude').value = '';
-    document.getElementById('address').value = '';
-    document.getElementById('status').value = 'Enable';
-}
+            // Update form fields
+            document.getElementById('location').value = place.placeName;
+            document.getElementById('address').value = place.placeAddress || '';
 
-let searchTimeout;
+            // Convert eloc to lat/lng if needed
+            if (place.eLoc) {
+                mappls.eloc2coord({ eLoc: place.eLoc }, function (data) {
+                    const lat = data?.copResults?.[0]?.latitude;
+                    const lng = data?.copResults?.[0]?.longitude;
 
-document.getElementById('placeSearch').addEventListener('input', function(e) {
-    clearTimeout(searchTimeout);
-    const query = e.target.value.trim();
+                    if (lat && lng) {
+                        document.getElementById('latitude').value = lat;
+                        document.getElementById('longitude').value = lng;
 
-    if (query.length < 3) {
-        document.getElementById('searchResults').style.display = 'none';
-        return;
-    }
+                        // Add marker to map
+                        if (searchMarker) {
+                            searchMarker.remove();
+                        }
 
-    searchTimeout = setTimeout(() => {
-        searchPlaces(query);
-    }, 300);
-});
+                        searchMarker = new mappls.Marker({
+                            map: map,
+                            position: { lat: lat, lng: lng },
+                            draggable: false,
+                            popupHtml: place.placeName
+                        });
 
-async function searchPlaces(query) {
-    try {
-        // Create a new instance of the search plugin
-        const mapplsSearch = new mappls.search({bridge: true});
-        
-        // Use the instance to search
-        const searchData = {
-            query: query,
-            bridge: true,
-            location: map.getCenter(),
-            zoom: map.getZoom(),
-            pod: "city,street,village,locality"
-        };
-        
-        const response = await mapplsSearch.search(searchData);
-        showSearchResults(response.suggestedLocations || []);
-    } catch (error) {
-        console.error('Error searching places:', error);
-    }
-}
+                        // Center map on selected location
+                        map.setCenter({ lat: lat, lng: lng });
+                        map.setZoom(16);
+                    }
+                });
+            } else if (place.latitude && place.longitude) {
+                document.getElementById('latitude').value = place.latitude;
+                document.getElementById('longitude').value = place.longitude;
 
-function showSearchResults(predictions) {
-    const resultsDiv = document.getElementById('searchResults');
-    resultsDiv.innerHTML = '';
-
-    if (predictions.length === 0) {
-        resultsDiv.style.display = 'none';
-        return;
-    }
-
-    predictions.forEach(place => {
-        const div = document.createElement('div');
-        div.className = 'search-item';
-        div.textContent = `${place.placeName}${place.placeAddress ? ', ' + place.placeAddress : ''}`;
-        div.onclick = () => selectPlace(place);
-        resultsDiv.appendChild(div);
-    });
-
-    resultsDiv.style.display = 'block';
-}
-
-function selectPlace(place) {
-    const searchInput = document.getElementById('placeSearch');
-    searchInput.value = `${place.placeName}${place.placeAddress ? ', ' + place.placeAddress : ''}`;
-    document.getElementById('searchResults').style.display = 'none';
-
-    // Update form fields
-    document.getElementById('location').value = place.placeName;
-    document.getElementById('address').value = place.placeAddress || '';
-    
-    // Convert eloc to lat/lng if needed
-    if (place.eLoc) {
-        mappls.eloc2coord({ eLoc: place.eLoc }, function(data) {
-            const lat = data?.copResults?.[0]?.latitude;
-            const lng = data?.copResults?.[0]?.longitude;
-            
-            if (lat && lng) {
-                document.getElementById('latitude').value = lat;
-                document.getElementById('longitude').value = lng;
-                
                 // Add marker to map
                 if (searchMarker) {
                     searchMarker.remove();
@@ -313,97 +336,77 @@ function selectPlace(place) {
 
                 searchMarker = new mappls.Marker({
                     map: map,
-                    position: { lat: lat, lng: lng },
+                    position: { lat: place.latitude, lng: place.longitude },
                     draggable: false,
                     popupHtml: place.placeName
                 });
 
                 // Center map on selected location
-                map.setCenter({ lat: lat, lng: lng });
+                map.setCenter({ lat: place.latitude, lng: place.longitude });
                 map.setZoom(16);
             }
-        });
-    } else if (place.latitude && place.longitude) {
-        document.getElementById('latitude').value = place.latitude;
-        document.getElementById('longitude').value = place.longitude;
-        
-        // Add marker to map
-        if (searchMarker) {
-            searchMarker.remove();
         }
 
-        searchMarker = new mappls.Marker({
-            map: map,
-            position: { lat: place.latitude, lng: place.longitude },
-            draggable: false,
-            popupHtml: place.placeName
-        });
-
-        // Center map on selected location
-        map.setCenter({ lat: place.latitude, lng: place.longitude });
-        map.setZoom(16);
-    }
-}
-
-async function reverseGeocode(lat, lng) {
-    try {
-        const response = await mappls.rev_geocode({ lat, lng });
-        if (response && response.results && response.results.length > 0) {
-            return response.results[0].formatted_address;
-        }
-        return '';
-    } catch (error) {
-        console.error('Error in reverse geocoding:', error);
-        return '';
-    }
-}
-
-function initializeFromParams() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const lat = urlParams.get('lat');
-    const lng = urlParams.get('lng');
-    const deviceName = urlParams.get('deviceName');
-
-    if (lat && lng && styleLoaded) {
-        // Set form values
-        document.getElementById('latitude').value = lat;
-        document.getElementById('longitude').value = lng;
-        
-        if (deviceName) {
-            document.getElementById('location').value = deviceName;
+        async function reverseGeocode(lat, lng) {
+            try {
+                const response = await mappls.rev_geocode({ lat, lng });
+                if (response && response.results && response.results.length > 0) {
+                    return response.results[0].formatted_address;
+                }
+                return '';
+            } catch (error) {
+                console.error('Error in reverse geocoding:', error);
+                return '';
+            }
         }
 
-        // Fetch and set address
-        reverseGeocode(lat, lng).then(address => {
-            document.getElementById('address').value = address;
-        });
+        function initializeFromParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const lat = urlParams.get('lat');
+            const lng = urlParams.get('lng');
+            const deviceName = urlParams.get('deviceName');
 
-        // Center map and add marker
-        map.setCenter({ lat: parseFloat(lat), lng: parseFloat(lng) });
-        map.setZoom(16);
+            if (lat && lng && styleLoaded) {
+                // Set form values
+                document.getElementById('latitude').value = lat;
+                document.getElementById('longitude').value = lng;
 
-        if (searchMarker) {
-            searchMarker.remove();
+                if (deviceName) {
+                    document.getElementById('location').value = deviceName;
+                }
+
+                // Fetch and set address
+                reverseGeocode(lat, lng).then(address => {
+                    document.getElementById('address').value = address;
+                });
+
+                // Center map and add marker
+                map.setCenter({ lat: parseFloat(lat), lng: parseFloat(lng) });
+                map.setZoom(16);
+
+                if (searchMarker) {
+                    searchMarker.remove();
+                }
+
+                searchMarker = new mappls.Marker({
+                    map: map,
+                    position: { lat: parseFloat(lat), lng: parseFloat(lng) },
+                    draggable: false,
+                    popupHtml: deviceName || 'Selected Location'
+                });
+            }
         }
 
-        searchMarker = new mappls.Marker({
-            map: map,
-            position: { lat: parseFloat(lat), lng: parseFloat(lng) },
-            draggable: false,
-            popupHtml: deviceName || 'Selected Location'
+        // Close search results when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.search-container')) {
+                document.getElementById('searchResults').style.display = 'none';
+            }
         });
-    }
-}
 
-// Close search results when clicking outside
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('.search-container')) {
-        document.getElementById('searchResults').style.display = 'none';
-    }
-});
-
-// Initial load
-fetchPOIs();
+        // Initial load
+        fetchPOIs();
     </script>
 </body>
+
 </html>

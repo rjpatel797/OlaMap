@@ -14,7 +14,7 @@
   <link href="../olamap/style.css" rel="stylesheet" />
   <script src="../olamap/olamaps-js-sdk.umd.js"></script>
 
-  <link href="/livetracking/livetrackingola.css" rel="stylesheet">  
+  <link href="/livetracking/livetrackingola.css" rel="stylesheet">
 
 </head>
 
@@ -129,7 +129,7 @@
           if (isTracking) {
             stopTracking();
           }
-          
+
           // Reset marker and data
           if (currentMarker) {
             currentMarker.remove();
@@ -143,7 +143,7 @@
           // Clear vehicle info displays
           document.getElementById('speedDisplay').textContent = '0 km/h';
           document.getElementById('dateTimeDisplay').textContent = '--';
-          
+
           // Hide any popups
           const customPopup = document.getElementById('customPopup');
           if (customPopup) {
@@ -153,7 +153,7 @@
           // Update dropdown selection
           document.getElementById("selectedVehicle").textContent = deviceName;
           document.getElementById("deviceDropdown").style.display = "none";
-          
+
           // Reset track button to initial state
           const trackButton = document.getElementById("trackButton");
           if (trackButton) {

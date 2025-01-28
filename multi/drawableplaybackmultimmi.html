@@ -1,496 +1,497 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>GPS Playback System - MapMyIndia</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>GPS Playback System - MapMyIndia</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <link href="/multi/drawableplaybackmultimmi.css" rel="stylesheet"/>
+  <link href="/multi/drawableplaybackmultimmi.css" rel="stylesheet" />
 </head>
+
 <body>
-    <div class="container">
-        <div id="navbar-container"></div>
-        <div class="content">
-            <div class="controls">
-                <div class="datetime-selector">
-                    <div class="device-selector">
-                        <div class="dropdown-container">
-                            <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
-                                Select Vehicles
-                            </div>
-                            <div class="dropdown-list" id="deviceDropdown">
-                                <div class="dropdown-search">
-                                    <input type="text" placeholder="Search vehicles..." id="vehicleSearch" 
-                                        onclick="event.stopPropagation()" 
-                                        onkeyup="filterVehicles(this.value)" />
-                                </div>
-                                <div class="dropdown-items" id="vehicleList">
-                                    <!-- Vehicles populated dynamically -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="date-input">
-                        <label>From:</label>
-                        <div class="datetime-wrapper">
-                            <input type="date" id="fromDate" placeholder="dd/mm/yyyy" />
-                            <input type="time" id="fromTime" value="00:00" />
-                        </div>
-                    </div>
-                    <div class="date-input">
-                        <label>To:</label>
-                        <div class="datetime-wrapper">
-                            <input type="date" id="toDate" placeholder="dd/mm/yyyy" />
-                            <input type="time" id="toTime" value="23:59" />
-                        </div>
-                    </div>
+  <div class="container">
+    <div id="navbar-container"></div>
+    <div class="content">
+      <div class="controls">
+        <div class="datetime-selector">
+          <div class="device-selector">
+            <div class="dropdown-container">
+              <div class="selected-vehicle" id="selectedVehicle" onclick="toggleDropdown()">
+                Select Vehicles
+              </div>
+              <div class="dropdown-list" id="deviceDropdown">
+                <div class="dropdown-search">
+                  <input type="text" placeholder="Search vehicles..." id="vehicleSearch"
+                    onclick="event.stopPropagation()" onkeyup="filterVehicles(this.value)" />
                 </div>
-                <div class="buttonclass">
-                    <button id="stopPlayback">Reset</button>
+                <div class="dropdown-items" id="vehicleList">
+                  <!-- Vehicles populated dynamically -->
                 </div>
+              </div>
             </div>
-            <div id="map"></div>
+          </div>
+          <div class="date-input">
+            <label>From:</label>
+            <div class="datetime-wrapper">
+              <input type="date" id="fromDate" placeholder="dd/mm/yyyy" />
+              <input type="time" id="fromTime" value="00:00" />
+            </div>
+          </div>
+          <div class="date-input">
+            <label>To:</label>
+            <div class="datetime-wrapper">
+              <input type="date" id="toDate" placeholder="dd/mm/yyyy" />
+              <input type="time" id="toTime" value="23:59" />
+            </div>
+          </div>
         </div>
+        <div class="buttonclass">
+          <button id="stopPlayback">Reset</button>
+        </div>
+      </div>
+      <div id="map"></div>
     </div>
+  </div>
 
-    <script src="../js/api.js"></script>
-    <script>
+  <script src="../js/api.js"></script>
+  <script>
     let selectedDevices = [];
-let deviceDataMap = new Map();
-let deviceMarkers = new Map();
-let devicePolylines = new Map();
-let bounds;
-let vehicleMarker = null;
-let playbackData = [];
-let index = 0;
-let playbackInterval = null;
-let isPaused = false;
-const polylineId = "dynamicPolyline";
-let isPopupClosedManually = false;
-let pathCoordinates = [];
-let startMarker = null;
-let endMarker = null;
-let startingMarker = null;
-let endingMarker = null;
-let totalDistance = 0;
-let map;
-let devices = [];
-let selectedDeviceId = null;
+    let deviceDataMap = new Map();
+    let deviceMarkers = new Map();
+    let devicePolylines = new Map();
+    let bounds;
+    let vehicleMarker = null;
+    let playbackData = [];
+    let index = 0;
+    let playbackInterval = null;
+    let isPaused = false;
+    const polylineId = "dynamicPolyline";
+    let isPopupClosedManually = false;
+    let pathCoordinates = [];
+    let startMarker = null;
+    let endMarker = null;
+    let startingMarker = null;
+    let endingMarker = null;
+    let totalDistance = 0;
+    let map;
+    let devices = [];
+    let selectedDeviceId = null;
 
-const ANGLE_OFFSET = 90;
-const popup = document.getElementById("customPopup");
-const popupContent = document.getElementById("popupContent");
+    const ANGLE_OFFSET = 90;
+    const popup = document.getElementById("customPopup");
+    const popupContent = document.getElementById("popupContent");
 
-const deviceColors = [
-  '#FF0000', // Red
-  '#00FF00', // Green
-  '#0000FF', // Blue
-  '#FFA500', // Orange
-  '#800080', // Purple
-  '#008080', // Teal
-  '#FFD700', // Gold
-  '#4B0082', // Indigo
-  '#FF1493', // Deep Pink
-  '#00CED1'  // Dark Turquoise
-];
+    const deviceColors = [
+      '#FF0000', // Red
+      '#00FF00', // Green
+      '#0000FF', // Blue
+      '#FFA500', // Orange
+      '#800080', // Purple
+      '#008080', // Teal
+      '#FFD700', // Gold
+      '#4B0082', // Indigo
+      '#FF1493', // Deep Pink
+      '#00CED1'  // Dark Turquoise
+    ];
 
-// Create and append MapMyIndia script
-const script = document.createElement('script');
-script.src = `https://apis.mappls.com/advancedmaps/api/${localStorage.getItem("key")}/map_sdk?layer=vector&v=3.0&callback=initMap`;
-script.defer = true;
-script.async = true;
-document.head.appendChild(script);
+    // Create and append MapMyIndia script
+    const script = document.createElement('script');
+    script.src = `https://apis.mappls.com/advancedmaps/api/${localStorage.getItem("key")}/map_sdk?layer=vector&v=3.0&callback=initMap`;
+    script.defer = true;
+    script.async = true;
+    document.head.appendChild(script);
 
-// Initialize MapMyIndia Map
-function initMap() {
-  map = new mappls.Map('map', {
-    center: [23.0225, 72.5714],
-    zoom: 15,
-    zoomControl: true,
-    hybrid: false
-  });
+    // Initialize MapMyIndia Map
+    function initMap() {
+      map = new mappls.Map('map', {
+        center: [23.0225, 72.5714],
+        zoom: 15,
+        zoomControl: true,
+        hybrid: false
+      });
 
-  bounds = new mappls.LatLngBounds();
+      bounds = new mappls.LatLngBounds();
 
-  
-}
 
-$(document).ready(() => {
+    }
+
+    $(document).ready(() => {
       $("#navbar-container").load("../navbarola.html", () => {
       });
 
       //   map.on("load", () => {
       //   console.log("Map loaded successfully");
-         fetchDeviceData().catch((error) => {
-           console.error("Error fetching device data:", error);
-         });
+      fetchDeviceData().catch((error) => {
+        console.error("Error fetching device data:", error);
+      });
       // });
     });
 
-function toggleDropdown() {
-  const dropdown = document.getElementById("deviceDropdown");
-  dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-}
-
-function filterVehicles(searchText) {
-  const vehicleList = document.getElementById("vehicleList");
-  const filteredDevices = devices.filter((device) =>
-    device.name.toLowerCase().includes(searchText.toLowerCase())
-  );
-  populateVehicleList(filteredDevices);
-}
-
-function populateVehicleList(devicesList) {
-  const vehicleList = document.getElementById("vehicleList");
-  vehicleList.innerHTML = "";
-
-  if (!Array.isArray(devicesList) || devicesList.length === 0) {
-    const noDevicesMsg = document.createElement("div");
-    noDevicesMsg.className = "dropdown-item";
-    noDevicesMsg.textContent = "No vehicles available";
-    vehicleList.appendChild(noDevicesMsg);
-    return;
-  }
-
-  devicesList.forEach((device) => {
-    if (!device.did || !device.name) return;
-
-    const item = document.createElement("div");
-    item.className = "device-item";
-
-    const colorIndicator = document.createElement("div");
-    colorIndicator.className = "color-indicator";
-
-    const selectedDevice = selectedDevices.find(d => d.did === device.did);
-    if (selectedDevice) {
-      item.classList.add("selected");
-      colorIndicator.style.backgroundColor = selectedDevice.color;
+    function toggleDropdown() {
+      const dropdown = document.getElementById("deviceDropdown");
+      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
     }
 
-    const nameSpan = document.createElement("span");
-    nameSpan.textContent = device.name;
-
-    item.appendChild(colorIndicator);
-    item.appendChild(nameSpan);
-
-    item.onclick = (e) => {
-      e.stopPropagation();
-      toggleDeviceSelection(device);
-    };
-
-    vehicleList.appendChild(item);
-  });
-}
-
-function toggleDeviceSelection(device) {
-  const index = selectedDevices.findIndex(d => d.did === device.did);
-
-  if (index === -1) {
-    if (selectedDevices.length < deviceColors.length) {
-      const newDevice = {
-        did: device.did,
-        name: device.name,
-        color: deviceColors[selectedDevices.length]
-      };
-
-      selectedDevices.push(newDevice);
-
-      fetchPlaybackData(newDevice.did)
-        .then(data => {
-          if (data && data.length > 0) {
-            addPolyline(newDevice.did, newDevice.color);
-          }
-        })
-        .catch(error => {
-          console.error('Error fetching data:', error);
-          const removeIdx = selectedDevices.findIndex(d => d.did === newDevice.did);
-          if (removeIdx !== -1) {
-            selectedDevices.splice(removeIdx, 1);
-          }
-          alert('Failed to load data for selected device');
-        });
-    } else {
-      alert(`Maximum ${deviceColors.length} devices can be selected`);
-      return;
+    function filterVehicles(searchText) {
+      const vehicleList = document.getElementById("vehicleList");
+      const filteredDevices = devices.filter((device) =>
+        device.name.toLowerCase().includes(searchText.toLowerCase())
+      );
+      populateVehicleList(filteredDevices);
     }
-  } else {
-    const deviceId = selectedDevices[index].did;
-    cleanupDevice(deviceId);
-    selectedDevices.splice(index, 1);
-    reassignColors();
-  }
 
-  updateSelectedVehiclesDisplay();
-  populateVehicleList(devices);
-}
+    function populateVehicleList(devicesList) {
+      const vehicleList = document.getElementById("vehicleList");
+      vehicleList.innerHTML = "";
 
-function updateSelectedVehiclesDisplay() {
-    const selectedVehicleElement = document.getElementById("selectedVehicle");
-    if (selectedDevices.length === 0) {
-    selectedVehicleElement.textContent = "Select Vehicles";
-    } else {
-    selectedVehicleElement.textContent = `${selectedDevices.length} Vehicle${selectedDevices.length > 1 ? 's' : ''} Selected`;
-    const countSpan = document.createElement("span");
-    countSpan.className = "selected-count";
-    countSpan.textContent = selectedDevices.length;
-    selectedVehicleElement.appendChild(countSpan);
+      if (!Array.isArray(devicesList) || devicesList.length === 0) {
+        const noDevicesMsg = document.createElement("div");
+        noDevicesMsg.className = "dropdown-item";
+        noDevicesMsg.textContent = "No vehicles available";
+        vehicleList.appendChild(noDevicesMsg);
+        return;
+      }
+
+      devicesList.forEach((device) => {
+        if (!device.did || !device.name) return;
+
+        const item = document.createElement("div");
+        item.className = "device-item";
+
+        const colorIndicator = document.createElement("div");
+        colorIndicator.className = "color-indicator";
+
+        const selectedDevice = selectedDevices.find(d => d.did === device.did);
+        if (selectedDevice) {
+          item.classList.add("selected");
+          colorIndicator.style.backgroundColor = selectedDevice.color;
+        }
+
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = device.name;
+
+        item.appendChild(colorIndicator);
+        item.appendChild(nameSpan);
+
+        item.onclick = (e) => {
+          e.stopPropagation();
+          toggleDeviceSelection(device);
+        };
+
+        vehicleList.appendChild(item);
+      });
     }
-}
 
-function removeDirectionArrowsForDevice(deviceId) {
-    // Find and remove all direction arrows for this device
-    const arrows = document.querySelectorAll(`.device-${deviceId}`);
-    arrows.forEach(arrow => arrow.remove());
-    
-    // Remove the container if it exists
-    const arrowContainer = document.querySelector(`.direction-arrows-${deviceId}`);
-    if (arrowContainer) {
+    function toggleDeviceSelection(device) {
+      const index = selectedDevices.findIndex(d => d.did === device.did);
+
+      if (index === -1) {
+        if (selectedDevices.length < deviceColors.length) {
+          const newDevice = {
+            did: device.did,
+            name: device.name,
+            color: deviceColors[selectedDevices.length]
+          };
+
+          selectedDevices.push(newDevice);
+
+          fetchPlaybackData(newDevice.did)
+            .then(data => {
+              if (data && data.length > 0) {
+                addPolyline(newDevice.did, newDevice.color);
+              }
+            })
+            .catch(error => {
+              console.error('Error fetching data:', error);
+              const removeIdx = selectedDevices.findIndex(d => d.did === newDevice.did);
+              if (removeIdx !== -1) {
+                selectedDevices.splice(removeIdx, 1);
+              }
+              alert('Failed to load data for selected device');
+            });
+        } else {
+          alert(`Maximum ${deviceColors.length} devices can be selected`);
+          return;
+        }
+      } else {
+        const deviceId = selectedDevices[index].did;
+        cleanupDevice(deviceId);
+        selectedDevices.splice(index, 1);
+        reassignColors();
+      }
+
+      updateSelectedVehiclesDisplay();
+      populateVehicleList(devices);
+    }
+
+    function updateSelectedVehiclesDisplay() {
+      const selectedVehicleElement = document.getElementById("selectedVehicle");
+      if (selectedDevices.length === 0) {
+        selectedVehicleElement.textContent = "Select Vehicles";
+      } else {
+        selectedVehicleElement.textContent = `${selectedDevices.length} Vehicle${selectedDevices.length > 1 ? 's' : ''} Selected`;
+        const countSpan = document.createElement("span");
+        countSpan.className = "selected-count";
+        countSpan.textContent = selectedDevices.length;
+        selectedVehicleElement.appendChild(countSpan);
+      }
+    }
+
+    function removeDirectionArrowsForDevice(deviceId) {
+      // Find and remove all direction arrows for this device
+      const arrows = document.querySelectorAll(`.device-${deviceId}`);
+      arrows.forEach(arrow => arrow.remove());
+
+      // Remove the container if it exists
+      const arrowContainer = document.querySelector(`.direction-arrows-${deviceId}`);
+      if (arrowContainer) {
         arrowContainer.remove();
+      }
     }
-}
 
-function cleanupDevice(deviceId) {
-    deviceDataMap.delete(deviceId);
+    function cleanupDevice(deviceId) {
+      deviceDataMap.delete(deviceId);
 
-    if (deviceMarkers.has(deviceId)) {
+      if (deviceMarkers.has(deviceId)) {
         const marker = deviceMarkers.get(deviceId);
         marker.remove();
         deviceMarkers.delete(deviceId);
-    }
+      }
 
-    ['start-', 'end-'].forEach(prefix => {
+      ['start-', 'end-'].forEach(prefix => {
         const markerId = prefix + deviceId;
         if (deviceMarkers.has(markerId)) {
-            const marker = deviceMarkers.get(markerId);
-            marker.remove();
-            deviceMarkers.delete(markerId);
+          const marker = deviceMarkers.get(markerId);
+          marker.remove();
+          deviceMarkers.delete(markerId);
         }
-    });
+      });
 
-    if (devicePolylines.has(deviceId)) {
+      if (devicePolylines.has(deviceId)) {
         const polyline = devicePolylines.get(deviceId);
         polyline.remove();
         devicePolylines.delete(deviceId);
+      }
+
+      // Now call the arrow removal function
+      removeDirectionArrowsForDevice(deviceId);
     }
 
-    // Now call the arrow removal function
-    removeDirectionArrowsForDevice(deviceId);
-}
+    // Also add the cleanupAllArrows function that's referenced in stopPlayback
+    function cleanupAllArrows() {
+      // Remove all direction arrows
+      const arrows = document.querySelectorAll('[class*="direction-arrow"]');
+      arrows.forEach(arrow => arrow.remove());
 
-// Also add the cleanupAllArrows function that's referenced in stopPlayback
-function cleanupAllArrows() {
-    // Remove all direction arrows
-    const arrows = document.querySelectorAll('[class*="direction-arrow"]');
-    arrows.forEach(arrow => arrow.remove());
-    
-    // Remove all arrow containers
-    const containers = document.querySelectorAll('[class*="direction-arrows-"]');
-    containers.forEach(container => container.remove());
-}
-
-function reassignColors() {
-  selectedDevices.forEach((device, idx) => {
-    device.color = deviceColors[idx];
-    const deviceData = deviceDataMap.get(device.did);
-    if (deviceData && deviceData.length > 0) {
-      addPolyline(device.did, device.color);
+      // Remove all arrow containers
+      const containers = document.querySelectorAll('[class*="direction-arrows-"]');
+      containers.forEach(container => container.remove());
     }
-  });
-}
 
-function fetchDeviceData() {
-    const mid = localStorage.getItem("mid");
-    if (!mid) {
+    function reassignColors() {
+      selectedDevices.forEach((device, idx) => {
+        device.color = deviceColors[idx];
+        const deviceData = deviceDataMap.get(device.did);
+        if (deviceData && deviceData.length > 0) {
+          addPolyline(device.did, device.color);
+        }
+      });
+    }
+
+    function fetchDeviceData() {
+      const mid = localStorage.getItem("mid");
+      if (!mid) {
         console.error("No mid found in localStorage");
         return;
-    }
+      }
 
-    return fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+      return fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
         .then(response => response.json())
         .then(data => {
-            if (!Array.isArray(data)) {
-                throw new Error("Invalid data format received");
-            }
-            devices = data.map(item => ({
-                name: item.dname,
-                did: item.did,
-            }));
-            populateVehicleList(devices);
+          if (!Array.isArray(data)) {
+            throw new Error("Invalid data format received");
+          }
+          devices = data.map(item => ({
+            name: item.dname,
+            did: item.did,
+          }));
+          populateVehicleList(devices);
         });
-}
-
-async function fetchPlaybackData(deviceId) {
-  if (!deviceId) {
-    console.error("No Vehicle ID provided");
-    return Promise.reject("Vehicle ID required");
-  }
-
-  const fromDate = document.getElementById("fromDate").value;
-  const toDate = document.getElementById("toDate").value;
-  const fromTime = document.getElementById("fromTime").value;
-  const toTime = document.getElementById("toTime").value;
-
-  if (!fromDate || !toDate) {
-    alert("Please select both From and To dates");
-    return Promise.reject("Date selection required");
-  }
-
-  const formattedFromDateTime = `${formatDate(fromDate)}${formatTime(fromTime)}`;
-  const formattedToDateTime = `${formatDate(toDate)}${formatTime(toTime)}`;
-
-  try {
-    const response = await fetch(
-      `${API}opr=getplaybacktest&sdate=${formattedFromDateTime}&edate=${formattedToDateTime}&did=${deviceId}`
-    );
-    const data = await response.json();
-
-    if (!Array.isArray(data)) {
-      throw new Error("Invalid data format received");
     }
 
-    const processedData = data
-      .map(item => {
-        const lng = Number(item.langitude);
-        const lat = Number(item.latitude);
-        let angle = Number(item.angle) || 0;
-        angle = ((angle % 360) + 360) % 360;
+    async function fetchPlaybackData(deviceId) {
+      if (!deviceId) {
+        console.error("No Vehicle ID provided");
+        return Promise.reject("Vehicle ID required");
+      }
 
-        if (!isValidCoordinate(lng, lat)) {
-          return null;
+      const fromDate = document.getElementById("fromDate").value;
+      const toDate = document.getElementById("toDate").value;
+      const fromTime = document.getElementById("fromTime").value;
+      const toTime = document.getElementById("toTime").value;
+
+      if (!fromDate || !toDate) {
+        alert("Please select both From and To dates");
+        return Promise.reject("Date selection required");
+      }
+
+      const formattedFromDateTime = `${formatDate(fromDate)}${formatTime(fromTime)}`;
+      const formattedToDateTime = `${formatDate(toDate)}${formatTime(toTime)}`;
+
+      try {
+        const response = await fetch(
+          `${API}opr=getplaybacktest&sdate=${formattedFromDateTime}&edate=${formattedToDateTime}&did=${deviceId}`
+        );
+        const data = await response.json();
+
+        if (!Array.isArray(data)) {
+          throw new Error("Invalid data format received");
         }
 
-        return {
-          coordinates: [lng, lat],
-          angle: angle,
-          deviceId: String(item.deviceId),
-          speed: Number(item.speed) || 0,
-          gps: item.digital_2,
-          engine: item.digital_2,
-          date: item.DeviceDate
+        const processedData = data
+          .map(item => {
+            const lng = Number(item.langitude);
+            const lat = Number(item.latitude);
+            let angle = Number(item.angle) || 0;
+            angle = ((angle % 360) + 360) % 360;
+
+            if (!isValidCoordinate(lng, lat)) {
+              return null;
+            }
+
+            return {
+              coordinates: [lng, lat],
+              angle: angle,
+              deviceId: String(item.deviceId),
+              speed: Number(item.speed) || 0,
+              gps: item.digital_2,
+              engine: item.digital_2,
+              date: item.DeviceDate
+            };
+          })
+          .filter(Boolean);
+
+        deviceDataMap.set(deviceId, processedData);
+        return processedData;
+      } catch (error) {
+        console.error("Error in fetchPlaybackData:", error);
+        throw error;
+      }
+    }
+
+    function addPolyline(deviceId, color) {
+      if (!deviceId || !deviceDataMap.has(deviceId)) {
+        console.log("No device data available for polyline");
+        return;
+      }
+
+      const data = deviceDataMap.get(deviceId);
+
+      // Convert coordinates for MapMyIndia - swap to [lat, lng] order
+      const coordinates = data.map(item => ({
+        lat: item.coordinates[1],  // latitude
+        lng: item.coordinates[0]   // longitude
+      }));
+
+
+      if (devicePolylines.has(deviceId)) {
+        const existingPolyline = devicePolylines.get(deviceId);
+        existingPolyline.remove();
+      }
+
+      try {
+        // Create polyline with converted coordinates
+        const polyline = new mappls.Polyline({
+          map: map,
+          path: coordinates,
+          strokeColor: color,
+          strokeOpacity: 0.8,
+          strokeWeight: 4,
+          interactive: true
+        });
+
+        devicePolylines.set(deviceId, polyline);
+        // Add start/end markers with correct coordinate format
+        addStartEndMarkersForDevice(deviceId, coordinates, color, data);
+
+        setupPolylineHover(polyline, deviceId, data);
+
+        // Fit bounds with correct coordinate format
+        const bounds = new mappls.LatLngBounds();
+        coordinates.forEach(coord => {
+          bounds.extend([coord.lng, coord.lat]);
+        });
+
+        map.fitBounds(bounds, {
+          padding: { top: 50, bottom: 50, left: 50, right: 50 }
+        });
+
+      } catch (error) {
+        console.error("Error creating polyline:", error);
+      }
+    }
+
+    // Also update the marker position setting function
+
+
+    function setupPolylineHover(polyline, deviceId, data) {
+      let hoverPopup = document.getElementById('polyline-hover-popup');
+      if (!hoverPopup) {
+        hoverPopup = document.createElement('div');
+        hoverPopup.id = 'polyline-hover-popup';
+        hoverPopup.className = 'polyline-popup';
+        document.body.appendChild(hoverPopup);
+      }
+
+      polyline.addListener('mousemove', (e) => {
+        const mousePoint = {
+          lat: e.lngLat.lat,
+          lng: e.lngLat.lng
         };
-      })
-      .filter(Boolean);
 
-    deviceDataMap.set(deviceId, processedData);
-    return processedData;
-  } catch (error) {
-    console.error("Error in fetchPlaybackData:", error);
-    throw error;
-  }
-}
+        let minDistance = Infinity;
+        let closestPoint = null;
+        let pointIndex = -1;
 
-function addPolyline(deviceId, color) {
-  if (!deviceId || !deviceDataMap.has(deviceId)) {
-    console.log("No device data available for polyline");
-    return;
-  }
+        // Find closest point and its index
+        data.forEach((point, index) => {
+          const distance = calculateDistance(
+            mousePoint.lat,
+            mousePoint.lng,
+            point.coordinates[1],
+            point.coordinates[0]
+          );
 
-  const data = deviceDataMap.get(deviceId);
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestPoint = point;
+            pointIndex = index;
+          }
+        });
 
-  // Convert coordinates for MapMyIndia - swap to [lat, lng] order
-  const coordinates = data.map(item => ({
-    lat: item.coordinates[1],  // latitude
-    lng: item.coordinates[0]   // longitude
-  }));
+        if (closestPoint) {
+          const device = selectedDevices.find(d => d.did === deviceId);
+          if (!device) return;
 
+          // Calculate cumulative distance up to this point
+          let cumulativeDistance = 0;
+          for (let i = 1; i <= pointIndex; i++) {
+            const prevPoint = data[i - 1];
+            const currentPoint = data[i];
+            cumulativeDistance += calculateDistance(
+              prevPoint.coordinates[1],
+              prevPoint.coordinates[0],
+              currentPoint.coordinates[1],
+              currentPoint.coordinates[0]
+            );
+          }
 
-  if (devicePolylines.has(deviceId)) {
-    const existingPolyline = devicePolylines.get(deviceId);
-    existingPolyline.remove();
-  }
-
-  try {
-    // Create polyline with converted coordinates
-    const polyline = new mappls.Polyline({
-      map: map,
-      path: coordinates,
-      strokeColor: color,
-      strokeOpacity: 0.8,
-      strokeWeight: 4,
-      interactive: true
-    });
-
-    devicePolylines.set(deviceId, polyline);
-    // Add start/end markers with correct coordinate format
-    addStartEndMarkersForDevice(deviceId, coordinates, color, data);
-
-    setupPolylineHover(polyline, deviceId, data);
-
-    // Fit bounds with correct coordinate format
-    const bounds = new mappls.LatLngBounds();
-    coordinates.forEach(coord => {
-      bounds.extend([coord.lng, coord.lat]);
-    });
-    
-    map.fitBounds(bounds, {
-      padding: { top: 50, bottom: 50, left: 50, right: 50 }
-    });
-
-  } catch (error) {
-    console.error("Error creating polyline:", error);
-  }
-}
-
-// Also update the marker position setting function
-
-
-function setupPolylineHover(polyline, deviceId, data) {
-  let hoverPopup = document.getElementById('polyline-hover-popup');
-  if (!hoverPopup) {
-    hoverPopup = document.createElement('div');
-    hoverPopup.id = 'polyline-hover-popup';
-    hoverPopup.className = 'polyline-popup';
-    document.body.appendChild(hoverPopup);
-  }
-
-  polyline.addListener('mousemove', (e) => {
-    const mousePoint = {
-      lat: e.lngLat.lat,
-      lng: e.lngLat.lng
-    };
-    
-    let minDistance = Infinity;
-    let closestPoint = null;
-    let pointIndex = -1;
-    
-    // Find closest point and its index
-    data.forEach((point, index) => {
-      const distance = calculateDistance(
-        mousePoint.lat,
-        mousePoint.lng,
-        point.coordinates[1],
-        point.coordinates[0]
-      );
-      
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestPoint = point;
-        pointIndex = index;
-      }
-    });
-
-    if (closestPoint) {
-      const device = selectedDevices.find(d => d.did === deviceId);
-      if (!device) return;
-
-      // Calculate cumulative distance up to this point
-      let cumulativeDistance = 0;
-      for (let i = 1; i <= pointIndex; i++) {
-        const prevPoint = data[i - 1];
-        const currentPoint = data[i];
-        cumulativeDistance += calculateDistance(
-          prevPoint.coordinates[1],
-          prevPoint.coordinates[0],
-          currentPoint.coordinates[1],
-          currentPoint.coordinates[0]
-        );
-      }
-
-      const content = `
+          const content = `
         <div class="point-details">
           <div class="point-header" style="background-color: ${device.color}; color: white; padding: 5px; border-radius: 4px">
             ${device.name}
@@ -503,58 +504,58 @@ function setupPolylineHover(polyline, deviceId, data) {
         </div>
       `;
 
-      hoverPopup.innerHTML = content;
+          hoverPopup.innerHTML = content;
 
-      // Use fixed offset values for positioning
-      hoverPopup.style.display = 'block';
-      hoverPopup.style.left = `${e.point.x - 85}px`;  // Fixed -80px offset from mouse X
-      hoverPopup.style.top = `${e.point.y - 40}px`;  // Fixed +110px offset from mouse Y
+          // Use fixed offset values for positioning
+          hoverPopup.style.display = 'block';
+          hoverPopup.style.left = `${e.point.x - 85}px`;  // Fixed -80px offset from mouse X
+          hoverPopup.style.top = `${e.point.y - 40}px`;  // Fixed +110px offset from mouse Y
+        }
+      });
+
+      polyline.addListener('mouseout', () => {
+        hoverPopup.style.display = 'none';
+      });
     }
-  });
 
-  polyline.addListener('mouseout', () => {
-    hoverPopup.style.display = 'none';
-  });
-}
+    function addStartEndMarkersForDevice(deviceId, coordinates, color, data) {
+      const startMarkerId = `start-${deviceId}`;
+      const endMarkerId = `end-${deviceId}`;
 
-function addStartEndMarkersForDevice(deviceId, coordinates, color, data) {
-  const startMarkerId = `start-${deviceId}`;
-  const endMarkerId = `end-${deviceId}`;
+      if (deviceMarkers.has(startMarkerId)) {
+        deviceMarkers.get(startMarkerId).remove();
+      }
+      if (deviceMarkers.has(endMarkerId)) {
+        deviceMarkers.get(endMarkerId).remove();
+      }
 
-  if (deviceMarkers.has(startMarkerId)) {
-    deviceMarkers.get(startMarkerId).remove();
-  }
-  if (deviceMarkers.has(endMarkerId)) {
-    deviceMarkers.get(endMarkerId).remove();
-  }
+      if (!data || data.length < 2) return;
 
-  if (!data || data.length < 2) return;
+      const startPoint = data[0];
+      const endPoint = data[data.length - 1];
 
-  const startPoint = data[0];
-  const endPoint = data[data.length - 1];
+      // Create start marker with correct coordinate order
+      const startMarker = new mappls.Marker({
+        map: map,
+        position: [startPoint.coordinates[1], startPoint.coordinates[0]], // [lat, lng]
+        icon: createStartEndIcon('S', color),
+      });
 
-  // Create start marker with correct coordinate order
-  const startMarker = new mappls.Marker({
-    map: map,
-    position: [startPoint.coordinates[1], startPoint.coordinates[0]], // [lat, lng]
-    icon: createStartEndIcon('S',  color),
-  });
+      // Create end marker with correct coordinate order
+      const endMarker = new mappls.Marker({
+        map: map,
+        position: [endPoint.coordinates[1], endPoint.coordinates[0]], // [lat, lng]
+        icon: createStartEndIcon('E', color),
+      });
 
-  // Create end marker with correct coordinate order
-  const endMarker = new mappls.Marker({
-    map: map,
-    position: [endPoint.coordinates[1], endPoint.coordinates[0]], // [lat, lng]
-    icon: createStartEndIcon('E', color),
-  });
+      addPermanentLabel(startMarker, startPoint.date.split('.')[0])
+      addPermanentLabel(endMarker, endPoint.date.split('.')[0])
 
-  addPermanentLabel(startMarker, startPoint.date.split('.')[0])
-  addPermanentLabel(endMarker, endPoint.date.split('.')[0])
+      deviceMarkers.set(startMarkerId, startMarker);
+      deviceMarkers.set(endMarkerId, endMarker);
+    }
 
-  deviceMarkers.set(startMarkerId, startMarker);
-  deviceMarkers.set(endMarkerId, endMarker);
-}
-
-function createStartEndIcon(label, color) {
+    function createStartEndIcon(label, color) {
       const canvas = document.createElement('canvas');
       canvas.width = 40;
       canvas.height = 40;
@@ -606,80 +607,80 @@ function createStartEndIcon(label, color) {
       markerElement.appendChild(labelContainer);
     }
 
-function startPlayback() {
-  if (selectedDevices.length === 0) {
-    alert('Please select at least one vehicle');
-    return;
-  }
+    function startPlayback() {
+      if (selectedDevices.length === 0) {
+        alert('Please select at least one vehicle');
+        return;
+      }
 
-  if (playbackInterval) {
-    clearInterval(playbackInterval);
-  }
+      if (playbackInterval) {
+        clearInterval(playbackInterval);
+      }
 
-  if (!isPaused) {
-    selectedDevices.forEach(device => {
-      device.index = 0;
-      device.totalDistance = 0;
-    });
-  }
+      if (!isPaused) {
+        selectedDevices.forEach(device => {
+          device.index = 0;
+          device.totalDistance = 0;
+        });
+      }
 
-  isPaused = false;
+      isPaused = false;
 
-  selectedDevices.forEach(device => {
-    if (!deviceMarkers.has(device.did)) {
-      const marker = new mappls.Marker({
-        map: map,
-        position: [0, 0],
-        icon: {
-          html: createVehicleMarkerHTML(device.color),
-          anchor: new mappls.Point(15, 15)
+      selectedDevices.forEach(device => {
+        if (!deviceMarkers.has(device.did)) {
+          const marker = new mappls.Marker({
+            map: map,
+            position: [0, 0],
+            icon: {
+              html: createVehicleMarkerHTML(device.color),
+              anchor: new mappls.Point(15, 15)
+            }
+          });
+          deviceMarkers.set(device.did, marker);
         }
       });
-      deviceMarkers.set(device.did, marker);
-    }
-  });
 
-  playbackInterval = setInterval(() => {
-    let allComplete = true;
+      playbackInterval = setInterval(() => {
+        let allComplete = true;
 
-    selectedDevices.forEach(device => {
-      const data = deviceDataMap.get(device.did);
-      if (!data) return;
+        selectedDevices.forEach(device => {
+          const data = deviceDataMap.get(device.did);
+          if (!data) return;
 
-      if (device.index < data.length) {
-        allComplete = false;
-        const point = data[device.index];
+          if (device.index < data.length) {
+            allComplete = false;
+            const point = data[device.index];
 
-        const marker = deviceMarkers.get(device.did);
-        if (marker) {
-          marker.setLatLng(point.coordinates);
-          updateMarkerRotation(marker.getElement(), point.angle);
+            const marker = deviceMarkers.get(device.did);
+            if (marker) {
+              marker.setLatLng(point.coordinates);
+              updateMarkerRotation(marker.getElement(), point.angle);
+            }
+
+            if (device.index > 0) {
+              const prevPoint = data[device.index - 1];
+              device.totalDistance += calculateDistance(
+                prevPoint.coordinates[1],
+                prevPoint.coordinates[0],
+                point.coordinates[1],
+                point.coordinates[0]
+              );
+            }
+
+            updateVehicleInfo(device.did, point, device.totalDistance);
+            device.index++;
+          }
+        });
+
+        if (allComplete) {
+          clearInterval(playbackInterval);
+          playbackInterval = null;
         }
-
-        if (device.index > 0) {
-          const prevPoint = data[device.index - 1];
-          device.totalDistance += calculateDistance(
-            prevPoint.coordinates[1],
-            prevPoint.coordinates[0],
-            point.coordinates[1],
-            point.coordinates[0]
-          );
-        }
-
-        updateVehicleInfo(device.did, point, device.totalDistance);
-        device.index++;
-      }
-    });
-
-    if (allComplete) {
-      clearInterval(playbackInterval);
-      playbackInterval = null;
+      }, 1000);
     }
-  }, 1000);
-}
 
-function createVehicleMarkerHTML(color) {
-  return `
+    function createVehicleMarkerHTML(color) {
+      return `
     <div class="vehicle-marker" style="position: relative; width: 30px; height: 30px;">
       <img src="images/truck1.png" 
            alt="Vehicle" 
@@ -687,27 +688,27 @@ function createVehicleMarkerHTML(color) {
            class="vehicle-icon" />
     </div>
   `;
-}
+    }
 
-function updateVehicleInfo(deviceId, data, totalDistance) {
-  const infoContainer = document.getElementById(`vehicle-info-${deviceId}`);
-  if (!infoContainer) {
-    createVehicleInfoContainer(deviceId);
-  }
+    function updateVehicleInfo(deviceId, data, totalDistance) {
+      const infoContainer = document.getElementById(`vehicle-info-${deviceId}`);
+      if (!infoContainer) {
+        createVehicleInfoContainer(deviceId);
+      }
 
-  document.getElementById(`speed-${deviceId}`).textContent = `${Math.round(data.speed)} km/h`;
-  document.getElementById(`datetime-${deviceId}`).textContent = data.date.split(".")[0];
-  document.getElementById(`distance-${deviceId}`).textContent = `${totalDistance.toFixed(2)} km`;
-}
+      document.getElementById(`speed-${deviceId}`).textContent = `${Math.round(data.speed)} km/h`;
+      document.getElementById(`datetime-${deviceId}`).textContent = data.date.split(".")[0];
+      document.getElementById(`distance-${deviceId}`).textContent = `${totalDistance.toFixed(2)} km`;
+    }
 
-function createVehicleInfoContainer(deviceId) {
-  const device = selectedDevices.find(d => d.did === deviceId);
-  const container = document.createElement('div');
-  container.id = `vehicle-info-${deviceId}`;
-  container.className = 'vehicle-info-container';
-  container.style.borderColor = device.color;
+    function createVehicleInfoContainer(deviceId) {
+      const device = selectedDevices.find(d => d.did === deviceId);
+      const container = document.createElement('div');
+      container.id = `vehicle-info-${deviceId}`;
+      container.className = 'vehicle-info-container';
+      container.style.borderColor = device.color;
 
-  container.innerHTML = `
+      container.innerHTML = `
     <h4 style="color: ${device.color}">${device.name}</h4>
     <div class="info-row">
       <span>Speed:</span>
@@ -723,129 +724,129 @@ function createVehicleInfoContainer(deviceId) {
     </div>
   `;
 
-  document.getElementById('vehicle-info-panel').appendChild(container);
-}
-
-function updateMarkerRotation(element, angle) {
-  const icon = element.querySelector('.vehicle-icon');
-  if (icon) {
-    const rotationAngle = (angle + ANGLE_OFFSET) % 360;
-    icon.style.transform = `rotate(${rotationAngle}deg)`;
-  }
-}
-
-function pausePlayback() {
-  if (playbackInterval) {
-    clearInterval(playbackInterval);
-    playbackInterval = null;
-    isPaused = true;
-  }
-}
-
-function stopPlayback() {
-  clearInterval(playbackInterval);
-  playbackInterval = null;
-  isPaused = false;
-
-  cleanupAllArrows();
-
-  deviceMarkers.forEach(marker => {
-    marker.remove();
-  });
-  deviceMarkers.clear();
-
-  devicePolylines.forEach((polyline, deviceId) => {
-    polyline.remove();
-    
-    const startMarkerId = `start-${deviceId}`;
-    const endMarkerId = `end-${deviceId}`;
-
-    if (deviceMarkers.has(startMarkerId)) {
-      deviceMarkers.get(startMarkerId).remove();
-      deviceMarkers.delete(startMarkerId);
+      document.getElementById('vehicle-info-panel').appendChild(container);
     }
 
-    if (deviceMarkers.has(endMarkerId)) {
-      deviceMarkers.get(endMarkerId).remove();
-      deviceMarkers.delete(endMarkerId);
+    function updateMarkerRotation(element, angle) {
+      const icon = element.querySelector('.vehicle-icon');
+      if (icon) {
+        const rotationAngle = (angle + ANGLE_OFFSET) % 360;
+        icon.style.transform = `rotate(${rotationAngle}deg)`;
+      }
     }
-  });
 
-  deviceDataMap.clear();
-  devicePolylines.clear();
-  selectedDevices = [];
-
-  updateSelectedVehiclesDisplay();
-  const vehicleInfoPanel = document.getElementById('vehicle-info-panel');
-  if (vehicleInfoPanel) {
-    vehicleInfoPanel.innerHTML = '';
-  }
-
-  populateVehicleList(devices);
-}
-
-function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-function toRad(degrees) {
-  return degrees * (Math.PI / 180);
-}
-
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toISOString().split('T')[0];
-}
-
-function formatTime(timeString) {
-  return timeString.replace(':', '') + '00';
-}
-
-function isValidCoordinate(lng, lat) {
-  return (
-    !isNaN(lng) &&
-    !isNaN(lat) &&
-    lng >= -180 &&
-    lng <= 180 &&
-    lat >= -90 &&
-    lat <= 90
-  );
-}
-
-function findClosestPointOnPolyline(latLng, data) {
-  let minDistance = Infinity;
-  let closestPoint = null;
-
-  data.forEach(point => {
-    const distance = calculateDistance(
-      latLng.lat,
-      latLng.lng,
-      point.coordinates[1],
-      point.coordinates[0]
-    );
-
-    if (distance < minDistance) {
-      minDistance = distance;
-      closestPoint = point;
+    function pausePlayback() {
+      if (playbackInterval) {
+        clearInterval(playbackInterval);
+        playbackInterval = null;
+        isPaused = true;
+      }
     }
-  });
 
-  return closestPoint;
-}
+    function stopPlayback() {
+      clearInterval(playbackInterval);
+      playbackInterval = null;
+      isPaused = false;
 
-function createPointInfoContent(point, deviceId) {
-  const device = selectedDevices.find(d => d.did === deviceId);
-  const totalDistance = calculateCumulativeDistance(point, deviceId);
+      cleanupAllArrows();
 
-  return `
+      deviceMarkers.forEach(marker => {
+        marker.remove();
+      });
+      deviceMarkers.clear();
+
+      devicePolylines.forEach((polyline, deviceId) => {
+        polyline.remove();
+
+        const startMarkerId = `start-${deviceId}`;
+        const endMarkerId = `end-${deviceId}`;
+
+        if (deviceMarkers.has(startMarkerId)) {
+          deviceMarkers.get(startMarkerId).remove();
+          deviceMarkers.delete(startMarkerId);
+        }
+
+        if (deviceMarkers.has(endMarkerId)) {
+          deviceMarkers.get(endMarkerId).remove();
+          deviceMarkers.delete(endMarkerId);
+        }
+      });
+
+      deviceDataMap.clear();
+      devicePolylines.clear();
+      selectedDevices = [];
+
+      updateSelectedVehiclesDisplay();
+      const vehicleInfoPanel = document.getElementById('vehicle-info-panel');
+      if (vehicleInfoPanel) {
+        vehicleInfoPanel.innerHTML = '';
+      }
+
+      populateVehicleList(devices);
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function toRad(degrees) {
+      return degrees * (Math.PI / 180);
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toISOString().split('T')[0];
+    }
+
+    function formatTime(timeString) {
+      return timeString.replace(':', '') + '00';
+    }
+
+    function isValidCoordinate(lng, lat) {
+      return (
+        !isNaN(lng) &&
+        !isNaN(lat) &&
+        lng >= -180 &&
+        lng <= 180 &&
+        lat >= -90 &&
+        lat <= 90
+      );
+    }
+
+    function findClosestPointOnPolyline(latLng, data) {
+      let minDistance = Infinity;
+      let closestPoint = null;
+
+      data.forEach(point => {
+        const distance = calculateDistance(
+          latLng.lat,
+          latLng.lng,
+          point.coordinates[1],
+          point.coordinates[0]
+        );
+
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestPoint = point;
+        }
+      });
+
+      return closestPoint;
+    }
+
+    function createPointInfoContent(point, deviceId) {
+      const device = selectedDevices.find(d => d.did === deviceId);
+      const totalDistance = calculateCumulativeDistance(point, deviceId);
+
+      return `
     <div class="point-info-popup">
       <div class="point-header" style="background-color: ${device.color}">${device.name}</div>
       <div class="point-details">
@@ -855,175 +856,176 @@ function createPointInfoContent(point, deviceId) {
       </div>
     </div>
   `;
-}
-
-function calculateCumulativeDistance(targetPoint, deviceId) {
-  const data = deviceDataMap.get(deviceId);
-  if (!data) return 0;
-
-  let totalDistance = 0;
-  for (let i = 1; i < data.length; i++) {
-    const prevPoint = data[i-1];
-    const currentPoint = data[i];
-
-    const distance = calculateDistance(
-      prevPoint.coordinates[1],
-      prevPoint.coordinates[0],
-      currentPoint.coordinates[1],
-      currentPoint.coordinates[0]
-    );
-    
-    totalDistance += distance;
-
-    if (currentPoint === targetPoint) break;
-  }
-
-  return totalDistance;
-}
-
-function setupDateValidation() {
-  const fromDateInput = document.getElementById("fromDate");
-  const toDateInput = document.getElementById("toDate");
-  const fromTimeInput = document.getElementById("fromTime");
-  const toTimeInput = document.getElementById("toTime");
-
-  const currentDate = new Date().toISOString().split('T')[0];
-
-  if (!fromDateInput.value) fromDateInput.value = currentDate;
-  if (!toDateInput.value) toDateInput.value = currentDate;
-  if (!fromTimeInput.value) fromTimeInput.value = "00:00";
-  if (!toTimeInput.value) toTimeInput.value = "23:59";
-
-  fromDateInput.max = currentDate;
-  toDateInput.max = currentDate;
-
-  fromDateInput.addEventListener("input", function() {
-    validateDateRange(this, toDateInput);
-  });
-
-  toDateInput.addEventListener("input", function() {
-    validateDateRange(fromDateInput, this);
-  });
-
-  [fromTimeInput, toTimeInput].forEach(input => {
-    input.addEventListener("change", validateTimeRange);
-  });
-}
-
-function validateDateRange(fromDate, toDate) {
-  const from = new Date(fromDate.value);
-  const to = new Date(toDate.value);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  if (from > today || to > today) {
-    alert("Dates cannot be in the future");
-    from > today ? fromDate.value = today.toISOString().split('T')[0] :
-                   toDate.value = today.toISOString().split('T')[0];
-    return;
-  }
-
-  if (fromDate.value && toDate.value && from > to) {
-    alert("From date cannot be after To date");
-    toDate.value = fromDate.value;
-  }
-
-  toDate.min = fromDate.value;
-  fromDate.max = toDate.value;
-}
-
-function validateTimeRange() {
-  const fromDate = document.getElementById("fromDate").value;
-  const toDate = document.getElementById("toDate").value;
-  const fromTime = document.getElementById("fromTime").value;
-  const toTime = document.getElementById("toTime").value;
-
-  if (fromDate === toDate && fromTime && toTime && fromTime > toTime) {
-    alert("Start time cannot be after end time on the same day");
-    document.getElementById("toTime").value = fromTime;
-  }
-}
-
-// Event Listeners
-$(document).ready(() => {
-  if (!localStorage.getItem('mid')) {
-    window.location.href = '../index.html';
-    return;
-  }
-
-  $("#startPlayback").on("click", startPlayback);
-  $("#pausePlayback").on("click", pausePlayback);
-  $("#stopPlayback").on("click", stopPlayback);
-
-  setupDateValidation();
-
-  // Handle URL parameters
-  const urlParams = new URLSearchParams(window.location.search);
-  const deviceName = urlParams.get('device');
-  const fromDate = urlParams.get('from');
-  const toDate = urlParams.get('to');
-
-  if (deviceName && fromDate && toDate) {
-    handleUrlParameters(deviceName, fromDate, toDate);
-  }
-
-  // Close dropdown when clicking outside
-  document.addEventListener("click", function(event) {
-    const dropdown = document.getElementById("deviceDropdown");
-    const selectedVehicle = document.getElementById("selectedVehicle");
-    
-    if (!event.target.closest(".device-selector") && event.target !== selectedVehicle) {
-      dropdown.style.display = "none";
     }
-  });
 
-  // Reset selection on date/time change
-  const dateTimeInputs = document.querySelectorAll('#fromDate, #toDate, #fromTime, #toTime');
-  dateTimeInputs.forEach(input => {
-    input.addEventListener('change', () => {
-      resetSelection();
-    });
-  });
-});
+    function calculateCumulativeDistance(targetPoint, deviceId) {
+      const data = deviceDataMap.get(deviceId);
+      if (!data) return 0;
 
-function resetSelection() {
-  document.getElementById('selectedVehicle').textContent = 'Select Vehicle';
-  stopPlayback();
-  playbackData = [];
-  document.getElementById('deviceDropdown').style.display = 'none';
-}
+      let totalDistance = 0;
+      for (let i = 1; i < data.length; i++) {
+        const prevPoint = data[i - 1];
+        const currentPoint = data[i];
 
-function handleUrlParameters(deviceName, fromDate, toDate) {
-  const dateInputs = document.querySelectorAll('.date-input input[type="date"]');
-  const timeInputs = document.querySelectorAll('.date-input input[type="time"]');
+        const distance = calculateDistance(
+          prevPoint.coordinates[1],
+          prevPoint.coordinates[0],
+          currentPoint.coordinates[1],
+          currentPoint.coordinates[0]
+        );
 
-  if (dateInputs.length >= 2) {
-    dateInputs[0].value = fromDate;
-    dateInputs[1].value = toDate;
-    timeInputs[0].value = '00:00';
-    timeInputs[1].value = '23:59';
-  }
+        totalDistance += distance;
 
-  const checkVehicleList = setInterval(() => {
-    const vehicleList = document.getElementById('vehicleList');
-    if (vehicleList && vehicleList.children.length > 0) {
-      clearInterval(checkVehicleList);
-      
-      const deviceElements = vehicleList.querySelectorAll('.device-item');
-      for (const element of deviceElements) {
-        if (element.textContent.trim() === deviceName) {
-          element.click();
-          break;
-        }
+        if (currentPoint === targetPoint) break;
+      }
+
+      return totalDistance;
+    }
+
+    function setupDateValidation() {
+      const fromDateInput = document.getElementById("fromDate");
+      const toDateInput = document.getElementById("toDate");
+      const fromTimeInput = document.getElementById("fromTime");
+      const toTimeInput = document.getElementById("toTime");
+
+      const currentDate = new Date().toISOString().split('T')[0];
+
+      if (!fromDateInput.value) fromDateInput.value = currentDate;
+      if (!toDateInput.value) toDateInput.value = currentDate;
+      if (!fromTimeInput.value) fromTimeInput.value = "00:00";
+      if (!toTimeInput.value) toTimeInput.value = "23:59";
+
+      fromDateInput.max = currentDate;
+      toDateInput.max = currentDate;
+
+      fromDateInput.addEventListener("input", function () {
+        validateDateRange(this, toDateInput);
+      });
+
+      toDateInput.addEventListener("input", function () {
+        validateDateRange(fromDateInput, this);
+      });
+
+      [fromTimeInput, toTimeInput].forEach(input => {
+        input.addEventListener("change", validateTimeRange);
+      });
+    }
+
+    function validateDateRange(fromDate, toDate) {
+      const from = new Date(fromDate.value);
+      const to = new Date(toDate.value);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (from > today || to > today) {
+        alert("Dates cannot be in the future");
+        from > today ? fromDate.value = today.toISOString().split('T')[0] :
+          toDate.value = today.toISOString().split('T')[0];
+        return;
+      }
+
+      if (fromDate.value && toDate.value && from > to) {
+        alert("From date cannot be after To date");
+        toDate.value = fromDate.value;
+      }
+
+      toDate.min = fromDate.value;
+      fromDate.max = toDate.value;
+    }
+
+    function validateTimeRange() {
+      const fromDate = document.getElementById("fromDate").value;
+      const toDate = document.getElementById("toDate").value;
+      const fromTime = document.getElementById("fromTime").value;
+      const toTime = document.getElementById("toTime").value;
+
+      if (fromDate === toDate && fromTime && toTime && fromTime > toTime) {
+        alert("Start time cannot be after end time on the same day");
+        document.getElementById("toTime").value = fromTime;
       }
     }
-  }, 100);
 
-  setTimeout(() => clearInterval(checkVehicleList), 10000);
-}
+    // Event Listeners
+    $(document).ready(() => {
+      if (!localStorage.getItem('mid')) {
+        window.location.href = '../index.html';
+        return;
+      }
 
-          
+      $("#startPlayback").on("click", startPlayback);
+      $("#pausePlayback").on("click", pausePlayback);
+      $("#stopPlayback").on("click", stopPlayback);
 
-    </script>
+      setupDateValidation();
+
+      // Handle URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const deviceName = urlParams.get('device');
+      const fromDate = urlParams.get('from');
+      const toDate = urlParams.get('to');
+
+      if (deviceName && fromDate && toDate) {
+        handleUrlParameters(deviceName, fromDate, toDate);
+      }
+
+      // Close dropdown when clicking outside
+      document.addEventListener("click", function (event) {
+        const dropdown = document.getElementById("deviceDropdown");
+        const selectedVehicle = document.getElementById("selectedVehicle");
+
+        if (!event.target.closest(".device-selector") && event.target !== selectedVehicle) {
+          dropdown.style.display = "none";
+        }
+      });
+
+      // Reset selection on date/time change
+      const dateTimeInputs = document.querySelectorAll('#fromDate, #toDate, #fromTime, #toTime');
+      dateTimeInputs.forEach(input => {
+        input.addEventListener('change', () => {
+          resetSelection();
+        });
+      });
+    });
+
+    function resetSelection() {
+      document.getElementById('selectedVehicle').textContent = 'Select Vehicle';
+      stopPlayback();
+      playbackData = [];
+      document.getElementById('deviceDropdown').style.display = 'none';
+    }
+
+    function handleUrlParameters(deviceName, fromDate, toDate) {
+      const dateInputs = document.querySelectorAll('.date-input input[type="date"]');
+      const timeInputs = document.querySelectorAll('.date-input input[type="time"]');
+
+      if (dateInputs.length >= 2) {
+        dateInputs[0].value = fromDate;
+        dateInputs[1].value = toDate;
+        timeInputs[0].value = '00:00';
+        timeInputs[1].value = '23:59';
+      }
+
+      const checkVehicleList = setInterval(() => {
+        const vehicleList = document.getElementById('vehicleList');
+        if (vehicleList && vehicleList.children.length > 0) {
+          clearInterval(checkVehicleList);
+
+          const deviceElements = vehicleList.querySelectorAll('.device-item');
+          for (const element of deviceElements) {
+            if (element.textContent.trim() === deviceName) {
+              element.click();
+              break;
+            }
+          }
+        }
+      }, 100);
+
+      setTimeout(() => clearInterval(checkVehicleList), 10000);
+    }
+
+
+
+  </script>
 </body>
+
 </html>

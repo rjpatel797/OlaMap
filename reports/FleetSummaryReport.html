@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -14,6 +15,7 @@
 
     <link href="/reports/fleetsummaryreport.css" rel="stylesheet" />
 </head>
+
 <body>
     <div class="container">
         <!-- Navbar -->
@@ -29,17 +31,12 @@
                         <div class="selected-devices" id="selectedDevicesList"></div>
                         <div class="dropdown-list" id="deviceDropdown">
                             <div class="dropdown-search">
-                                <input type="text" 
-                                       placeholder="Search vehicles..." 
-                                       id="vehicleSearch"
-                                       onclick="event.stopPropagation()"
-                                       onkeyup="filterVehicles(this.value)">
+                                <input type="text" placeholder="Search vehicles..." id="vehicleSearch"
+                                    onclick="event.stopPropagation()" onkeyup="filterVehicles(this.value)">
                             </div>
                             <!-- Add Select All checkbox -->
                             <div class="select-all-option">
-                                <input type="checkbox" 
-                                       id="selectAllCheckbox" 
-                                       onclick="toggleSelectAll(event)">
+                                <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll(event)">
                                 <label for="selectAllCheckbox">Select All</label>
                             </div>
                             <div class="dropdown-items" id="vehicleList"></div>
@@ -60,7 +57,7 @@
                         <input type="time" id="endTime" value="23:59">
                     </div>
                 </div>
-                
+
                 <button class="submit-btn" onclick="generateReport()">Submit</button>
                 <button class="reset-btn" onclick="resetForm()">Reset</button>
             </div>
@@ -98,17 +95,17 @@
         let selectedDeviceId = null;
         let devices = [];
 
-        $(document).ready(function() {
+        $(document).ready(function () {
 
             // Check if 'mid' is available in localStorage otherwise ri-direct login page
 
             if (!localStorage.getItem('mid')) {
                 // Redirect to login page if 'mid' is not found
-                window.location.href = '../index.html';  
+                window.location.href = '../index.html';
             }
-            
 
-            $("#navbar-container").load("../navbarola.html", function() {
+
+            $("#navbar-container").load("../navbarola.html", function () {
                 console.log("Navbar loaded successfully!");
             });
             fetchDeviceData();
@@ -118,11 +115,11 @@
         function setDefaultDates() {
             const now = new Date();
             const today = now.toISOString().split('T')[0];
-            const currentTime = now.toTimeString().slice(0,5);
-            
+            const currentTime = now.toTimeString().slice(0, 5);
+
             document.getElementById('endDate').value = today;
             document.getElementById('endTime').value = '23:59';
-            
+
             now.setHours(0, 0, 0, 0);
             document.getElementById('startDate').value = today;
             document.getElementById('startTime').value = '00:00';
@@ -134,12 +131,12 @@
                 dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
             }
         }
-        
+
         function toggleSelectAll(event) {
             event.stopPropagation();
             const selectAllCheckbox = document.getElementById('selectAllCheckbox');
             const isChecked = selectAllCheckbox.checked;
-            
+
             // Get all visible devices (respecting search filter)
             const visibleDevices = Array.from(document.querySelectorAll('#vehicleList .dropdown-item'))
                 .map(item => {
@@ -171,7 +168,7 @@
                 device.name.toLowerCase().includes(searchText.toLowerCase())
             );
             populateVehicleList(filteredDevices);
-            
+
             // Update Select All checkbox state based on filtered items
             updateSelectAllCheckbox();
         }
@@ -181,7 +178,7 @@
             const visibleCheckboxes = Array.from(document.querySelectorAll('#vehicleList .dropdown-item input[type="checkbox"]:not([style*="display: none"])'));
             const allChecked = visibleCheckboxes.every(cb => cb.checked);
             const someChecked = visibleCheckboxes.some(cb => cb.checked);
-            
+
             selectAllCheckbox.checked = allChecked;
             selectAllCheckbox.indeterminate = someChecked && !allChecked;
         }
@@ -200,32 +197,32 @@
         function populateVehicleList(devicesList) {
             const vehicleList = document.getElementById('vehicleList');
             if (!vehicleList) return;
-            
+
             vehicleList.innerHTML = '';
-            
+
             devicesList.forEach(device => {
                 const item = document.createElement('div');
                 item.className = 'dropdown-item';
                 item.style.color = '#333';
-                
+
                 // Add checkbox
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.className = 'device-checkbox';
                 checkbox.checked = selectedDevices.has(device.did);
-                
+
                 const label = document.createElement('span');
                 label.textContent = device.name;
-                
+
                 item.appendChild(checkbox);
                 item.appendChild(label);
-                
+
                 item.onclick = (e) => {
                     e.stopPropagation();
                     checkbox.checked = !checkbox.checked;
                     updateSelectedDevices(device, checkbox.checked);
                 };
-                
+
                 vehicleList.appendChild(item);
             });
         }
@@ -242,12 +239,12 @@
 
         function updateSelectedDevicesDisplay() {
             const selectedVehicle = document.getElementById('selectedVehicle');
-            
+
             if (selectedDevices.size === 0) {
                 selectedVehicle.textContent = 'Select Vehicle';
                 return;
             }
-            
+
             // Create container for device tags
             const container = document.createElement('div');
             container.style.display = 'flex';
@@ -257,7 +254,7 @@
             // Get first two devices
             const devices = Array.from(selectedDevices.entries());
             const firstTwoDevices = devices.slice(0, 2);
-            
+
             // Create tags for first two devices
             firstTwoDevices.forEach(([did, name]) => {
                 const tag = document.createElement('div');
@@ -267,7 +264,7 @@
                 tag.style.fontSize = '12px';
                 tag.style.display = 'inline-flex';
                 tag.style.alignItems = 'center';
-                
+
                 const closeButton = document.createElement('span');
                 closeButton.textContent = '×';
                 closeButton.style.cursor = 'pointer';
@@ -277,7 +274,7 @@
                     e.stopPropagation(); // Stop event from bubbling up
                     removeDevice(did);
                 };
-                
+
                 tag.textContent = name;
                 tag.appendChild(closeButton);
                 container.appendChild(tag);
@@ -293,7 +290,7 @@
                 moreCount.textContent = `+${selectedDevices.size - 2}`;
                 container.appendChild(moreCount);
             }
-            
+
             // Clear previous content and add new tags
             selectedVehicle.innerHTML = '';
             selectedVehicle.appendChild(container);
@@ -304,14 +301,14 @@
             if (event) {
                 event.stopPropagation();
             }
-            
+
             // Remove the device from selected devices
             selectedDevices.delete(did);
-            
+
             // Update displays
             updateSelectedDevicesDisplay();
             populateVehicleList(devices);
-            
+
             // Keep dropdown open
             const dropdown = document.getElementById('deviceDropdown');
             if (dropdown) {
@@ -341,19 +338,19 @@
                 });
         }
 
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             const dropdown = document.getElementById('deviceDropdown');
             const selectedVehicle = document.getElementById('selectedVehicle');
-            
-            if (!event.target.closest('.device-selector') && 
-                dropdown && 
-                selectedVehicle && 
+
+            if (!event.target.closest('.device-selector') &&
+                dropdown &&
+                selectedVehicle &&
                 event.target !== selectedVehicle) {
                 dropdown.style.display = 'none';
             }
         });
 
-        document.getElementById('vehicleSearch')?.addEventListener('click', function(event) {
+        document.getElementById('vehicleSearch')?.addEventListener('click', function (event) {
             event.stopPropagation();
         });
 
@@ -470,13 +467,13 @@
             const day = String(date.getDate()).padStart(2, '0');
             const hours = String(date.getHours()).padStart(2, '0');
             const minutes = String(date.getMinutes()).padStart(2, '0');
-            
+
             return `${year}-${month}-${day} ${hours}:${minutes}`;
         }
 
         function fetchReportData(fromdate, todate, did) {
             console.log("Fetching report data...");
-            
+
             // Show loading state
             const reportBody = document.getElementById('reportData');
             reportBody.innerHTML = `
@@ -489,7 +486,7 @@
                 .then(response => response.json())
                 .then(data => {
                     console.log("Raw Report Data:", data);
-                    
+
                     if (Array.isArray(data)) {
                         const formattedData = data.map(item => ({
                             deviceGroup: item.deviceGroup, // or any default group
@@ -558,12 +555,12 @@
         // Format time from milliseconds/seconds to hours and minutes
         function formatTime(time) {
             if (!time || isNaN(time)) return '0 hours 0 mins';
-            
+
             // Convert to minutes first (assuming time is in milliseconds)
             let minutes = Math.floor(time / (1000 * 60));
             const hours = Math.floor(minutes / 60);
             minutes = minutes % 60;
-            
+
             return `${hours} hours ${minutes} mins`;
         }
 
@@ -588,7 +585,7 @@
         function exportExcel() {
             // Get headers
             const headers = ['Vehicle Group', 'Vehicle Name', 'Distance Travelled(km)', 'Max. Speed(km/h)', 'Drive Time', 'Stoppage Time'];
-            
+
             // Get data rows
             const rows = document.querySelectorAll('#reportData tr');
             const data = Array.from(rows).map(row => {
@@ -626,7 +623,7 @@
 
             // Get current date for filename
             const date = new Date().toLocaleDateString().replace(/\//g, '-');
-            
+
             // Generate Excel file
             XLSX.writeFile(wb, `fleet_report_${date}.xlsx`);
         }
@@ -637,7 +634,7 @@
             const table = document.querySelector('.report-table');
             const rows = table.querySelectorAll('tr');
             let csv = [];
-            
+
             // Convert table to CSV format
             rows.forEach(row => {
                 const rowData = [];
@@ -651,7 +648,7 @@
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
-            
+
             link.setAttribute('href', url);
             link.setAttribute('download', 'fleet_report.csv');
             link.style.visibility = 'hidden';
@@ -713,19 +710,19 @@
                     4: { cellWidth: 35 }, // Drive Time
                     5: { cellWidth: 35 }  // Stoppage Time
                 },
-                didDrawPage: function(data) {
+                didDrawPage: function (data) {
                     // Add footer
                     doc.setFontSize(8);
                     doc.text(
-                        `Generated on: ${new Date().toLocaleString()}`, 
-                        doc.internal.pageSize.width - 15, 
-                        doc.internal.pageSize.height - 10, 
+                        `Generated on: ${new Date().toLocaleString()}`,
+                        doc.internal.pageSize.width - 15,
+                        doc.internal.pageSize.height - 10,
                         { align: 'right' }
                     );
                     // Add page number
                     doc.text(
-                        `Page ${doc.internal.getCurrentPageInfo().pageNumber}`, 
-                        15, 
+                        `Page ${doc.internal.getCurrentPageInfo().pageNumber}`,
+                        15,
                         doc.internal.pageSize.height - 10
                     );
                 }
@@ -733,11 +730,12 @@
 
             // Get current date for filename
             const date = new Date().toLocaleDateString().replace(/\//g, '-');
-            
+
             // Save the PDF
             doc.save(`fleet_report_${date}.pdf`);
         }
 
-</script>
+    </script>
 </body>
+
 </html>

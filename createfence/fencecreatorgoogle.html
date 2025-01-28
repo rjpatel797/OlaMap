@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fence Creator with Google Maps</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
-    <link href="/createfence/fencecreatorgoogle.css" rel="stylesheet">  
+    <link href="/createfence/fencecreatorgoogle.css" rel="stylesheet">
 </head>
+
 <body>
     <div class="container">
         <div id="navbar-container"></div>
@@ -22,17 +24,20 @@
             <div class="drawing-tools">
                 <button class="tool-button" onclick="setDrawingMode('hand', event)" title="Pan Map" data-mode="hand">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                        <path
+                            d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
                     </svg>
                 </button>
-                <button class="tool-button" onclick="setDrawingMode('circle', event)" title="Draw Circle" data-mode="circle">
+                <button class="tool-button" onclick="setDrawingMode('circle', event)" title="Draw Circle"
+                    data-mode="circle">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
+                        <circle cx="12" cy="12" r="10" />
                     </svg>
                 </button>
-                <button class="tool-button" onclick="setDrawingMode('polygon', event)" title="Draw Polygon" data-mode="polygon">
+                <button class="tool-button" onclick="setDrawingMode('polygon', event)" title="Draw Polygon"
+                    data-mode="polygon">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                     </svg>
                 </button>
             </div>
@@ -51,7 +56,9 @@
     </div>
 
     <script src="../js/api.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&libraries=drawing,places&callback=initMap" async defer></script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&libraries=drawing,places&callback=initMap"
+        async defer></script>
     <script>
         let map;
         let drawingManager;
@@ -149,7 +156,7 @@
 
             // Find the button that was clicked
             const button = event ? event.currentTarget : document.querySelector(`.tool-button[data-mode="${mode}"]`);
-            
+
             switch (mode) {
                 case 'hand':
                     drawingManager.setDrawingMode(null);
@@ -205,16 +212,16 @@
                 // Modified polygon shape handling
                 const path = currentShape.getPath();
                 const coords = [];
-                
+
                 // Get all coordinates
                 path.forEach(coord => {
                     coords.push(`${coord.lat()},${coord.lng()}`);
                 });
-                
+
                 // Add the first coordinate again at the end to close the polygon
                 const firstCoord = path.getAt(0);
                 coords.push(`${firstCoord.lat()},${firstCoord.lng()}`);
-                
+
                 const coordPairs = coords.join(',');
 
                 url = `${API}opr=savefence&fvalue=${coordPairs}&fname=${encodeURIComponent(name)}&ftype=polygon&mid=${encodeURIComponent(mid)}`;
@@ -257,7 +264,8 @@
             }
         }
 
-        
+
     </script>
 </body>
+
 </html>

@@ -30,8 +30,8 @@
             </div>
             <div class="dropdown-list" id="deviceDropdown">
               <div class="dropdown-search">
-                <input type="text" placeholder="Search vehicle..." id="vehicleSearch"
-                  onclick="event.stopPropagation()" onkeyup="filterVehicles(this.value)" />
+                <input type="text" placeholder="Search vehicle..." id="vehicleSearch" onclick="event.stopPropagation()"
+                  onkeyup="filterVehicles(this.value)" />
               </div>
               <div class="dropdown-items" id="vehicleList"></div>
             </div>
@@ -68,54 +68,57 @@
         <!-- Add this inside your controls section, near other controls -->
         <div class="speed-threshold-container">
           <div class="speed-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41M12 10.5l3.5 4.5h-7z"/>
-                  <circle cx="12" cy="12" r="10"/>
-              </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path
+                d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41M12 10.5l3.5 4.5h-7z" />
+              <circle cx="12" cy="12" r="10" />
+            </svg>
           </div>
           <div class="speed-select-wrapper">
-              <select id="overSpeedingThreshold" class="speed-dropdown">
-                  <option value="30">30 km/h</option>
-                  <option value="40">40 km/h</option>
-                  <option value="45">45 km/h</option>
-                  <option value="50" selected>50 km/h</option>
-                  <option value="60">60 km/h</option>
-                  <option value="65">65 km/h</option>
-                  <option value="70">70 km/h</option>
-                  <option value="75">75 km/h</option>
-                  <option value="80">80 km/h</option>
-                  <option value="85">85 km/h</option>
-                  <option value="90">90 km/h</option>
-                  <option value="95">95 km/h</option>
-                  <option value="100">100 km/h</option>
-                  <option value="120">120 km/h</option>
-              </select>
+            <select id="overSpeedingThreshold" class="speed-dropdown">
+              <option value="30">30 km/h</option>
+              <option value="40">40 km/h</option>
+              <option value="45">45 km/h</option>
+              <option value="50" selected>50 km/h</option>
+              <option value="60">60 km/h</option>
+              <option value="65">65 km/h</option>
+              <option value="70">70 km/h</option>
+              <option value="75">75 km/h</option>
+              <option value="80">80 km/h</option>
+              <option value="85">85 km/h</option>
+              <option value="90">90 km/h</option>
+              <option value="95">95 km/h</option>
+              <option value="100">100 km/h</option>
+              <option value="120">120 km/h</option>
+            </select>
           </div>
-      </div>
+        </div>
 
         <div class="hold-time-selector">
           <div class="hold-time-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
-              </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
           </div>
           <div class="hold-time-wrapper">
-              <select class="hold-time-select" id="holdTime">
-                  <option value="2">2 Minutes</option>
-                  <option value="3">3 Minutes</option>
-                  <option value="5">5 Minutes</option>
-                  <option value="10">10 Minutes</option>
-                  <option value="15">15 Minutes</option>
-                  <option value="20">20 Minutes</option>
-                  <option value="30" selected>30 Minutes</option>
-                  <option value="45">45 Minutes</option>
-                  <option value="60">1 Hour</option>
-                  <option value="90">1.5 Hours</option>
-                  <option value="120">2 Hours</option>
-              </select>
+            <select class="hold-time-select" id="holdTime">
+              <option value="2">2 Minutes</option>
+              <option value="3">3 Minutes</option>
+              <option value="5">5 Minutes</option>
+              <option value="10">10 Minutes</option>
+              <option value="15">15 Minutes</option>
+              <option value="20">20 Minutes</option>
+              <option value="30" selected>30 Minutes</option>
+              <option value="45">45 Minutes</option>
+              <option value="60">1 Hour</option>
+              <option value="90">1.5 Hours</option>
+              <option value="120">2 Hours</option>
+            </select>
           </div>
-      </div>
+        </div>
 
         <div class="buttonclass">
           <button id="startPlayback">Start</button>
@@ -150,7 +153,7 @@
             <span class="info-value" id="speedDisplay">0 km/h</span>
           </div>
         </div>
-        
+
         <div class="info-card">
           <div class="info-icon">🕒</div>
           <div class="info-details">
@@ -158,7 +161,7 @@
             <span class="info-value" id="dateTimeDisplay">--</span>
           </div>
         </div>
-        
+
         <div class="info-card">
           <div class="info-icon">📍</div>
           <div class="info-details">
@@ -540,7 +543,7 @@
           myMap.removeLayer(polylineId);
         }
         if (myMap.getLayer(`${polylineId}-direction`)) {
-          myMap.removeLayer(`${polylineId}-direction`);  
+          myMap.removeLayer(`${polylineId}-direction`);
         }
         if (myMap.getSource(polylineId)) {
           myMap.removeSource(polylineId);
@@ -604,7 +607,7 @@
       }
     }
 
-    
+
     function setupHoverInteractions() {
       const popup = document.getElementById("polylinePopup");
       const popupContent = document.getElementById("polylinePopupContent");
@@ -867,44 +870,44 @@
 
 
     function getTimeDifferenceInMinutes(prevTimeStr, currentTimeStr) {
-    // Parse the datetime strings
-    // Assuming the format is "DD-MM-YYYY HH:mm:ss"
-    const [prevDate, prevTime] = prevTimeStr.split(' ');
-    const [currDate, currTime] = currentTimeStr.split(' ');
+      // Parse the datetime strings
+      // Assuming the format is "DD-MM-YYYY HH:mm:ss"
+      const [prevDate, prevTime] = prevTimeStr.split(' ');
+      const [currDate, currTime] = currentTimeStr.split(' ');
 
-    // Split date and time components
-    const [prevDay, prevMonth, prevYear] = prevDate.split('-');
-    const [currDay, currMonth, currYear] = currDate.split('-');
+      // Split date and time components
+      const [prevDay, prevMonth, prevYear] = prevDate.split('-');
+      const [currDay, currMonth, currYear] = currDate.split('-');
 
-    // Split time components
-    const [prevHours, prevMinutes, prevSeconds] = prevTime.split(':');
-    const [currHours, currMinutes, currSeconds] = currTime.split(':');
+      // Split time components
+      const [prevHours, prevMinutes, prevSeconds] = prevTime.split(':');
+      const [currHours, currMinutes, currSeconds] = currTime.split(':');
 
-    // Create Date objects
-    const prevDateTime = new Date(
-        parseInt(prevYear), 
+      // Create Date objects
+      const prevDateTime = new Date(
+        parseInt(prevYear),
         parseInt(prevMonth) - 1, // Month is 0-indexed
-        parseInt(prevDay), 
-        parseInt(prevHours), 
-        parseInt(prevMinutes), 
+        parseInt(prevDay),
+        parseInt(prevHours),
+        parseInt(prevMinutes),
         parseInt(prevSeconds)
-    );
+      );
 
-    const currentDateTime = new Date(
-        parseInt(currYear), 
+      const currentDateTime = new Date(
+        parseInt(currYear),
         parseInt(currMonth) - 1, // Month is 0-indexed
-        parseInt(currDay), 
-        parseInt(currHours), 
-        parseInt(currMinutes), 
+        parseInt(currDay),
+        parseInt(currHours),
+        parseInt(currMinutes),
         parseInt(currSeconds)
-    );
+      );
 
-    // Calculate difference in milliseconds and convert to minutes
-    const diffInMilliseconds = currentDateTime - prevDateTime;
-    const diffInMinutes = diffInMilliseconds / (1000 * 60);
+      // Calculate difference in milliseconds and convert to minutes
+      const diffInMilliseconds = currentDateTime - prevDateTime;
+      const diffInMinutes = diffInMilliseconds / (1000 * 60);
 
-    return diffInMinutes;
-}
+      return diffInMinutes;
+    }
     // **Detect Stop During Playback** (this is the main change)
     function detectStopDuringPlayback(currentIndex) {
       if (currentIndex === 0) return; // Skip the first point, no previous point to compare
@@ -960,7 +963,7 @@
       stopElement.classList.add('stop-marker');
       stopElement.style.position = "relative";
       stopElement.style.width = "30px";
-      stopElement.style.height = "40px"; 
+      stopElement.style.height = "40px";
       stopElement.style.display = "flex";
       stopElement.style.alignItems = "center";
       stopElement.style.justifyContent = "center";
@@ -1220,10 +1223,10 @@
     function startPlayback(isSpeedUpdate = false) {
 
       const selectedVehicle = document.getElementById('selectedVehicle');
-    if (selectedVehicle.textContent === 'Select Vehicle') {
+      if (selectedVehicle.textContent === 'Select Vehicle') {
         alert('Please select a vehicle before starting playback');
         return;
-    }
+      }
       // Disable start button and enable pause/stop buttons
       document.getElementById("startPlayback").disabled = true;
       document.getElementById("pausePlayback").disabled = false;
@@ -1526,127 +1529,127 @@
     // }
 
     function setupDateValidation() {
-    const fromDateInput = document.getElementById("fromDate");
-    const toDateInput = document.getElementById("toDate");
-    const fromTimeInput = document.getElementById("fromTime");
-    const toTimeInput = document.getElementById("toTime");
+      const fromDateInput = document.getElementById("fromDate");
+      const toDateInput = document.getElementById("toDate");
+      const fromTimeInput = document.getElementById("fromTime");
+      const toTimeInput = document.getElementById("toTime");
 
-    // Function to get current date in YYYY-MM-DD format
-    function getCurrentDate() {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
+      // Function to get current date in YYYY-MM-DD format
+      function getCurrentDate() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
 
-    // Set initial values when page loads
-    const currentDate = getCurrentDate();
-    
-    // Set default values only if they haven't been set by URL parameters
-    if (!fromDateInput.value) {
-      fromDateInput.value = currentDate;
-    }
-    if (!toDateInput.value) {
-      toDateInput.value = currentDate;
-    }
-    if (!fromTimeInput.value) {
-      fromTimeInput.value = "00:00";
-    }
-    if (!toTimeInput.value) {
-      toTimeInput.value = "23:59";
-    }
+      // Set initial values when page loads
+      const currentDate = getCurrentDate();
 
-    // Set max attribute to current date
-    fromDateInput.max = currentDate;
-    toDateInput.max = currentDate;
+      // Set default values only if they haven't been set by URL parameters
+      if (!fromDateInput.value) {
+        fromDateInput.value = currentDate;
+      }
+      if (!toDateInput.value) {
+        toDateInput.value = currentDate;
+      }
+      if (!fromTimeInput.value) {
+        fromTimeInput.value = "00:00";
+      }
+      if (!toTimeInput.value) {
+        toTimeInput.value = "23:59";
+      }
 
-    function validateTimes() {
-      if (fromDateInput.value === toDateInput.value) {
-        const fromTime = fromTimeInput.value;
-        const toTime = toTimeInput.value;
+      // Set max attribute to current date
+      fromDateInput.max = currentDate;
+      toDateInput.max = currentDate;
 
-        if (fromTime > toTime) {
-          alert("Start time cannot be after end time on the same day");
-          toTimeInput.value = fromTime;
+      function validateTimes() {
+        if (fromDateInput.value === toDateInput.value) {
+          const fromTime = fromTimeInput.value;
+          const toTime = toTimeInput.value;
+
+          if (fromTime > toTime) {
+            alert("Start time cannot be after end time on the same day");
+            toTimeInput.value = fromTime;
+          }
         }
       }
+
+      fromTimeInput.addEventListener("change", validateTimes);
+      toTimeInput.addEventListener("change", validateTimes);
+
+      // Validate From Date
+      fromDateInput.addEventListener("input", function () {
+        const fromDate = new Date(this.value);
+        const toDate = new Date(toDateInput.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (fromDate > today) {
+          alert("From date cannot be in the future");
+          this.value = currentDate;
+          return;
+        }
+
+        if (toDateInput.value && fromDate > toDate) {
+          alert("From date cannot be after To date");
+          this.value = toDateInput.value;
+          return;
+        }
+
+        toDateInput.min = this.value;
+      });
+
+      // Validate To Date
+      toDateInput.addEventListener("input", function () {
+        const fromDate = new Date(fromDateInput.value);
+        const toDate = new Date(this.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (toDate > today) {
+          alert("To date cannot be in the future");
+          this.value = currentDate;
+          return;
+        }
+
+        if (fromDateInput.value && toDate < fromDate) {
+          alert("To date cannot be before From date");
+          this.value = fromDateInput.value;
+          return;
+        }
+
+        fromDateInput.max = this.value;
+      });
     }
 
-    fromTimeInput.addEventListener("change", validateTimes);
-    toTimeInput.addEventListener("change", validateTimes);
-
-    // Validate From Date
-    fromDateInput.addEventListener("input", function () {
-      const fromDate = new Date(this.value);
-      const toDate = new Date(toDateInput.value);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (fromDate > today) {
-        alert("From date cannot be in the future");
-        this.value = currentDate;
-        return;
-      }
-
-      if (toDateInput.value && fromDate > toDate) {
-        alert("From date cannot be after To date");
-        this.value = toDateInput.value;
-        return;
-      }
-
-      toDateInput.min = this.value;
-    });
-
-    // Validate To Date
-    toDateInput.addEventListener("input", function () {
-      const fromDate = new Date(fromDateInput.value);
-      const toDate = new Date(this.value);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (toDate > today) {
-        alert("To date cannot be in the future");
-        this.value = currentDate;
-        return;
-      }
-
-      if (fromDateInput.value && toDate < fromDate) {
-        alert("To date cannot be before From date");
-        this.value = fromDateInput.value;
-        return;
-      }
-
-      fromDateInput.max = this.value;
-    });
-  }
-
-  const dateTimeInputs = document.querySelectorAll('#fromDate, #toDate, #fromTime, #toTime');
-dateTimeInputs.forEach(input => {
-    input.addEventListener('change', () => {
+    const dateTimeInputs = document.querySelectorAll('#fromDate, #toDate, #fromTime, #toTime');
+    dateTimeInputs.forEach(input => {
+      input.addEventListener('change', () => {
         // Reset device selection
         document.getElementById('selectedVehicle').textContent = 'Select Vehicle';
-        
+
         // Stop any ongoing playback
         stopPlayback();
-        
+
         // Clear any existing data
         playbackData = [];
         dynamicPlaybackData = [];
-        
+
         // Reset the dropdown display
         const dropdown = document.getElementById('deviceDropdown');
         if (dropdown) {
-            dropdown.style.display = 'none';
+          dropdown.style.display = 'none';
         }
+      });
     });
-});
 
     // Make sure to call setupDateValidation when the page loads
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
       setupDateValidation();
     });
-    
+
     document.addEventListener("DOMContentLoaded", function () {
       // Get URL parameters
       const urlParams = new URLSearchParams(window.location.search);

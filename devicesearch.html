@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trans Track Systems - Device Search</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <style>
-        body, html {
+        body,
+        html {
             margin: 0;
             padding: 0;
             height: 100%;
@@ -79,7 +81,7 @@
             text-align: center;
             border-radius: 8px;
             cursor: pointer;
-            
+
         }
 
         /* Table Styles */
@@ -146,7 +148,8 @@
         }
 
         /* Loading and Error States */
-        .loading, .error {
+        .loading,
+        .error {
             text-align: center;
             padding: 20px;
             font-size: 14px;
@@ -237,7 +240,8 @@
             justify-content: flex-end;
         }
 
-        .save-btn, .reset-btn {
+        .save-btn,
+        .reset-btn {
             padding: 8px 20px;
             border: none;
             border-radius: 4px;
@@ -272,6 +276,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Navbar Container -->
     <div id="navbar-container"></div>
@@ -346,9 +351,9 @@
     <script src="js/api.js"></script>
     <script>
         let currentDevice = null;
-        $(document).ready(function() {
+        $(document).ready(function () {
             // Load navbar
-            $("#navbar-container").load("navbarola.html", function() {
+            $("#navbar-container").load("navbarola.html", function () {
                 console.log("Navbar loaded successfully!");
             });
 
@@ -364,15 +369,15 @@
         async function fetchDevices() {
             const mid = localStorage.getItem("mid");
             const tableBody = document.getElementById('deviceTableBody');
-            
+
             try {
                 // Show loading state
                 tableBody.innerHTML = '<tr><td colspan="8" class="loading">Loading devices...</td></tr>';
-                
+
                 // Fetch data from API
                 const response = await fetch(`${API}opr=getdeviceinfo&mid=${mid}`);
                 const devices = await response.json();
-                
+
                 // Handle empty data
                 if (!devices || devices.length === 0) {
                     tableBody.innerHTML = '<tr><td colspan="8" class="error">No devices found</td></tr>';
@@ -382,7 +387,7 @@
                 tableBody.innerHTML = devices.map((device, index) => `
                     <tr>
                         <td class="checkbox-cell" id="device_${device.deviceid}">
-                            ${index+1}
+                            ${index + 1}
                         </td>
                         <td>${device.devicename || ''}</td>
                         <td>${device.devicetype || 'Truck'}</td>
@@ -459,7 +464,7 @@
 
             try {
                 const url = `${API}opr=editdevice&deviceid=${deviceId}&deviceName=${deviceName}&imei=${imei}&mobileNo=${mobileNo}&deviceType=${deviceType}&driverName=${driverName}&driverNo=${driverNo}`;
-                
+
                 const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
@@ -474,8 +479,8 @@
                 await fetchDevices();
 
                 // Close the modal after a delay
-                    closeModal();
-                
+                closeModal();
+
 
             } catch (error) {
                 console.error('Error updating device:', error);
@@ -486,7 +491,7 @@
         }
 
         // Close modal when clicking outside
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             const modal = document.getElementById('editDeviceModal');
             if (event.target === modal) {
                 closeModal();
@@ -512,4 +517,5 @@
         }
     </script>
 </body>
+
 </html>

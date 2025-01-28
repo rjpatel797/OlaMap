@@ -10,7 +10,7 @@
   <!-- jQuery for API requests -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-  <link href="/livetracking/livetrackinggoogle.css" rel="stylesheet"/>
+  <link href="/livetracking/livetrackinggoogle.css" rel="stylesheet" />
 </head>
 
 <body>
@@ -73,490 +73,490 @@
 
       <script src="../js/api.js"></script>
       <script>
-      let map;
-      let mapOverlay = null;
-      let currentMarker = null;
-      let trackingInterval = null;
-      let isTracking = false;
-      let lastPosition = null;
-      let customInfoWindow = null;
-      let isAnimating = false;
-      let isMapDragging = false;
-      let devices = [];
-// Create and append MapMyIndia script dynamically
-const script = document.createElement('script');
-script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap&libraries=marker&v=beta`;
-script.defer = true;
-script.async = true;
-document.head.appendChild(script);
+        let map;
+        let mapOverlay = null;
+        let currentMarker = null;
+        let trackingInterval = null;
+        let isTracking = false;
+        let lastPosition = null;
+        let customInfoWindow = null;
+        let isAnimating = false;
+        let isMapDragging = false;
+        let devices = [];
+        // Create and append MapMyIndia script dynamically
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap&libraries=marker&v=beta`;
+        script.defer = true;
+        script.async = true;
+        document.head.appendChild(script);
 
-function initMap() {
-    try {
-        map = new google.maps.Map(document.getElementById('map'), {
-            mapTypeId: google.maps.MapTypeId.ROADMAP,
-            center: { 
+        function initMap() {
+          try {
+            map = new google.maps.Map(document.getElementById('map'), {
+              mapTypeId: google.maps.MapTypeId.ROADMAP,
+              center: {
                 lat: 28.612964,
-                lng: 77.229463 
-            },
-            zoom: 15,
-        });
+                lng: 77.229463
+              },
+              zoom: 15,
+            });
 
-        // Add this new line to initialize custom overlay
-        initializeCustomOverlay();
+            // Add this new line to initialize custom overlay
+            initializeCustomOverlay();
 
-        map.addListener('idle', () => {
-            console.log("Map loaded");
-            fetchDeviceData();
-        });
-    } catch (error) {
-        console.error("Error initializing map:", error);
-    }
-}
-
-function initializeCustomOverlay() {
-    window.CustomInfoWindow = class extends google.maps.OverlayView {
-        constructor(content, position) {
-            super();
-            this.content = content;
-            this.position = position;
-            this.div = null;
+            map.addListener('idle', () => {
+              console.log("Map loaded");
+              fetchDeviceData();
+            });
+          } catch (error) {
+            console.error("Error initializing map:", error);
+          }
         }
 
-        onAdd() {
-          const div = document.createElement('div');
-            div.id = 'customPopup';
-            div.className = 'popup';
-            div.style.position = 'absolute';
-            div.style.display = 'block';  // Add this line
-            div.style.transform = 'translate(-50%, -130%)';  // Add this line
-            
-            // Create main content div
-            const contentDiv = document.createElement('div');
-            contentDiv.id = 'popupContent';  // Add id for content
-            contentDiv.innerHTML = this.content;
-            
-            // Create close button
-            const closeBtn = document.createElement('span');
-            closeBtn.className = 'close-btn';
-            closeBtn.innerHTML = '✖';
-            closeBtn.onclick = () => hidePopup(true);
-            
-            // Append elements
-            div.appendChild(closeBtn);
-            div.appendChild(contentDiv);
-            
-            this.div = div;
-            const panes = this.getPanes();
-            panes.floatPane.appendChild(div);
-        }
+        function initializeCustomOverlay() {
+          window.CustomInfoWindow = class extends google.maps.OverlayView {
+            constructor(content, position) {
+              super();
+              this.content = content;
+              this.position = position;
+              this.div = null;
+            }
 
-        draw() {
-            if (!this.div) return;
-            const overlayProjection = this.getProjection();
-            const position = overlayProjection.fromLatLngToDivPixel(this.position);
-            this.div.style.left = position.x + 'px';
-            this.div.style.top = (position.y + 20) + 'px';
-        }
+            onAdd() {
+              const div = document.createElement('div');
+              div.id = 'customPopup';
+              div.className = 'popup';
+              div.style.position = 'absolute';
+              div.style.display = 'block';  // Add this line
+              div.style.transform = 'translate(-50%, -130%)';  // Add this line
 
-        onRemove() {
-            if (this.div) {
+              // Create main content div
+              const contentDiv = document.createElement('div');
+              contentDiv.id = 'popupContent';  // Add id for content
+              contentDiv.innerHTML = this.content;
+
+              // Create close button
+              const closeBtn = document.createElement('span');
+              closeBtn.className = 'close-btn';
+              closeBtn.innerHTML = '✖';
+              closeBtn.onclick = () => hidePopup(true);
+
+              // Append elements
+              div.appendChild(closeBtn);
+              div.appendChild(contentDiv);
+
+              this.div = div;
+              const panes = this.getPanes();
+              panes.floatPane.appendChild(div);
+            }
+
+            draw() {
+              if (!this.div) return;
+              const overlayProjection = this.getProjection();
+              const position = overlayProjection.fromLatLngToDivPixel(this.position);
+              this.div.style.left = position.x + 'px';
+              this.div.style.top = (position.y + 20) + 'px';
+            }
+
+            onRemove() {
+              if (this.div) {
                 this.div.parentNode.removeChild(this.div);
                 this.div = null;
+              }
             }
-        }
 
-        setContent(content) {
-            if (this.div) {
+            setContent(content) {
+              if (this.div) {
                 const contentDiv = this.div.querySelector('#popupContent');
                 if (contentDiv) {
-                    contentDiv.innerHTML = content;
+                  contentDiv.innerHTML = content;
                 }
+              }
             }
+
+            setPosition(position) {
+              this.position = position;
+              this.draw();
+            }
+          };
         }
 
-        setPosition(position) {
-            this.position = position;
-            this.draw();
+        function initializeOverlay() {
+          if (!map || mapOverlay) return;
+
+          class CustomOverlay extends google.maps.OverlayView {
+            constructor(map) {
+              super();
+              this.setMap(map);
+            }
+            draw() { } // Required but empty
+          }
+
+          mapOverlay = new CustomOverlay(map);
         }
-    };
-}
-
-function initializeOverlay() {
-  if (!map || mapOverlay) return;
-  
-  class CustomOverlay extends google.maps.OverlayView {
-    constructor(map) {
-      super();
-      this.setMap(map);
-    }
-    draw() {} // Required but empty
-  }
-  
-  mapOverlay = new CustomOverlay(map);
-}
 
 
-function toggleDropdown() {
-    const dropdown = document.getElementById("deviceDropdown");
-    dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-}
+        function toggleDropdown() {
+          const dropdown = document.getElementById("deviceDropdown");
+          dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+        }
 
-function filterVehicles(searchText) {
-    const filteredDevices = devices.filter((device) =>
-        device.name.toLowerCase().includes(searchText.toLowerCase())
-    );
-    populateVehicleList(filteredDevices);
-}
+        function filterVehicles(searchText) {
+          const filteredDevices = devices.filter((device) =>
+            device.name.toLowerCase().includes(searchText.toLowerCase())
+          );
+          populateVehicleList(filteredDevices);
+        }
 
-function selectVehicle(deviceId, deviceName) {
+        function selectVehicle(deviceId, deviceName) {
 
-    hidePopup(true);
-    isPopupOpen = false;
-    currentPopupDid = null;
-    
-    // Stop existing tracking
-    if (isTracking) {
-        stopTracking();
-    }
-    
-    // Reset marker and data
-    if (currentMarker) {
-        currentMarker.setMap(null);
-        currentMarker = null;
-    }
+          hidePopup(true);
+          isPopupOpen = false;
+          currentPopupDid = null;
 
-    lastPosition = null;
-    isAnimating = false;
-    isMapDragging = false;
+          // Stop existing tracking
+          if (isTracking) {
+            stopTracking();
+          }
 
-    // Clear vehicle info displays
-    document.getElementById('speedDisplay').textContent = '0 km/h';
-    document.getElementById('dateTimeDisplay').textContent = '--';
-    
-    // Hide popups
-    const customPopup = document.getElementById('customPopup');
-    if (customPopup) {
-        customPopup.style.display = 'none';
-    }
+          // Reset marker and data
+          if (currentMarker) {
+            currentMarker.setMap(null);
+            currentMarker = null;
+          }
 
-    // Update dropdown selection
-    document.getElementById("selectedVehicle").textContent = deviceName;
-    document.getElementById("deviceDropdown").style.display = "none";
-    
-    // Reset track button
-    const trackButton = document.getElementById("trackButton");
-    if (trackButton) {
-        trackButton.textContent = "Track";
-        trackButton.classList.remove("tracking");
-    }
+          lastPosition = null;
+          isAnimating = false;
+          isMapDragging = false;
 
-    // Fetch vehicle location
-    if (deviceId) {
-        fetchVehicleLocation(deviceId);
-    }
-}
+          // Clear vehicle info displays
+          document.getElementById('speedDisplay').textContent = '0 km/h';
+          document.getElementById('dateTimeDisplay').textContent = '--';
 
-function populateVehicleList(devicesList) {
-    const vehicleList = document.getElementById("vehicleList");
-    vehicleList.innerHTML = "";
+          // Hide popups
+          const customPopup = document.getElementById('customPopup');
+          if (customPopup) {
+            customPopup.style.display = 'none';
+          }
 
-    devicesList.forEach((device) => {
-        const item = document.createElement("div");
-        item.className = "dropdown-item";
-        item.textContent = device.name;
-        item.onclick = () => selectVehicle(device.did, device.name);
-        vehicleList.appendChild(item);
-    });
-}
+          // Update dropdown selection
+          document.getElementById("selectedVehicle").textContent = deviceName;
+          document.getElementById("deviceDropdown").style.display = "none";
 
-function fetchDeviceData() {
-    const mid = localStorage.getItem("mid");
-    fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
-        .then((response) => response.json())
-        .then((data) => {
-            devices = data.map((item) => ({
+          // Reset track button
+          const trackButton = document.getElementById("trackButton");
+          if (trackButton) {
+            trackButton.textContent = "Track";
+            trackButton.classList.remove("tracking");
+          }
+
+          // Fetch vehicle location
+          if (deviceId) {
+            fetchVehicleLocation(deviceId);
+          }
+        }
+
+        function populateVehicleList(devicesList) {
+          const vehicleList = document.getElementById("vehicleList");
+          vehicleList.innerHTML = "";
+
+          devicesList.forEach((device) => {
+            const item = document.createElement("div");
+            item.className = "dropdown-item";
+            item.textContent = device.name;
+            item.onclick = () => selectVehicle(device.did, device.name);
+            vehicleList.appendChild(item);
+          });
+        }
+
+        function fetchDeviceData() {
+          const mid = localStorage.getItem("mid");
+          fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+            .then((response) => response.json())
+            .then((data) => {
+              devices = data.map((item) => ({
                 name: item.dname,
                 did: item.did,
-            }));
-            populateVehicleList(devices);
-        })
-        .catch((error) => console.error("Error fetching Vehicles:", error));
-}
+              }));
+              populateVehicleList(devices);
+            })
+            .catch((error) => console.error("Error fetching Vehicles:", error));
+        }
 
-function updateMarkerPosition(coordinates) {
-  if (!currentMarker) {
-        try {
-            console.log("Creating new marker at position:", position);
-            
-            // Remove any existing marker
-            if (currentMarker) {
+        function updateMarkerPosition(coordinates) {
+          if (!currentMarker) {
+            try {
+              console.log("Creating new marker at position:", position);
+
+              // Remove any existing marker
+              if (currentMarker) {
                 currentMarker.setMap(null);
-            }
-            
-            // Create marker using MapMyIndia's recommended syntax
-            currentMarker = new mappls.Marker({
+              }
+
+              // Create marker using MapMyIndia's recommended syntax
+              currentMarker = new mappls.Marker({
                 map: map,
                 position: {
-                    lat: position.lat,
-                    lng: position.lng
+                  lat: position.lat,
+                  lng: position.lng
                 },
                 fitbounds: true,
                 icon: 'https://apis.mapmyindia.com/map_v3/1.png',
                 iconSize: [40, 40],
                 popupHtml: generatePopupContent(data)
-            });
-            
-            // Center and zoom the map
-            map.flyTo({
+              });
+
+              // Center and zoom the map
+              map.flyTo({
                 center: [position.lng, position.lat],
                 zoom: 15,
                 essential: true
-            });
-            
-            console.log('Marker created successfully:', currentMarker);
-            console.log('Current marker position:', [position.lng, position.lat]);
-        } catch (error) {
-            console.error('Error creating marker:', error);
-            console.error('Position data:', position);
-            console.error('Map instance:', map);
-        }
-      }
-}
+              });
 
-function fetchVehicleLocation(did) {
-    fetch(`${API}opr=getVehicleBydeviceid&did=${did}`)
-        .then((response) => response.json())
-        .then((data) => {
-            if (!isTracking) return;
-            updateVehicleMarker(data);
-            updateVehicleInfo(data[0]);
-        })
-        .catch((error) => {
-            console.error("Error fetching vehicle location:", error);
-            if (isTracking) {
+              console.log('Marker created successfully:', currentMarker);
+              console.log('Current marker position:', [position.lng, position.lat]);
+            } catch (error) {
+              console.error('Error creating marker:', error);
+              console.error('Position data:', position);
+              console.error('Map instance:', map);
+            }
+          }
+        }
+
+        function fetchVehicleLocation(did) {
+          fetch(`${API}opr=getVehicleBydeviceid&did=${did}`)
+            .then((response) => response.json())
+            .then((data) => {
+              if (!isTracking) return;
+              updateVehicleMarker(data);
+              updateVehicleInfo(data[0]);
+            })
+            .catch((error) => {
+              console.error("Error fetching vehicle location:", error);
+              if (isTracking) {
                 stopTracking();
                 alert("Error tracking vehicle. Please try again.");
-            }
-        });
-}
+              }
+            });
+        }
 
-let isPopupOpen = false;
-let currentPopupDid = null;
+        let isPopupOpen = false;
+        let currentPopupDid = null;
 
-function createMarkerIcon() {
-  return {
-    url: '/deviceTracking/images/car_image_transparent.png#vehicleMarker',
-    scaledSize: new google.maps.Size(30, 30),
-    anchor: new google.maps.Point(15, 15)
-  };
-}
+        function createMarkerIcon() {
+          return {
+            url: '/deviceTracking/images/car_image_transparent.png#vehicleMarker',
+            scaledSize: new google.maps.Size(30, 30),
+            anchor: new google.maps.Point(15, 15)
+          };
+        }
 
-function rotateMarker(newAngle) {
-  if (!currentMarker) return;
-  
-  // Normalize the angle
-  newAngle = ((Number(newAngle) % 360) + 360) % 360;
-  
-  // Apply rotation using CSS transform
-  $('img[src$="#vehicleMarker"]').css({
-    'transform': `rotate(${newAngle}deg)`,
-    'transform-origin': 'center',
-    'width': '30px',  // Set desired width
-    'height': '32px', // Maintain aspect ratio
-    'max-width': '100%',
-    'object-fit': 'scale-down'
-  });
-}
+        function rotateMarker(newAngle) {
+          if (!currentMarker) return;
 
-function getMarkerRotation() {
-  const markerImg = $('img[src$="#vehicleMarker"]');
-  if (!markerImg.length) return 0;
-  
-  const transform = markerImg.css('transform');
-  if (transform === 'none') return 0;
-  
-  const values = transform.split('(')[1].split(')')[0].split(',');
-  const a = values[0];
-  const b = values[1];
-  const angle = Math.round(Math.atan2(b, a) * (180/Math.PI));
-  return ((angle % 360) + 360) % 360;
-}
+          // Normalize the angle
+          newAngle = ((Number(newAngle) % 360) + 360) % 360;
 
-function updateVehicleMarker(vehicleData) {
-  if (!vehicleData || vehicleData.length === 0) return;
+          // Apply rotation using CSS transform
+          $('img[src$="#vehicleMarker"]').css({
+            'transform': `rotate(${newAngle}deg)`,
+            'transform-origin': 'center',
+            'width': '30px',  // Set desired width
+            'height': '32px', // Maintain aspect ratio
+            'max-width': '100%',
+            'object-fit': 'scale-down'
+          });
+        }
 
-  const data = vehicleData[0];
-  if (!data.latlang) {
-    console.error('No position data available');
-    return;
-  }
+        function getMarkerRotation() {
+          const markerImg = $('img[src$="#vehicleMarker"]');
+          if (!markerImg.length) return 0;
 
-  try {
-    const [lat, lng] = data.latlang.split(",").map(coord => parseFloat(coord));
-    const position = {
-      lat: lat || 23.0225,
-      lng: lng || 72.5714
-    };
+          const transform = markerImg.css('transform');
+          if (transform === 'none') return 0;
 
-    // Parse and normalize the initial angle
-    let initialAngle = Number(data.angle) || 0;
-    initialAngle = ((initialAngle % 360) + 360) % 360;
+          const values = transform.split('(')[1].split(')')[0].split(',');
+          const a = values[0];
+          const b = values[1];
+          const angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
+          return ((angle % 360) + 360) % 360;
+        }
 
-    console.log('Setting initial marker angle:', initialAngle + JSON.stringify(position));
+        function updateVehicleMarker(vehicleData) {
+          if (!vehicleData || vehicleData.length === 0) return;
 
-    if (!currentMarker) {
-      // Create new marker
-      currentMarker = new google.maps.Marker({
-        map: map,
-        position: position,
-        icon: createMarkerIcon(),
-        clickable: true,
-        optimized: false // This helps with rotation issues
-      });
+          const data = vehicleData[0];
+          if (!data.latlang) {
+            console.error('No position data available');
+            return;
+          }
 
-      // Add CSS style for smooth rotation
-      const style = document.createElement('style');
-      style.textContent = `
+          try {
+            const [lat, lng] = data.latlang.split(",").map(coord => parseFloat(coord));
+            const position = {
+              lat: lat || 23.0225,
+              lng: lng || 72.5714
+            };
+
+            // Parse and normalize the initial angle
+            let initialAngle = Number(data.angle) || 0;
+            initialAngle = ((initialAngle % 360) + 360) % 360;
+
+            console.log('Setting initial marker angle:', initialAngle + JSON.stringify(position));
+
+            if (!currentMarker) {
+              // Create new marker
+              currentMarker = new google.maps.Marker({
+                map: map,
+                position: position,
+                icon: createMarkerIcon(),
+                clickable: true,
+                optimized: false // This helps with rotation issues
+              });
+
+              // Add CSS style for smooth rotation
+              const style = document.createElement('style');
+              style.textContent = `
         img[src$="#vehicleMarker"] {
           transition: transform 0.1s ease-out;
           transform-origin: center;
         }
       `;
-      document.head.appendChild(style);
+              document.head.appendChild(style);
 
-      // Set initial rotation after a short delay to ensure marker is rendered
-      setTimeout(() => {
-        rotateMarker(initialAngle);
-      }, 100);
+              // Set initial rotation after a short delay to ensure marker is rendered
+              setTimeout(() => {
+                rotateMarker(initialAngle);
+              }, 100);
 
-      currentMarker.addListener('click', () => {
-    if (!isPopupOpen || currentPopupDid !== data.did) {
-        showVehicleInfo(vehicleData, true);
-        currentPopupDid = data.did;
-        isPopupOpen = true;
-    }
-});
+              currentMarker.addListener('click', () => {
+                if (!isPopupOpen || currentPopupDid !== data.did) {
+                  showVehicleInfo(vehicleData, true);
+                  currentPopupDid = data.did;
+                  isPopupOpen = true;
+                }
+              });
 
-      map.panTo(position);
-      lastPosition = position;
-      
-    } else {
-      // Update existing marker
-      if (lastPosition && !isAnimating) {
-        let targetAngle = initialAngle;
-        
-        // Only calculate bearing if position has changed
-        if (lastPosition.lat !== position.lat || lastPosition.lng !== position.lng) {
-          targetAngle = calculateBearing(lastPosition, position);
+              map.panTo(position);
+              lastPosition = position;
+
+            } else {
+              // Update existing marker
+              if (lastPosition && !isAnimating) {
+                let targetAngle = initialAngle;
+
+                // Only calculate bearing if position has changed
+                if (lastPosition.lat !== position.lat || lastPosition.lng !== position.lng) {
+                  targetAngle = calculateBearing(lastPosition, position);
+                }
+
+                // Normalize target angle
+                targetAngle = ((targetAngle % 360) + 360) % 360;
+
+                animateMarkerMovement(lastPosition, position, targetAngle);
+              } else {
+                currentMarker.setPosition(position);
+                rotateMarker(initialAngle);
+              }
+              lastPosition = { ...position };
+            }
+
+            if (isPopupOpen && currentPopupDid === data.did) {
+              showVehicleInfo(vehicleData, false);
+              debouncedUpdatePopupPosition();
+            }
+
+            if (isPopupOpen && customInfoWindow) {
+              customInfoWindow.setPosition(currentMarker.getPosition());
+            }
+          } catch (error) {
+            console.error('Error updating vehicle marker:', error);
+          }
         }
 
-        // Normalize target angle
-        targetAngle = ((targetAngle % 360) + 360) % 360;
-        
-        animateMarkerMovement(lastPosition, position, targetAngle);
-      } else {
-        currentMarker.setPosition(position);
-        rotateMarker(initialAngle);
-      }
-      lastPosition = {...position};
-    }
+        function animateMarkerMovement(from, to, finalAngle) {
+          if (isAnimating || isMapDragging) return;
+          isAnimating = true;
 
-    if (isPopupOpen && currentPopupDid === data.did) {
-      showVehicleInfo(vehicleData, false);
-      debouncedUpdatePopupPosition();
-    }
+          const startTime = performance.now();
+          const duration = 15000;
 
-    if (isPopupOpen && customInfoWindow) {
-    customInfoWindow.setPosition(currentMarker.getPosition());
-  }
-  } catch (error) {
-    console.error('Error updating vehicle marker:', error);
-  }
-}
+          const startAngle = getMarkerRotation();
 
-function animateMarkerMovement(from, to, finalAngle) {
-  if (isAnimating || isMapDragging) return;
-  isAnimating = true;
+          // Ensure the final angle is the most direct rotation
+          let angleDiff = finalAngle - startAngle;
 
-  const startTime = performance.now();
-  const duration = 15000;
+          // Choose the shortest rotation path
+          if (Math.abs(angleDiff) > 180) {
+            angleDiff = angleDiff > 0 ? angleDiff - 360 : angleDiff + 360;
+          }
 
-  const startAngle = getMarkerRotation();
-  
-  // Ensure the final angle is the most direct rotation
-  let angleDiff = finalAngle - startAngle;
-  
-  // Choose the shortest rotation path
-  if (Math.abs(angleDiff) > 180) {
-    angleDiff = angleDiff > 0 ? angleDiff - 360 : angleDiff + 360;
-  }
+          function animate(currentTime) {
+            if (isMapDragging) {
+              isAnimating = false;
+              return;
+            }
 
-  function animate(currentTime) {
-    if (isMapDragging) {
-      isAnimating = false;
-      return;
-    }
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easeProgress = easeInOutQuad(progress);
 
-    const elapsed = currentTime - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    const easeProgress = easeInOutQuad(progress);
+            const currentPosition = {
+              lat: from.lat + (to.lat - from.lat) * easeProgress,
+              lng: from.lng + (to.lng - from.lng) * easeProgress
+            };
 
-    const currentPosition = {
-      lat: from.lat + (to.lat - from.lat) * easeProgress,
-      lng: from.lng + (to.lng - from.lng) * easeProgress
-    };
+            const currentAngle = startAngle + (angleDiff * easeProgress);
+            const normalizedAngle = ((currentAngle % 360) + 360) % 360;
 
-    const currentAngle = startAngle + (angleDiff * easeProgress);
-    const normalizedAngle = ((currentAngle % 360) + 360) % 360;
+            currentMarker.setPosition(currentPosition);
+            rotateMarker(normalizedAngle);
 
-    currentMarker.setPosition(currentPosition);
-    rotateMarker(normalizedAngle);
-    
-    lastPosition = currentPosition;
-    
-    if (isPopupOpen) {
-      // debouncedUpdatePopupPosition();
-    }
+            lastPosition = currentPosition;
 
-    if (progress < 1) {
-      requestAnimationFrame(animate);
-    } else {
-      isAnimating = false;
-    }
-  }
+            if (isPopupOpen) {
+              // debouncedUpdatePopupPosition();
+            }
 
-  requestAnimationFrame(animate);
-}
+            if (progress < 1) {
+              requestAnimationFrame(animate);
+            } else {
+              isAnimating = false;
+            }
+          }
+
+          requestAnimationFrame(animate);
+        }
 
 
 
-function calculateBearing(from, to) {
-  const toRad = (degree) => degree * (Math.PI / 180);
-  const toDeg = (radian) => radian * (180 / Math.PI);
+        function calculateBearing(from, to) {
+          const toRad = (degree) => degree * (Math.PI / 180);
+          const toDeg = (radian) => radian * (180 / Math.PI);
 
-  const fromLat = toRad(from.lat);
-  const fromLng = toRad(from.lng);
-  const toLat = toRad(to.lat);
-  const toLng = toRad(to.lng);
+          const fromLat = toRad(from.lat);
+          const fromLng = toRad(from.lng);
+          const toLat = toRad(to.lat);
+          const toLng = toRad(to.lng);
 
-  const dLng = toLng - fromLng;
+          const dLng = toLng - fromLng;
 
-  const y = Math.sin(dLng) * Math.cos(toLat);
-  const x = Math.cos(fromLat) * Math.sin(toLat) - 
+          const y = Math.sin(dLng) * Math.cos(toLat);
+          const x = Math.cos(fromLat) * Math.sin(toLat) -
             Math.sin(fromLat) * Math.cos(toLat) * Math.cos(dLng);
 
-  let bearingRad = Math.atan2(y, x);
-  let bearingDeg = toDeg(bearingRad);
+          let bearingRad = Math.atan2(y, x);
+          let bearingDeg = toDeg(bearingRad);
 
-  // Normalize to 0-360 degrees
-  bearingDeg = (bearingDeg + 360) % 360;
+          // Normalize to 0-360 degrees
+          bearingDeg = (bearingDeg + 360) % 360;
 
-  return bearingDeg;
-}
+          return bearingDeg;
+        }
 
 
-function generatePopupContent(data) {
-  return `
+        function generatePopupContent(data) {
+          return `
     <div style="border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 5px;">
       <b>Vehicle:</b> ${data.dname}
     </div>
@@ -583,213 +583,213 @@ function generatePopupContent(data) {
       </div>
     </div>
   `;
-}
+        }
 
-function showVehicleInfo(vehicleData, showPopup = false) {
-  if (!vehicleData || vehicleData.length === 0) return;
+        function showVehicleInfo(vehicleData, showPopup = false) {
+          if (!vehicleData || vehicleData.length === 0) return;
 
-  const data = vehicleData[0];
-  
-  if (showPopup && (!isPopupOpen || currentPopupDid !== data.did)) {
-    const content = generatePopupContent(data);
-    const position = currentMarker.getPosition();
+          const data = vehicleData[0];
 
-    if (!customInfoWindow) {
-      customInfoWindow = new CustomInfoWindow(content, position);
-      customInfoWindow.setMap(map);
-    } else {
-      customInfoWindow.setContent(content);
-      customInfoWindow.setPosition(position);
-    }
-    
-    isPopupOpen = true;
-    currentPopupDid = data.did;
-  } else if (isPopupOpen && currentPopupDid === data.did) {
-    const content = generatePopupContent(data);
-    if (customInfoWindow) {
-      customInfoWindow.setContent(content);
-      customInfoWindow.setPosition(currentMarker.getPosition());
-    }
-  }
-}
+          if (showPopup && (!isPopupOpen || currentPopupDid !== data.did)) {
+            const content = generatePopupContent(data);
+            const position = currentMarker.getPosition();
 
-let isPopupUpdating = false;
+            if (!customInfoWindow) {
+              customInfoWindow = new CustomInfoWindow(content, position);
+              customInfoWindow.setMap(map);
+            } else {
+              customInfoWindow.setContent(content);
+              customInfoWindow.setPosition(position);
+            }
 
-function updatePopupPosition() {
-    if (!currentMarker || !isPopupOpen) return;
+            isPopupOpen = true;
+            currentPopupDid = data.did;
+          } else if (isPopupOpen && currentPopupDid === data.did) {
+            const content = generatePopupContent(data);
+            if (customInfoWindow) {
+              customInfoWindow.setContent(content);
+              customInfoWindow.setPosition(currentMarker.getPosition());
+            }
+          }
+        }
 
-    try {
-        const markerPosition = currentMarker.getPosition();
-        if (!markerPosition) return;
+        let isPopupUpdating = false;
 
-        if (!window.popupOverlay) {
-            window.popupOverlay = new window.CustomInfoWindow(
+        function updatePopupPosition() {
+          if (!currentMarker || !isPopupOpen) return;
+
+          try {
+            const markerPosition = currentMarker.getPosition();
+            if (!markerPosition) return;
+
+            if (!window.popupOverlay) {
+              window.popupOverlay = new window.CustomInfoWindow(
                 popupContent.innerHTML,
                 markerPosition
-            );
-            window.popupOverlay.setMap(map);
-        } else {
-            window.popupOverlay.setPosition(markerPosition);
-            window.popupOverlay.setContent(popupContent.innerHTML);
+              );
+              window.popupOverlay.setMap(map);
+            } else {
+              window.popupOverlay.setPosition(markerPosition);
+              window.popupOverlay.setContent(popupContent.innerHTML);
+            }
+          } catch (error) {
+            console.error('Error updating popup position:', error);
+          }
         }
-    } catch (error) {
-        console.error('Error updating popup position:', error);
-    }
-}
 
 
-function debounce(func, delay) {
-  let timer;
-  return function (...args) {
-    clearTimeout(timer);
-    timer = setTimeout(() => func.apply(this, args), delay);
-  };
-}
+        function debounce(func, delay) {
+          let timer;
+          return function (...args) {
+            clearTimeout(timer);
+            timer = setTimeout(() => func.apply(this, args), delay);
+          };
+        }
 
-const debouncedUpdatePopupPosition = debounce(updatePopupPosition, 100);
+        const debouncedUpdatePopupPosition = debounce(updatePopupPosition, 100);
 
-function hidePopup(manuallyClosed = false) {
-  if (customInfoWindow) {
-    customInfoWindow.setMap(null);
-    customInfoWindow = null;
-  }
-  isPopupOpen = false;
-  currentPopupDid = null;
-}
+        function hidePopup(manuallyClosed = false) {
+          if (customInfoWindow) {
+            customInfoWindow.setMap(null);
+            customInfoWindow = null;
+          }
+          isPopupOpen = false;
+          currentPopupDid = null;
+        }
 
-function updateVehicleInfo(data) {
-    document.getElementById('speedDisplay').textContent = `${Math.round(data.speed)} km/h`;
-    const dateTime = data.ddate.split('.')[0];
-    document.getElementById('dateTimeDisplay').textContent = dateTime;
-}
+        function updateVehicleInfo(data) {
+          document.getElementById('speedDisplay').textContent = `${Math.round(data.speed)} km/h`;
+          const dateTime = data.ddate.split('.')[0];
+          document.getElementById('dateTimeDisplay').textContent = dateTime;
+        }
 
-function startTracking() {
-    const selectedVehicle = document.getElementById("selectedVehicle").textContent;
+        function startTracking() {
+          const selectedVehicle = document.getElementById("selectedVehicle").textContent;
 
-    if (selectedVehicle === "Select Vehicle" || selectedVehicle.trim() === "") {
-        alert("Please select a vehicle first");
-        return;
-    }
+          if (selectedVehicle === "Select Vehicle" || selectedVehicle.trim() === "") {
+            alert("Please select a vehicle first");
+            return;
+          }
 
-    const selectedDevice = devices.find(device => device.name === selectedVehicle);
-    if (!selectedDevice) {
-        alert("Selected vehicle not found in the list");
-        return;
-    }
+          const selectedDevice = devices.find(device => device.name === selectedVehicle);
+          if (!selectedDevice) {
+            alert("Selected vehicle not found in the list");
+            return;
+          }
 
-    const did = selectedDevice.did;
-    const refreshRate = parseInt(document.getElementById("refreshRate").value);
+          const did = selectedDevice.did;
+          const refreshRate = parseInt(document.getElementById("refreshRate").value);
 
-    isTracking = true;
-    document.getElementById("trackButton").textContent = "Stop Tracking";
-    document.getElementById("trackButton").classList.add("tracking");
+          isTracking = true;
+          document.getElementById("trackButton").textContent = "Stop Tracking";
+          document.getElementById("trackButton").classList.add("tracking");
 
-    fetchVehicleLocation(did);
+          fetchVehicleLocation(did);
 
-    trackingInterval = setInterval(() => {
-        fetchVehicleLocation(did);
-    }, refreshRate);
-}
+          trackingInterval = setInterval(() => {
+            fetchVehicleLocation(did);
+          }, refreshRate);
+        }
 
-function stopTracking() {
-    if (trackingInterval) {
-        clearInterval(trackingInterval);
-        trackingInterval = null;
-    }
+        function stopTracking() {
+          if (trackingInterval) {
+            clearInterval(trackingInterval);
+            trackingInterval = null;
+          }
 
-    isTracking = false;
-    document.getElementById("trackButton").textContent = "Track";
-    document.getElementById("trackButton").classList.remove("tracking");
-    
-    hidePopup();
-    
-    document.getElementById('speedDisplay').textContent = '0 km/h';
-    document.getElementById('dateTimeDisplay').textContent = '--';
+          isTracking = false;
+          document.getElementById("trackButton").textContent = "Track";
+          document.getElementById("trackButton").classList.remove("tracking");
 
-    if (currentMarker) {
-        currentMarker.setMap(null);
-        currentMarker = null;
-    }
+          hidePopup();
 
-    lastPosition = null;
-    isAnimating = false;
-    isMapDragging = false;
+          document.getElementById('speedDisplay').textContent = '0 km/h';
+          document.getElementById('dateTimeDisplay').textContent = '--';
 
-    const customPopup = document.getElementById('customPopup');
-    if (customPopup) {
-        customPopup.style.display = 'none';
-    }
+          if (currentMarker) {
+            currentMarker.setMap(null);
+            currentMarker = null;
+          }
 
-    const selectedVehicle = document.getElementById('selectedVehicle');
-    if (selectedVehicle) {
-        selectedVehicle.textContent = 'Select Vehicle';
-    }
-}
+          lastPosition = null;
+          isAnimating = false;
+          isMapDragging = false;
 
-function getTimeDiff(currentTime, vehicleTime) {
-  const currentTimeMs = new Date(currentTime).getTime();
-  const vehicleTimeMs = new Date(vehicleTime).getTime();
-  const timeDiff = Math.abs(currentTimeMs - vehicleTimeMs);
-  return timeDiff / 1000; // Convert milliseconds to seconds
-}
+          const customPopup = document.getElementById('customPopup');
+          if (customPopup) {
+            customPopup.style.display = 'none';
+          }
 
-function easeInOutQuad(t) {
-    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-}
+          const selectedVehicle = document.getElementById('selectedVehicle');
+          if (selectedVehicle) {
+            selectedVehicle.textContent = 'Select Vehicle';
+          }
+        }
 
-async function updateLocationPopup(deviceId, latlang) {
-    const locationCell = document.getElementById(`location-popup-${deviceId}`);
-    if (!locationCell) return;
+        function getTimeDiff(currentTime, vehicleTime) {
+          const currentTimeMs = new Date(currentTime).getTime();
+          const vehicleTimeMs = new Date(vehicleTime).getTime();
+          const timeDiff = Math.abs(currentTimeMs - vehicleTimeMs);
+          return timeDiff / 1000; // Convert milliseconds to seconds
+        }
 
-    locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
+        function easeInOutQuad(t) {
+          return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        }
 
-    try {
-        const location = await fetchLocation(latlang);
-        locationCell.innerHTML = location;
-    } catch (error) {
-        console.error("Error updating location:", error);
-        locationCell.innerHTML = "Error fetching location";
-    }
-}
+        async function updateLocationPopup(deviceId, latlang) {
+          const locationCell = document.getElementById(`location-popup-${deviceId}`);
+          if (!locationCell) return;
 
-async function fetchLocation(latlang) {
-    try {
-        if (!latlang) return "Location not available";
+          locationCell.innerHTML = '<span style="color: #666;">Loading...</span>';
 
-        const [lat, lng] = latlang.split(",").map(coord => parseFloat(coord));
-        if (isNaN(lat) || isNaN(lng)) return "Invalid coordinates";
-        
-        const response = await fetch(`${API}opr=getLoc&lat=${lat}&lang=${lng}`);
-        const data = await response.json();
-        return data[0].location || "Location not available";
-    } catch (error) {
-        console.error("Error fetching location:", error);
-        return "Error fetching location";
-    }
-}
+          try {
+            const location = await fetchLocation(latlang);
+            locationCell.innerHTML = location;
+          } catch (error) {
+            console.error("Error updating location:", error);
+            locationCell.innerHTML = "Error fetching location";
+          }
+        }
 
-// Event Listeners
-document.addEventListener("click", function(event) {
-    const dropdown = document.getElementById("deviceDropdown");
-    if (!event.target.closest(".device-selector")) {
-        dropdown.style.display = "none";
-    }
-});
+        async function fetchLocation(latlang) {
+          try {
+            if (!latlang) return "Location not available";
 
-$("#trackButton").on("click", function() {
-    if (isTracking) {
-        stopTracking();
-    } else {
-        startTracking();
-    }
-});
+            const [lat, lng] = latlang.split(",").map(coord => parseFloat(coord));
+            if (isNaN(lat) || isNaN(lng)) return "Invalid coordinates";
 
-$("#refreshRate").on("change", function() {
-    if (isTracking) {
-        stopTracking();
-        startTracking();
-    }
-});
+            const response = await fetch(`${API}opr=getLoc&lat=${lat}&lang=${lng}`);
+            const data = await response.json();
+            return data[0].location || "Location not available";
+          } catch (error) {
+            console.error("Error fetching location:", error);
+            return "Error fetching location";
+          }
+        }
+
+        // Event Listeners
+        document.addEventListener("click", function (event) {
+          const dropdown = document.getElementById("deviceDropdown");
+          if (!event.target.closest(".device-selector")) {
+            dropdown.style.display = "none";
+          }
+        });
+
+        $("#trackButton").on("click", function () {
+          if (isTracking) {
+            stopTracking();
+          } else {
+            startTracking();
+          }
+        });
+
+        $("#refreshRate").on("change", function () {
+          if (isTracking) {
+            stopTracking();
+            startTracking();
+          }
+        });
 
         // Update device select handler
         $("#deviceSelect").on("change", function () {

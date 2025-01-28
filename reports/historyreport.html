@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -14,6 +15,7 @@
 
     <link href="/reports/historyreport.css" rel="stylesheet" />
 </head>
+
 <body>
     <div class="container">
         <!-- Navbar -->
@@ -29,16 +31,15 @@
                         </div>
                         <div class="dropdown-list" id="deviceDropdown">
                             <div class="dropdown-search">
-                                <input type="text" placeholder="Search vehicle..." id="vehicleSearch" 
-                                    onclick="event.stopPropagation()" 
-                                    oninput="filterVehicles(this.value)" />
+                                <input type="text" placeholder="Search vehicle..." id="vehicleSearch"
+                                    onclick="event.stopPropagation()" oninput="filterVehicles(this.value)" />
                             </div>
                             <div class="dropdown-items" id="vehicleList">
                             </div>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Start DateTime -->
                 <div class="date-group">
                     <label>Start DateTime:</label>
@@ -61,10 +62,10 @@
                 <div class="interval-selector">
                     <label>Time Interval:</label>
                     <select id="timeInterval" class="form-select">
-                            <option value="15">15 Min</option>
-                            <option value="30">30 Min</option>
-                            <option value="45">45 Min</option>
-                            <option value="60">60 Min</option>
+                        <option value="15">15 Min</option>
+                        <option value="30">30 Min</option>
+                        <option value="45">45 Min</option>
+                        <option value="60">60 Min</option>
                     </select>
                 </div>
 
@@ -112,14 +113,14 @@
         let selectedDeviceId = null;
         let devices = [];
 
-        $(document).ready(function() {
+        $(document).ready(function () {
             // Check for mid in localStorage
             if (!localStorage.getItem('mid')) {
                 window.location.href = '../index.html';
             }
 
             // Load navbar
-            $("#navbar-container").load("../navbarola.html", function() {
+            $("#navbar-container").load("../navbarola.html", function () {
                 console.log("Navbar loaded successfully!");
             });
 
@@ -130,127 +131,127 @@
         function setDefaultDates() {
             const now = new Date();
             const today = now.toISOString().split('T')[0];
-            
+
             document.getElementById('endDate').value = today;
             document.getElementById('endTime').value = '23:59';
-            
+
             document.getElementById('startDate').value = today;
             document.getElementById('startTime').value = '00:00';
         }
 
         function toggleDropdown() {
-    const dropdown = document.getElementById("deviceDropdown");
-    const currentDisplay = dropdown.style.display;
-    dropdown.style.display = currentDisplay === "block" ? "none" : "block";
-    
-    if (dropdown.style.display === "block") {
-        document.getElementById("vehicleSearch").value = "";
-        populateVehicleList(devices);
-    }
-}
+            const dropdown = document.getElementById("deviceDropdown");
+            const currentDisplay = dropdown.style.display;
+            dropdown.style.display = currentDisplay === "block" ? "none" : "block";
 
-function filterVehicles(searchText) {
-    if (!searchText) {
-        populateVehicleList(devices);
-        return;
-    }
-    const filteredDevices = devices.filter(device => 
-        device.name.toLowerCase().includes(searchText.toLowerCase())
-    );
-    populateVehicleList(filteredDevices);
-}
-
-function selectVehicle(deviceId, deviceName) {
-    selectedDeviceId = deviceId;
-    document.getElementById("deviceSelect").textContent = deviceName;
-    document.getElementById("deviceSelect").value = deviceId;
-    document.getElementById("deviceDropdown").style.display = "none";
-}
-
-function populateVehicleList(devicesList) {
-    const vehicleList = document.getElementById("vehicleList");
-    vehicleList.innerHTML = "";
-
-    if (devicesList.length === 0) {
-        const noResults = document.createElement("div");
-        noResults.className = "dropdown-item";
-        noResults.textContent = "No vehicles found";
-        vehicleList.appendChild(noResults);
-        return;
-    }
-
-    devicesList.forEach(device => {
-        const item = document.createElement("div");
-        item.className = "dropdown-item";
-        item.textContent = device.name;
-        item.onclick = () => selectVehicle(device.did, device.name);
-        vehicleList.appendChild(item);
-    });
-}
-
-// Add click outside handler
-document.addEventListener("click", function(event) {
-    const dropdown = document.getElementById("deviceDropdown");
-    const deviceSelect = document.getElementById("deviceSelect");
-    
-    if (!event.target.closest(".device-selector")) {
-        dropdown.style.display = "none";
-    }
-});
-
-function fetchDeviceData() {
-    const mid = localStorage.getItem("mid");
-    console.log("Fetching devices with mid:", mid);
-
-    fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
-        .then(response => response.json())
-        .then(data => {
-            console.log("Device data received:", data);
-            
-            if (Array.isArray(data)) {
-                devices = data.map(item => ({
-                    name: item.dname || 'Unnamed Vehicle',
-                    did: item.did
-                }));
+            if (dropdown.style.display === "block") {
+                document.getElementById("vehicleSearch").value = "";
                 populateVehicleList(devices);
-                
-                const deviceSelect = document.getElementById('deviceSelect');
-                if (deviceSelect) {
-                    deviceSelect.textContent = 'Select Vehicle';
-                } else {
-                    console.error('Device select element not found');
-                }
-            } else {
-                console.error('Invalid data format received:', data);
             }
-        })
-        .catch(error => {
-            console.error("Error fetching Vehicles:", error);
+        }
+
+        function filterVehicles(searchText) {
+            if (!searchText) {
+                populateVehicleList(devices);
+                return;
+            }
+            const filteredDevices = devices.filter(device =>
+                device.name.toLowerCase().includes(searchText.toLowerCase())
+            );
+            populateVehicleList(filteredDevices);
+        }
+
+        function selectVehicle(deviceId, deviceName) {
+            selectedDeviceId = deviceId;
+            document.getElementById("deviceSelect").textContent = deviceName;
+            document.getElementById("deviceSelect").value = deviceId;
+            document.getElementById("deviceDropdown").style.display = "none";
+        }
+
+        function populateVehicleList(devicesList) {
+            const vehicleList = document.getElementById("vehicleList");
+            vehicleList.innerHTML = "";
+
+            if (devicesList.length === 0) {
+                const noResults = document.createElement("div");
+                noResults.className = "dropdown-item";
+                noResults.textContent = "No vehicles found";
+                vehicleList.appendChild(noResults);
+                return;
+            }
+
+            devicesList.forEach(device => {
+                const item = document.createElement("div");
+                item.className = "dropdown-item";
+                item.textContent = device.name;
+                item.onclick = () => selectVehicle(device.did, device.name);
+                vehicleList.appendChild(item);
+            });
+        }
+
+        // Add click outside handler
+        document.addEventListener("click", function (event) {
+            const dropdown = document.getElementById("deviceDropdown");
+            const deviceSelect = document.getElementById("deviceSelect");
+
+            if (!event.target.closest(".device-selector")) {
+                dropdown.style.display = "none";
+            }
         });
-}
+
+        function fetchDeviceData() {
+            const mid = localStorage.getItem("mid");
+            console.log("Fetching devices with mid:", mid);
+
+            fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Device data received:", data);
+
+                    if (Array.isArray(data)) {
+                        devices = data.map(item => ({
+                            name: item.dname || 'Unnamed Vehicle',
+                            did: item.did
+                        }));
+                        populateVehicleList(devices);
+
+                        const deviceSelect = document.getElementById('deviceSelect');
+                        if (deviceSelect) {
+                            deviceSelect.textContent = 'Select Vehicle';
+                        } else {
+                            console.error('Device select element not found');
+                        }
+                    } else {
+                        console.error('Invalid data format received:', data);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching Vehicles:", error);
+                });
+        }
 
         function generateReport() {
-    const startDate = document.getElementById('startDate').value;
-    const startTime = document.getElementById('startTime').value;
-    const endDate = document.getElementById('endDate').value;
-    const endTime = document.getElementById('endTime').value;
-    const interval = document.getElementById('timeInterval').value;
-    const withDetail = document.getElementById('detailLocation').checked;
+            const startDate = document.getElementById('startDate').value;
+            const startTime = document.getElementById('startTime').value;
+            const endDate = document.getElementById('endDate').value;
+            const endTime = document.getElementById('endTime').value;
+            const interval = document.getElementById('timeInterval').value;
+            const withDetail = document.getElementById('detailLocation').checked;
 
-    if (!selectedDeviceId) {
-        alert("Please select a vehicle");
-        return;
-    }
+            if (!selectedDeviceId) {
+                alert("Please select a vehicle");
+                return;
+            }
 
-    // Combine date and time
-    const fromdate = `${startDate} ${startTime}:00`;
-    const todate = `${endDate} ${endTime}:59`;
+            // Combine date and time
+            const fromdate = `${startDate} ${startTime}:00`;
+            const todate = `${endDate} ${endTime}:59`;
 
-    fetchHistoryReport(fromdate, todate, selectedDeviceId, interval, withDetail);
-}
+            fetchHistoryReport(fromdate, todate, selectedDeviceId, interval, withDetail);
+        }
 
         function fetchHistoryReport(fromdate, todate, did, interval, withDetail) {
-        const reportBody = document.getElementById('reportData');
+            const reportBody = document.getElementById('reportData');
             reportBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Loading...</td></tr>';
 
             // Format dates for API
@@ -277,21 +278,21 @@ function fetchDeviceData() {
         }
 
         function formatDateForAPI(dateStr) {
-    // Convert date string to format: YYYY-MM-DD HH:mm:ss
-    const date = new Date(dateStr);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
+            // Convert date string to format: YYYY-MM-DD HH:mm:ss
+            const date = new Date(dateStr);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
 
-    return encodeURIComponent(`${year}-${month}-${day} ${hours}:${minutes}:${seconds}`);
-}
+            return encodeURIComponent(`${year}-${month}-${day} ${hours}:${minutes}:${seconds}`);
+        }
 
         function displayReport(data) {
             const reportBody = document.getElementById('reportData');
-            
+
             if (!data || data.length === 0) {
                 reportBody.innerHTML = `
                     <tr>
@@ -303,7 +304,7 @@ function fetchDeviceData() {
 
 
             reportBody.innerHTML = data.map((item, index) =>
-            `
+                `
                 <tr>
                     <td>${index + 1}</td>
                     <td>${item.date || ''}</td>
@@ -356,105 +357,105 @@ function fetchDeviceData() {
         }
 
         function exportPDF() {
-    try {
-        // Create new jsPDF instance
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
+            try {
+                // Create new jsPDF instance
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
 
-        // Add title
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(20);
-        doc.text("History Report", doc.internal.pageSize.width / 2, 15, { align: 'center' });
+                // Add title
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(20);
+                doc.text("History Report", doc.internal.pageSize.width / 2, 15, { align: 'center' });
 
-        // Add date range
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        const startDate = document.getElementById('startDate').value;
-        const startTime = document.getElementById('startTime').value;
-        const endDate = document.getElementById('endDate').value;
-        const endTime = document.getElementById('endTime').value;
-        doc.text(`Report Period: ${startDate} ${startTime} to ${endDate} ${endTime}`, 15, 25);
+                // Add date range
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                const startDate = document.getElementById('startDate').value;
+                const startTime = document.getElementById('startTime').value;
+                const endDate = document.getElementById('endDate').value;
+                const endTime = document.getElementById('endTime').value;
+                doc.text(`Report Period: ${startDate} ${startTime} to ${endDate} ${endTime}`, 15, 25);
 
-        // Get vehicle name
-        const deviceSelect = document.getElementById('deviceSelect');
-        const vehicleName = deviceSelect.options[deviceSelect.selectedIndex]?.text || 'Unknown Vehicle';
-        doc.text(`Vehicle: ${vehicleName}`, 15, 30);
+                // Get vehicle name
+                const deviceSelect = document.getElementById('deviceSelect');
+                const vehicleName = deviceSelect.options[deviceSelect.selectedIndex]?.text || 'Unknown Vehicle';
+                doc.text(`Vehicle: ${vehicleName}`, 15, 30);
 
-        // Define table headers
-        const headers = [[
-            'Sr',
-            'Start Time',
-            'Speed (km/hr)',
-            'Location',
-            'Latitude,Longitude'
-        ]];
+                // Define table headers
+                const headers = [[
+                    'Sr',
+                    'Start Time',
+                    'Speed (km/hr)',
+                    'Location',
+                    'Latitude,Longitude'
+                ]];
 
-        // Get table data
-        const rows = document.querySelectorAll('#reportData tr');
-        const data = Array.from(rows).map(row => {
-            const cells = row.querySelectorAll('td');
-            return Array.from(cells).map(cell => cell.textContent.trim());
-        });
+                // Get table data
+                const rows = document.querySelectorAll('#reportData tr');
+                const data = Array.from(rows).map(row => {
+                    const cells = row.querySelectorAll('td');
+                    return Array.from(cells).map(cell => cell.textContent.trim());
+                });
 
-        // Add table
-        doc.autoTable({
-            head: headers,
-            body: data,
-            startY: 35,
-            theme: 'grid',
-            styles: {
-                fontSize: 7,
-                cellPadding: 2
-            },
-            headStyles: {
-                fillColor: [41, 128, 185],
-                textColor: 255,
-                fontSize: 8,
-                fontStyle: 'bold',
-                halign: 'center'
-            },
-            columnStyles: {
-                0: { cellWidth: 15 },  // Sr
-                1: { cellWidth: 35 },  // Start Time
-                2: { cellWidth: 25 },  // Speed
-                3: { cellWidth: 80 },  // Location
-                4: { cellWidth: 40 }   // Latitude,Longitude
-            },
-            didDrawPage: function(data) {
-                // Add footer
-                doc.setFontSize(8);
-                doc.setFont("helvetica", "italic");
-                
-                // Add timestamp
-                doc.text(
-                    `Generated on: ${new Date().toLocaleString()}`, 
-                    doc.internal.pageSize.width - 15, 
-                    doc.internal.pageSize.height - 10, 
-                    { align: 'right' }
-                );
-                
-                // Add page numbers
-                const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
-                const totalPages = doc.internal.getNumberOfPages();
-                doc.text(
-                    `Page ${pageNumber} of ${totalPages}`, 
-                    15, 
-                    doc.internal.pageSize.height - 10
-                );
+                // Add table
+                doc.autoTable({
+                    head: headers,
+                    body: data,
+                    startY: 35,
+                    theme: 'grid',
+                    styles: {
+                        fontSize: 7,
+                        cellPadding: 2
+                    },
+                    headStyles: {
+                        fillColor: [41, 128, 185],
+                        textColor: 255,
+                        fontSize: 8,
+                        fontStyle: 'bold',
+                        halign: 'center'
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 15 },  // Sr
+                        1: { cellWidth: 35 },  // Start Time
+                        2: { cellWidth: 25 },  // Speed
+                        3: { cellWidth: 80 },  // Location
+                        4: { cellWidth: 40 }   // Latitude,Longitude
+                    },
+                    didDrawPage: function (data) {
+                        // Add footer
+                        doc.setFontSize(8);
+                        doc.setFont("helvetica", "italic");
+
+                        // Add timestamp
+                        doc.text(
+                            `Generated on: ${new Date().toLocaleString()}`,
+                            doc.internal.pageSize.width - 15,
+                            doc.internal.pageSize.height - 10,
+                            { align: 'right' }
+                        );
+
+                        // Add page numbers
+                        const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
+                        const totalPages = doc.internal.getNumberOfPages();
+                        doc.text(
+                            `Page ${pageNumber} of ${totalPages}`,
+                            15,
+                            doc.internal.pageSize.height - 10
+                        );
+                    }
+                });
+
+                // Save the PDF
+                const now = new Date();
+                const dateStr = now.toLocaleDateString().replace(/\//g, '-');
+                const timeStr = now.toLocaleTimeString().replace(/:/g, '-');
+                doc.save(`history_report_${vehicleName}_${dateStr}_${timeStr}.pdf`);
+
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                alert(`Error generating PDF: ${error.message}\nPlease check the console for more details.`);
             }
-        });
-
-        // Save the PDF
-        const now = new Date();
-        const dateStr = now.toLocaleDateString().replace(/\//g, '-');
-        const timeStr = now.toLocaleTimeString().replace(/:/g, '-');
-        doc.save(`history_report_${vehicleName}_${dateStr}_${timeStr}.pdf`);
-
-    } catch (error) {
-        console.error('Error generating PDF:', error);
-        alert(`Error generating PDF: ${error.message}\nPlease check the console for more details.`);
-    }
-}
+        }
 
         function downloadFile(content, fileName, mimeType) {
             const blob = new Blob([content], { type: mimeType });
@@ -469,32 +470,32 @@ function fetchDeviceData() {
         }
 
         function saveReport() {
-    const data = {
-        startDate: document.getElementById('startDate').value,
-        startTime: document.getElementById('startTime').value,
-        endDate: document.getElementById('endDate').value,
-        endTime: document.getElementById('endTime').value,
-        device: document.getElementById('deviceSelect').value,
-        reportData: Array.from(document.querySelectorAll('#reportData tr')).map(row => {
-            const cells = row.querySelectorAll('td');
-            return Array.from(cells).map(cell => cell.textContent.trim());
-        })
-    };
-    
-    const jsonString = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    
-    link.href = url;
-    link.download = 'history_report.json';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-}
-        
+            const data = {
+                startDate: document.getElementById('startDate').value,
+                startTime: document.getElementById('startTime').value,
+                endDate: document.getElementById('endDate').value,
+                endTime: document.getElementById('endTime').value,
+                device: document.getElementById('deviceSelect').value,
+                reportData: Array.from(document.querySelectorAll('#reportData tr')).map(row => {
+                    const cells = row.querySelectorAll('td');
+                    return Array.from(cells).map(cell => cell.textContent.trim());
+                })
+            };
+
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+
+            link.href = url;
+            link.download = 'history_report.json';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
     </script>
 </body>
-</html>
 
+</html>
