@@ -23,6 +23,140 @@
 <!-- jsPDF Autotable for table support in PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 
+<!-- Add this in the head section of your dashboard.html -->
+<script type="module">
+  // Import Firebase modules
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
+
+  // Your Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyD4XUicGEssUiXciIiTAYfB3U8cUSGsoVQ",
+    authDomain: "https://krishtrack-1d350.firebaseio.com",
+    projectId: "krishtrack-1d350",
+    messagingSenderId: "655489206659",
+    appId: "1:655489206659:android:2cc151714018504edb4eb6"
+};
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  
+  const messaging = getMessaging(app);
+
+  // Function to get FCM token with retry
+  async function getFCMToken(registration, maxRetries = 3) {
+      
+          try {
+              const currentToken = await getToken(messaging, {
+                  vapidKey: 'BG3wOmHHCynfGS3zVVOGL6R9VcZU0tl-8cPXmu9xbPNySHtKOZXLhkIufs6DCOPJJdZ9oxlkZOa_gM3LWZQYg2Y',
+                  serviceWorkerRegistration: registration
+              });
+
+              if (currentToken) {
+                  console.log('FCM Token obtained:', currentToken);
+                  return currentToken;
+              } else {
+                  console.log('No token received from Firebase');
+              }
+          } catch (error) {
+              console.error(`Error getting token (attempt ${attempt}):`, error);
+          }
+      
+      return null;
+  }
+
+  // Function to initialize FCM
+  async function initializeFCM() {
+      console.log('Requesting notification permission...');
+      try {
+          const permission = await Notification.requestPermission();
+          
+          if (permission === 'granted') {
+              // Register and activate service worker
+              const registration = await registerServiceWorker();
+              
+              // Get FCM token with retry logic
+              const token = await getFCMToken(registration);
+              
+              if (token) {
+                  // await sendTokenToBackend(token);
+              }
+          } else {
+              console.log('Notification permission denied');
+          }
+      } catch (error) {
+          console.error('Error in initializeFCM:', error);
+      }
+  }
+
+  // Function to register service worker
+  async function registerServiceWorker() {
+      if ('serviceWorker' in navigator) {
+          try {
+              // Unregister any existing service workers first
+              const existingRegistrations = await navigator.serviceWorker.getRegistrations();
+              for (let registration of existingRegistrations) {
+                  await registration.unregister();
+              }
+              
+              // Register new service worker
+              const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                  scope: '/'
+              });
+              console.log('Service Worker registered successfully');
+              console.log('Service Worker scope:', registration.scope);
+              
+              // Wait for the service worker to be ready
+              await navigator.serviceWorker.ready;
+              console.log('Service Worker is now active');
+              
+              return registration;
+          } catch (error) {
+              console.error('Service Worker registration failed:', error);
+              throw error;
+          }
+      }
+      throw new Error('Service workers are not supported');
+  }
+
+  // Function to send token to backend
+  // async function sendTokenToBackend(token) {
+  //     console.log('Attempting to send token to backend...');
+  //     try {
+  //         const response = await fetch('your-backend-url/fcm-token', {
+  //             method: 'POST',
+  //             headers: {
+  //                 'Content-Type': 'application/json',
+  //             },
+  //             body: JSON.stringify({ token })
+  //         });
+  //         console.log('Backend response:', response.ok);
+  //         return response.ok;
+  //     } catch (error) {
+  //         console.error('Error sending token to backend:', error);
+  //         return false;
+  //     }
+  // }
+
+  // Handle foreground messages
+  onMessage(messaging, (payload) => {
+      console.log('Message received:', payload);
+      const { title, body, icon } = payload.notification;
+      
+      // Show notification
+      new Notification(title, {
+          body,
+          icon
+      });
+  });
+
+  // Initialize FCM when page loads
+  if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeFCM);
+  } else {
+      initializeFCM();
+  }
+</script>
+
 
     <style>
       /* General reset and box-sizing */
