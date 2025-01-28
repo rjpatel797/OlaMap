@@ -2109,7 +2109,7 @@ function initializeMarkers() {
                               <b>Speed:</b> ${device.speed} km/h <br />
                             </div>
                             <div style="display: flex; align-items: center; gap: 5px;">
-                              <b>Hold Time:</b> ${device.holdtime} <br />
+                              <b>Hold Time:</b> ${formatHoldTime(parseInt(device.holdtime))} <br />
                             </div>
                             <div style="display: flex; align-items: center; gap: 5px;">
                               <b>Status:</b> <span class="status-indicator-status ${device.status == "Online" ? "status-on" : "status-off"}">${device.status}</span> <br />
