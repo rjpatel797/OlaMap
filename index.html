@@ -207,31 +207,40 @@
 
       try {
         // Create URL parameters the correct way
-        const params = new URLSearchParams({
-          opr: 'andro_login',
-          uid: username,
-          passwd: password,
-          ip: ip
-        });
+        // const params = new URLSearchParams({
+        //   opr: 'andro_login',
+        //   uid: username,
+        //   passwd: password,
+        //   ip: ip
+        // });
 
-        const response = await fetch(`${API}${params.toString()}`, {
-          method: 'GET', // Changed to GET if your API expects GET requests
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          }
-        });
+        const body = {
+          name : username,
+          password : password
+        }
+
+        const response = await fetch(`http://144.76.96.154:8484/auth/login`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    name: username,
+    passWord: password
+  })
+});
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json(); // Use text() instead of json() if API returns plain text
-        console.log("Response data:", data[0].status);
+        console.log("Response data:", data.status);
 
-        if (data[0].status === "true") {
-          localStorage.setItem("mid", data[0].data.managerid);
-          localStorage.setItem("keyType", data[0].data.keyType);
-          localStorage.setItem("key", data[0].data.key);
+        if (data.status === true) {
+          localStorage.setItem("token", data.data.token);
+          localStorage.setItem("username", data.data.username);
+          // localStorage.setItem("key", data[0].data.key);
           window.location.href = "/dashboard/dashboardliveola.html";
         } else {
           document.getElementById("uid").value = "";
