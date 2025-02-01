@@ -55,7 +55,7 @@
         document.head.appendChild(script);
 
         function initMap() {
-            if (!localStorage.getItem("mid")) {
+            if (!localStorage.getItem("token")) {
                 window.location.href = "index.html";
                 return;
             }
@@ -317,7 +317,7 @@
 
         // Check authentication on load
         window.addEventListener('load', () => {
-            if (!localStorage.getItem("mid")) {
+            if (!localStorage.getItem("token")) {
                 window.location.href = "index.html";
             }
         });

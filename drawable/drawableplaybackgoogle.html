@@ -176,7 +176,11 @@
         return Promise.reject("No mid found");
       }
 
-      return fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+      return fetch(`${API}/api/devices/getDeviceListByMid`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
         .then(response => {
           if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
           return response.json();

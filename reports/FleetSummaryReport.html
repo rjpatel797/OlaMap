@@ -318,7 +318,11 @@
 
         function fetchDeviceData() {
             const mid = localStorage.getItem("mid");
-            fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+            fetch(`${API}/api/devices/getDeviceListByMid`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
                 .then(response => response.json())
                 .then(data => {
                     console.log("Devices data:", data); // Debug log

@@ -135,7 +135,7 @@
         }
 
         window.addEventListener('load', function () {
-            if (!localStorage.getItem("mid")) {
+            if (!localStorage.getItem("token")) {
                 window.location.href = "index.html";
                 return;
             }
@@ -434,7 +434,7 @@
         // Load navbar
         $(document).ready(() => {
             $("#navbar-container").load("../navbarola.html");
-            if (!localStorage.getItem("mid")) {
+            if (!localStorage.getItem("token")) {
                 window.location.href = "../index.html";
             }
         });
