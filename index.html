@@ -219,14 +219,15 @@
           password : password
         }
 
-        const response = await fetch(`http://144.76.96.154:8484/auth/login`, {
+        const response = await fetch(`${API}/auth/login`, {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
   },
   body: JSON.stringify({
     name: username,
-    passWord: password
+    password: password,
+    webtoken: "1234567890"
   })
 });
 

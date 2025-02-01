@@ -505,10 +505,14 @@
 
     function fetchDeviceData() {
       const mid = localStorage.getItem("mid");
-      fetch(`${API}opr=getVehileByMid&mid=${mid}`)
+      fetch(`${API}/api/devices/getVehicleByMid`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
         .then((response) => response.json())
         .then((data) => {
-          devices = data.map((item) => {
+          devices = data.data.map((item) => {
             const coordinates = item.latlang
               ? item.latlang
                 .split(",")
