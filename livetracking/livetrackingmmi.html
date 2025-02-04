@@ -217,7 +217,7 @@
       })
                         .then((response) => response.json())
                         .then((data) => {
-                            devices = data.map((item) => ({
+                            devices = data.data.map((item) => ({
                                 name: item.dname,
                                 did: item.did,
                             }));
@@ -267,12 +267,16 @@
                 }
 
                 function fetchVehicleLocation(did) {
-                    fetch(`${API}opr=getVehicleBydeviceid&did=${did}`)
+                    fetch(`${API}/api/devices/getVehicleBydeviceid?did=${did}`, {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                        })
                         .then((response) => response.json())
                         .then((data) => {
                             if (!isTracking) return;
-                            updateVehicleMarker(data);
-                            updateVehicleInfo(data[0]);
+                            updateVehicleMarker(data.data);
+                            updateVehicleInfo(data.data);
                         })
                         .catch((error) => {
                             console.error("Error fetching vehicle location:", error);
@@ -290,7 +294,7 @@
                 function updateVehicleMarker(vehicleData) {
                     if (!vehicleData || vehicleData.length === 0) return;
 
-                    const data = vehicleData[0];
+                    const data = vehicleData;
                     if (!data.latlang) {
                         console.error('No position data available');
                         return;
@@ -499,7 +503,7 @@
                 function showVehicleInfo(vehicleData, showPopup = false) {
                     if (!vehicleData || vehicleData.length === 0) return;
 
-                    const data = vehicleData[0];
+                    const data = vehicleData;
 
                     if (showPopup && (!isPopupOpen || currentPopupDid !== data.did)) {
                         popupContent.innerHTML = generatePopupContent(data);

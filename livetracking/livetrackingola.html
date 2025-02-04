@@ -246,13 +246,17 @@
         }
 
         function fetchVehicleLocation(did) {
-          fetch(`${API}opr=getVehicleBydeviceid&did=${did}`)
+          fetch(`${API}/api/devices/getVehicleBydeviceid?did=${did}`, {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            })
             .then((response) => response.json())
             .then((data) => {
               if (!isTracking) return;
-              updateVehicleMarker(data);
-              showVehicleInfo(data);
-              updateVehicleInfo(data[0]); // Add this line
+              updateVehicleMarker(data.data);
+              showVehicleInfo(data.data);
+              updateVehicleInfo(data.data); // Add this line
             })
             .catch((error) => {
               console.error("Error fetching vehicle location:", error);
@@ -270,7 +274,7 @@
         function updateVehicleMarker(vehicleData) {
           if (!vehicleData || vehicleData.length === 0) return;
 
-          const data = vehicleData[0];
+          const data = vehicleData;
           const coordinates = data.latlang
             ? data.latlang.split(",").map(coord => parseFloat(coord)).reverse()
             : [10, 10];
@@ -497,7 +501,7 @@
         function showVehicleInfo(vehicleData, showPopup = false) {
           if (!vehicleData || vehicleData.length === 0) return;
 
-          const data = vehicleData[0]; // Get first vehicle data
+          const data = vehicleData; // Get first vehicle data
 
           popupContent.innerHTML = `
                 <div style="border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 5px;">
