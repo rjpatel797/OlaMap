@@ -438,11 +438,14 @@
                 console.error("No mid found");
                 return;
             }
-
             try {
-                const response = await fetch(`${API}opr=getVehileByMid&mid=${mid}`);
+                const response = await fetch(`${API}/api/devices/getVehicleByMid`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                })
                 const data = await response.json();
-                devices = data.map(item => ({
+                devices = data.data.map(item => ({
                     name: item.dname,
                     deviceId: item.did,
                     coordinates: item.latlang ?
