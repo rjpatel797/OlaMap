@@ -148,19 +148,6 @@
     }
 
 
-    function loadMapScript() {
-      const key = localStorage.getItem("key");
-      if (!key) {
-        console.error("No API key found");
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = `https://apis.mappls.com/advancedmaps/api/${key}/map_sdk?layer=vector&v=3.0&callback=initMap`;
-      script.defer = true;
-      script.async = true;
-      document.head.appendChild(script);
-    }
 
     // const olaMaps = new OlaMapsSDK.OlaMaps({
     //   apiKey: "0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9",
@@ -411,15 +398,19 @@
 
     async function fetchDeviceData() {
       const mid = localStorage.getItem("mid");
-      if (!mid) {
-        console.error("No mid found");
-        return;
-      }
+      // if (!mid) {
+      //   console.error("No mid found");
+      //   return;
+      // }
 
       try {
-        const response = await fetch(`${API}opr=getVehileByMid&mid=${mid}`);
+        const response = await fetch(`${API}/api/devices/getVehicleByMid`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
         const data = await response.json();
-        devices = data.map(item => ({
+        devices = data.data.map(item => ({
           name: item.dname,
           deviceId: item.did,
           coordinates: item.latlang ?
@@ -1221,7 +1212,6 @@
       }
 
       $("#navbar-container").load("../navbarola.html");
-      loadMapScript();
 
       // Event listeners
       $("#searchInput").on("input", filterDeviceList);
