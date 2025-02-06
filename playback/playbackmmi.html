@@ -184,10 +184,11 @@
                 //console.log("Navbar loaded successfully!");
             });
 
-            const mid = localStorage.getItem("mid");
+            // const mid = localStorage.getItem("mid");
             //console.log("mid:::" + mid);
 
             loadMapScript();
+            setupDateValidation();
         });
 
         // Load mappls SDK
@@ -204,7 +205,7 @@
             script.async = true;
 
             script.onload = function () {
-                //console.log("mappls SDK loaded successfully.");
+                console.log("mappls SDK loaded successfully.");
                 // No need to call initMap1 here as it's invoked by the callback
                 fetchDeviceData();
             };
@@ -303,7 +304,7 @@
       })
                 .then((response) => response.json())
                 .then((data) => {
-                    devices = data.map((item) => ({
+                    devices = data.data.map((item) => ({
                         name: item.dname,
                         did: item.did,
                     }));
@@ -400,39 +401,49 @@
             }
 
             return fetch(
-                `${API}opr=getplaybacktest&sdate=${formattedFromDateTime}&edate=${formattedToDateTime}&did=${did}`
-            )
+                `${API}/api/devices/playbackdata?sdate=${formattedFromDateTime}&edate=${formattedToDateTime}&did=${did}`, {
+                headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
                 .then((response) => response.json())
                 .then((data) => {
-                    if (Array.isArray(data)) {
-                        playbackData = data
-                            .map((item) => {
-                                const lng = parseFloat(item.langitude);
-                                const lat = parseFloat(item.latitude);
-                                const angle = parseFloat(item.angle);
-                                return !isNaN(lng) && !isNaN(lat) && !isNaN(angle)
-                                    ? {
-                                        coordinates: [lng, lat],
-                                        angle: angle,
-                                        deviceId: item.deviceId,
-                                        speed: item.speed,
-                                        gps: item.digital_2,
-                                        engine: item.digital_2,
-                                        date: item.DeviceDate,
-                                    }
-                                    : null;
-                            })
-                            .filter(Boolean);
-                        fetching = false;
-                        updateStartButtonState();
-                        // addStartEndMarkers();
-                        console.log("Playback Data Loaded:", playbackData);
+                    if(data.status !== false) {
+                            if (Array.isArray(data.data)) {
+                            playbackData = data.data
+                                .map((item) => {
+                                    const lng = parseFloat(item.Langitude);
+                                    const lat = parseFloat(item.latitude);
+                                    const angle = parseFloat(item.angle);
+                                    return !isNaN(lng) && !isNaN(lat) && !isNaN(angle)
+                                        ? {
+                                            coordinates: [lng, lat],
+                                            angle: angle,
+                                            deviceId: item.deviceid,
+                                            speed: item.speed,
+                                            gps: item.digital_2,
+                                            engine: item.digital_2,
+                                            date: item.ddate,
+                                        }
+                                        : null;
+                                })
+                                .filter(Boolean);
+                            fetching = false;
+                            updateStartButtonState();
+                            // addStartEndMarkers();
+                            console.log("Playback Data Loaded:", playbackData);
+                        } else {
+                            fetching = false;
+                            updateStartButtonState();
+                            // addStartEndMarkers();
+                            console.error("Unexpected data format: response is not an array");
+                        }
                     } else {
+                        alert(data.message);
                         fetching = false;
                         updateStartButtonState();
-                        // addStartEndMarkers();
-                        console.error("Unexpected data format: response is not an array");
                     }
+                    
                 })
                 .catch((error) => {
                     fetching = false;
@@ -1931,21 +1942,6 @@
                 // Add a timeout to prevent infinite checking
                 setTimeout(() => clearInterval(checkVehicleList), 10000);
             }
-        });
-
-        $(document).ready(function () {
-            // Load navbar from external file
-            $("#navbar-container").load("navbarola.html", function () {
-                console.log("Navbar loaded successfully!");
-            });
-
-            // Check if 'mid' is available in localStorage otherwise ri-direct login page
-            if (!localStorage.getItem("token")) {
-                // Redirect to login page if 'mid' is not found
-                window.location.href = "../index.html";
-            }
-
-            setupDateValidation();
         });
 
         // Event listeners for playback controls

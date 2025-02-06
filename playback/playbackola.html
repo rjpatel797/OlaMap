@@ -354,36 +354,47 @@
       }
 
       return fetch(
-        `${API}opr=getplaybacktest&sdate=${formattedFromDateTime}&edate=${formattedToDateTime}&did=${did}`
-      )
+        `${API}/api/devices/playbackdata?sdate=${formattedFromDateTime}&edate=${formattedToDateTime}&did=${did}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
         .then((response) => response.json())
         .then((data) => {
-          if (Array.isArray(data)) {
-            playbackData = data
-              .map((item) => {
-                const lng = parseFloat(item.langitude);
-                const lat = parseFloat(item.latitude);
-                const angle = parseFloat(item.angle);
-                return !isNaN(lng) && !isNaN(lat) && !isNaN(angle)
-                  ? {
-                    coordinates: [lng, lat],
-                    angle: angle,
-                    deviceId: item.deviceId,
-                    speed: item.speed,
-                    gps: item.digital_2,
-                    engine: item.digital_2,
-                    date: item.DeviceDate,
-                  }
-                  : null;
-              })
-              .filter(Boolean);
-            fetching = false;
-            updateStartButtonState();
-            console.log("Playback Data Loaded:", playbackData);
+          if(data.status !== false) {
+              if (Array.isArray(data.data)) {
+                  playbackData = data.data
+                  .map((item) => {
+                      const lng = parseFloat(item.Langitude);
+                      const lat = parseFloat(item.latitude);
+                      const angle = parseFloat(item.angle);
+                      return !isNaN(lng) && !isNaN(lat) && !isNaN(angle)
+                        ? {
+                        coordinates: [lng, lat],
+                        angle: angle,
+                        deviceId: item.deviceid,
+                        speed: item.speed,
+                        gps: item.digital_2,
+                        engine: item.digital_2,
+                        date: item.ddate,
+                        }
+                        : null;
+                  })
+                  .filter(Boolean);
+                  fetching = false;
+                  updateStartButtonState();
+                  // addStartEndMarkers();
+                  console.log("Playback Data Loaded:", playbackData);
+              } else {
+              fetching = false;
+              updateStartButtonState();
+              // addStartEndMarkers();
+              console.error("Unexpected data format: response is not an array");
+              }
           } else {
-            fetching = false;
-            updateStartButtonState();
-            console.error("Unexpected data format: response is not an array");
+              alert(data.message);
+              fetching = false;
+              updateStartButtonState();
           }
         })
         .catch((error) => {
