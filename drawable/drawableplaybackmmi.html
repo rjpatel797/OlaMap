@@ -202,7 +202,7 @@
     }
 
     function formatTime(timeString) {
-      return timeString.replace(':', '') + '00';
+      return timeString + ':00';
     }
 
     // Vehicle list handling functions
@@ -287,7 +287,7 @@
     }
 
     function formatTime(timeString) {
-      return timeString.replace(':', '') + '00';
+      return timeString + ':00';
     }
 
     function fetchPlaybackData(did) {
@@ -298,8 +298,8 @@
       const fromTime = document.getElementById("fromTime").value;
       const toTime = document.getElementById("toTime").value;
 
-      const formattedFromDateTime = `${formatDate(fromDate)}${formatTime(fromTime)}`;
-      const formattedToDateTime = `${formatDate(toDate)}${formatTime(toTime)}`;
+      const formattedFromDateTime = `${formatDate(fromDate)} ${formatTime(fromTime)}`;
+      const formattedToDateTime = `${formatDate(toDate)} ${formatTime(toTime)}`;
 
       console.log("Fetching data for:", {
         did: did,
@@ -319,12 +319,12 @@
             throw new Error("No data available for the selected period");
           }
 
-          playbackData = data.data.reverse().map(item => ({
-            coordinates: [Number(item.latitude), Number(item.Langitude)],
+          playbackData = data.data.map(item => ({
+            coordinates: [Number(item.latitude), Number(item.langitude)],
             angle: Number(item.angle) || 0,
             speed: Number(item.speed) || 0,
-            deviceId: String(item.deviceid || ''),
-            date: item.ddate,
+            deviceId: String(item.deviceId || ''),
+            date: item.DeviceDate,
           }));
 
           pathCoordinates = playbackData.map(item => item.coordinates);

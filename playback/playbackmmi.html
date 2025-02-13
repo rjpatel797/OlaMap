@@ -361,7 +361,7 @@
         }
 
         function formatTime(timeString) {
-            return timeString.replace(":", "") + "00";
+            return timeString + ":00";
         }
 
         function fetchPlaybackData(did) {
@@ -385,10 +385,10 @@
             }
 
             // Format dates to match your API requirement
-            const formattedFromDateTime = `${formatDate(fromDate)}${formatTime(
+            const formattedFromDateTime = `${formatDate(fromDate)} ${formatTime(
                 fromTime
             )}`;
-            const formattedToDateTime = `${formatDate(toDate)}${formatTime(
+            const formattedToDateTime = `${formatDate(toDate)} ${formatTime(
                 toTime
             )}`;
 
@@ -410,20 +410,20 @@
                 .then((data) => {
                     if(data.status !== false) {
                             if (Array.isArray(data.data)) {
-                            playbackData = data.data.reverse()
+                            playbackData = data.data
                                 .map((item) => {
-                                    const lng = parseFloat(item.Langitude);
+                                    const lng = parseFloat(item.langitude);
                                     const lat = parseFloat(item.latitude);
                                     const angle = parseFloat(item.angle);
                                     return !isNaN(lng) && !isNaN(lat) && !isNaN(angle)
                                         ? {
                                             coordinates: [lng, lat],
                                             angle: angle,
-                                            deviceId: item.deviceid,
+                                            deviceId: item.deviceId,
                                             speed: item.speed,
                                             gps: item.digital_2,
                                             engine: item.digital_2,
-                                            date: item.ddate,
+                                            date: item.DeviceDate,
                                         }
                                         : null;
                                 })

@@ -431,7 +431,7 @@
     // Rest of your JavaScript functions (fetchPlaybackData, createPopupContent, etc.)
     // [Previous JavaScript code for playback controls and functionality remains the same]
     function formatTime(timeString) {
-      return timeString.replace(':', '') + '00';
+      return timeString + ':00';
     }
     // Function to fetch playback data from the API
     function fetchPlaybackData(did) {
@@ -450,8 +450,8 @@
         return Promise.reject("Date selection required");
       }
 
-      const formattedFromDateTime = `${formatDate(fromDate)}${formatTime(fromTime)}`;
-      const formattedToDateTime = `${formatDate(toDate)}${formatTime(toTime)}`;
+      const formattedFromDateTime = `${formatDate(fromDate)} ${formatTime(fromTime)}`;
+      const formattedToDateTime = `${formatDate(toDate)} ${formatTime(toTime)}`;
 
       console.log(
         `Fetching data for Vehicle ${did} from ${formattedFromDateTime} to ${formattedToDateTime}`
@@ -474,9 +474,9 @@
           pathCoordinates = [];
 
           // Process and validate data
-          playbackData = data.data.reverse()
+          playbackData = data.data
             .map((item) => {
-              const lng = Number(item.Langitude);
+              const lng = Number(item.langitude);
               const lat = Number(item.latitude);
               // Ensure angle is a number and normalize it to 0-360 range
               let angle = Number(item.angle) || 0;
@@ -490,11 +490,11 @@
               return {
                 coordinates: [lng, lat],
                 angle: angle, // Use normalized angle
-                deviceId: String(item.deviceid),
+                deviceId: String(item.deviceId),
                 speed: Number(item.speed) || 0,
                 gps: item.digital_2,
                 engine: item.digital_2,
-                date: item.ddate,
+                date: item.DeviceDate,
               };
             })
             .filter(Boolean);

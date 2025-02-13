@@ -265,7 +265,7 @@
     }
 
     function formatTime(timeString) {
-      return timeString.replace(':', '') + '00';
+      return timeString + ':00';
     }
 
     // Validate coordinates
@@ -289,8 +289,8 @@
         return Promise.reject("Date selection required");
       }
 
-      const formattedFromDateTime = `${formatDate(fromDate)}${formatTime(fromTime)}`;
-      const formattedToDateTime = `${formatDate(toDate)}${formatTime(toTime)}`;
+      const formattedFromDateTime = `${formatDate(fromDate)} ${formatTime(fromTime)}`;
+      const formattedToDateTime = `${formatDate(toDate)} ${formatTime(toTime)}`;
 
       console.log('Fetching data with params:', {
         did,
@@ -323,10 +323,10 @@
             console.log('Sample data item:', data[0]);
           }
 
-          playbackData = data.data.reverse()
+          playbackData = data.data
             .map((item, index) => {
               // Convert and validate coordinates
-              const lng = Number(item.Langitude);
+              const lng = Number(item.langitude);
               const lat = Number(item.latitude);
               const angle = ((Number(item.angle) || 0) % 360 + 360) % 360;
 
@@ -342,11 +342,11 @@
               return {
                 position: { lat, lng },
                 angle: angle,
-                deviceId: String(item.deviceid),
+                deviceId: String(item.deviceId),
                 speed: Number(item.speed) || 0,
                 gps: item.digital_2,
                 engine: item.digital_2,
-                date: item.ddate
+                date: item.DeviceDate
               };
             })
             .filter(Boolean);
