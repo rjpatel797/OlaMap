@@ -99,7 +99,7 @@
 
             // Check if 'mid' is available in localStorage otherwise ri-direct login page
 
-            if (!localStorage.getItem('mid')) {
+            if (!localStorage.getItem('token')) {
                 // Redirect to login page if 'mid' is not found
                 window.location.href = '../index.html';
             }
@@ -326,7 +326,7 @@
                 .then(response => response.json())
                 .then(data => {
                     console.log("Devices data:", data); // Debug log
-                    devices = data.map(item => ({
+                    devices = data.data.map(item => ({
                         name: item.dname,
                         did: item.did
                     }));
@@ -486,13 +486,17 @@
                 </tr>
             `;
 
-            fetch(`${API}opr=fleetsummaryreport&fromdate=${fromdate}&todate=${todate}&did=${did}`)
+            fetch(`${API}/api/devices/fleetSummary?fromdate=${fromdate}&todate=${todate}&did=${did}`, {
+                headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
                 .then(response => response.json())
                 .then(data => {
                     console.log("Raw Report Data:", data);
 
-                    if (Array.isArray(data)) {
-                        const formattedData = data.map(item => ({
+                    if (Array.isArray(data.data)) {
+                        const formattedData = data.data.map(item => ({
                             deviceGroup: item.deviceGroup, // or any default group
                             devicename: item.devicename || 'undefined',
                             distance: item.distance || item.mileage || 0,
