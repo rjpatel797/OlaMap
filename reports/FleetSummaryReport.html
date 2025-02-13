@@ -486,7 +486,7 @@
                 </tr>
             `;
 
-            fetch(`${API}/api/devices/fleetSummary?fromdate=${fromdate}&todate=${todate}&did=${did}`, {
+            fetch(`${API}/api/devices/fleetSummary?fromdate=${fromdate}:00&todate=${todate}:59&did=${did}`, {
                 headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
