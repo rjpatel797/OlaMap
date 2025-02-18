@@ -116,7 +116,7 @@
         $(document).ready(function () {
 
             // Check if 'mid' is available in localStorage otherwise ri-direct login page
-            if (!localStorage.getItem('mid')) {
+            if (!localStorage.getItem('token')) {
                 // Redirect to login page if 'mid' is not found
                 window.location.href = '../index.html';
             }
@@ -388,21 +388,23 @@
         });
 
         function fetchDeviceData() {
-            const mid = localStorage.getItem("mid");
-            console.log("Fetching vehicle with mid:", mid);
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.error("No token found in localStorage");
+                return;
+            }
 
-            fetch(`${API}/api/devices/getDeviceListByMid`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+            return fetch(`${API}/api/devices/getDeviceListByMid`, {
+                headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
                 .then(response => response.json())
                 .then(data => {
-                    console.log("vehicle data received:", data);
 
-                    if (Array.isArray(data)) {
+                    if (Array.isArray(data.data)) {
                         // Map the devices array
-                        devices = data.map(item => ({
+                        devices = data.data.map(item => ({
                             name: item.dname || 'Unnamed vehicle',
                             did: item.did
                         }));
@@ -522,7 +524,7 @@
             const hours = String(date.getHours()).padStart(2, '0');
             const minutes = String(date.getMinutes()).padStart(2, '0');
 
-            return `${year}-${month}-${day} ${hours}:${minutes}`;
+            return `${year}-${month}-${day} ${hours}:${minutes}:00`;
         }
 
         function fetchReportData(fromdate, todate, did, mintrip) {
@@ -536,10 +538,12 @@
                 </tr>
             `;
 
-            // Construct the URL
-            const url = `${API}opr=gettripreport&fromdate=${fromdate}&todate=${todate}&did=${did}&mintrip=${mintrip}&bypoi=false`;
-
-            fetch(url)
+            
+            fetch(`${API}/api/devices/getTripReport?fromdate=${fromdate}&todate=${todate}&did=${did}&mintrip=${mintrip}&bypoi=false`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
                 .then(response => response.text())
                 .then(text => {
                     // Fix the date format issues in the response
@@ -547,10 +551,9 @@
 
                     try {
                         const data = JSON.parse(fixedText);
-                        console.log("Parsed Report Data:", data);
 
-                        if (Array.isArray(data)) {
-                            const formattedData = data.map(item => formatReportItem(item));
+                        if (Array.isArray(data.data)) {
+                            const formattedData = data.data.map(item => formatReportItem(item));
                             displayReportData(formattedData);
                         } else if (data && typeof data === 'object') {
                             const formattedData = [formatReportItem(data)];
@@ -580,32 +583,40 @@
             const formatDate = (dateStr) => {
                 try {
                     const date = new Date(dateStr);
-                    return date.toLocaleString();
+                    const year = date.getFullYear();
+                    const month = (1 + date.getMonth()).toString().padStart(2, '0');
+                    const day = date.getDate().toString().padStart(2, '0');
+                    const hours = date.getHours().toString().padStart(2, '0');
+                    const minutes = date.getMinutes().toString().padStart(2, '0');
+                    const seconds = date.getSeconds().toString().padStart(2, '0');
+                    return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
                 } catch (e) {
                     return dateStr;
                 }
             };
 
             // Calculate duration in minutes
-            const calculateDuration = (start, end) => {
+            const calculateDuration = (durationInMilliseconds) => {
                 try {
-                    const startTime = new Date(start).getTime();
-                    const endTime = new Date(end).getTime();
-                    return Math.round((endTime - startTime) / (1000 * 60)); // Convert to minutes
+                    const totalSeconds = Math.floor(durationInMilliseconds / 1000);
+                    const hours = Math.floor(totalSeconds / 3600);
+                    const minutes = Math.floor((totalSeconds % 3600) / 60);
+                    const seconds = totalSeconds % 60;
+                    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                 } catch (e) {
-                    return 0;
+                    return "00:00:00";
                 }
             };
 
             return {
-                deviceName: item.dname || 'undefined',
-                fromLocation: item.frmloc || 'Unknown',
-                toLocation: item.toloc || 'Unknown',
-                startTime: formatDate(item.frmdate),
-                endTime: formatDate(item.todate),
+                deviceName: item.deviceName || 'undefined',
+                fromLocation: item.startLocation || 'Unknown',
+                toLocation: item.endLocation || 'Unknown',
+                startTime: formatDate(item.fromDate),
+                endTime: formatDate(item.toDate),
                 distance: parseFloat(item.odometer || 0).toFixed(2),
                 mileage: parseFloat(item.milage || 0).toFixed(1),
-                duration: calculateDuration(item.frmdate, item.todate),
+                duration: calculateDuration(item.tripDuration),
                 holdTime: Math.round((item.hold || 0) / 1000) // Convert milliseconds to seconds
             };
         }
@@ -631,7 +642,7 @@
                     <td>${item.fromLocation}</td>
                     <td>${item.toLocation}</td>
                     <td>${item.distance} km</td>
-                    <td>${item.duration} mins</td>
+                    <td>${item.duration}</td>
                     <td>${item.mileage} km/l</td>
                 </tr>
             `).join('');
