@@ -903,7 +903,7 @@
                 return;
             }
 
-            let url = '';
+            let data;
 
             try {
                 if (currentShape.type === 'circle') {
@@ -915,7 +915,12 @@
                     const lng = currentShape.center.lng;
                     const radius = currentShape.radius;
 
-                    url = `${API}opr=savefence&fvalue=${lat},${lng},${radius}&fname=${encodeURIComponent(name)}&ftype=circle&mid=${encodeURIComponent(mid)}`;
+                    data = {
+                        fenceValue: `${lat},${lng},${radius}`,
+                        fenceName: name,
+                        fenceType: 'circle',
+                    };
+                
                 } else if (currentShape.type === 'polygon') {
                     if (!currentShape.coordinates || currentShape.coordinates.length < 3) {
                         console.error('Invalid polygon data');
@@ -949,13 +954,24 @@
                     // Create coordinate pairs
                     const coordPairs = closedCoords.map(c => `${c[0]},${c[1]}`).join(',');
 
-                    url = `${API}opr=savefence&fvalue=${coordPairs}&fname=${encodeURIComponent(name)}&ftype=polygon&mid=${encodeURIComponent(mid)}`;
+                    data = {
+                        fenceValue: coordPairs,
+                        fenceName: name,
+                        fenceType: 'polygon',
+                    };
                 }
 
-                fetch(url)
+                fetch(`${API}/api/devices/saveFence`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(data)
+                })
                     .then(response => response.json())
                     .then(data => {
-                        if (data[0].msg === "0") {
+                        if (data.status === true) {
                             // Complete cleanup after successful save
                             cleanupAllDrawings();
                             document.getElementById('namePopup').classList.remove('active');

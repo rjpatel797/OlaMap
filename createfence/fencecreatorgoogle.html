@@ -198,7 +198,7 @@
                 return;
             }
 
-            let url = '';
+            let data;
 
             if (currentShape instanceof google.maps.Circle) {
                 // Circle shape handling remains the same
@@ -207,7 +207,11 @@
                 const lng = center.lng();
                 const radius = currentShape.getRadius();
 
-                url = `${API}opr=savefence&fvalue=${lat},${lng},${radius}&fname=${encodeURIComponent(name)}&ftype=circle&mid=${encodeURIComponent(mid)}`;
+                data = {
+                    fenceValue: `${lat},${lng},${radius}`,
+                    fenceName: name,
+                    fenceType: 'circle',
+                };
             } else if (currentShape instanceof google.maps.Polygon) {
                 // Modified polygon shape handling
                 const path = currentShape.getPath();
@@ -224,16 +228,28 @@
 
                 const coordPairs = coords.join(',');
 
-                url = `${API}opr=savefence&fvalue=${coordPairs}&fname=${encodeURIComponent(name)}&ftype=polygon&mid=${encodeURIComponent(mid)}`;
+                data = {
+                    fenceValue: coordPairs,
+                    fenceName: name,
+                    fenceType: 'polygon',
+                };
+
             } else {
                 console.error('Invalid shape type');
                 return;
             }
 
-            fetch(url)
+            fetch(`${API}/api/devices/saveFence`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(data)
+            })
                 .then(response => response.json())
                 .then(data => {
-                    if (data[0].msg === "0") {
+                    if (data.status === true) {
                         console.log('Fence saved successfully');
                         alert("Successfully added the fence.");
                         cancelFence();

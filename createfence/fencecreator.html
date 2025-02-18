@@ -435,7 +435,7 @@
                 return;
             }
 
-            let url = '';
+            let data;
 
             if (currentDrawingMode === 'circle') {
                 // Circle shape: currentShape = { center: [lng, lat], radius: radiusInMeters }
@@ -444,8 +444,11 @@
                 const radius = currentShape.radius;
 
                 // Construct URL for circle fence
-                // &fvalue=lat,long,radius
-                url = `${API}opr=savefence&fvalue=${lat},${lng},${radius}&fname=${encodeURIComponent(name)}&ftype=circle&mid=${encodeURIComponent(mid)}`;
+                data = {
+                    fenceValue: `${lat},${lng},${radius}`,
+                    fenceName: name,
+                    fenceType: 'circle',
+                };
 
             } else if (currentDrawingMode === 'polygon') {
                 // Polygon shape: currentShape = { type: 'Feature', geometry: { type: 'Polygon', coordinates: [ [ [lng, lat], [lng, lat], ... ] ] } }
@@ -457,18 +460,28 @@
                 const coordPairs = coords.map(c => `${c[1]},${c[0]}`).join(',');
 
                 // Construct URL for polygon fence
-                // &fvalue=point1lat,point1long,point2lat,point2long,...etc.
-                url = `${API}opr=savefence&fvalue=${coordPairs}&fname=${encodeURIComponent(name)}&ftype=polygon&mid=${encodeURIComponent(mid)}`;
+                data = {
+                    fenceValue: coordPairs,
+                    fenceName: name,
+                    fenceType: 'polygon',
+                };
             } else {
                 console.error('Unsupported fence type:', currentDrawingMode);
                 return;
             }
 
-            fetch(url)
+            fetch(`${API}/api/devices/saveFence`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(data)
+            })
                 .then(response => response.json())
                 .then(data => {
-                    if (data[0].msg === "0") {
-                        console.log('Fence saved:', data[0].msg);
+                    if (data.status === true) {
+                        console.log('Fence saved:', data.data);
                         cleanupDrawing();
                         document.getElementById('namePopup').classList.remove('active');
                         currentDrawingMode = null;
@@ -479,7 +492,7 @@
                         });
 
                         alert("Successfully added the fence.")
-                    } else if (data[0].msg === "1") {
+                    } else  {
                         throw new Error('Failed to save fence.');
                     }
                 })
