@@ -170,11 +170,15 @@
         // Fetch POIs from API
         async function fetchPOIs() {
             try {
-                const response = await fetch(`${API}opr=getpoilistByMid&mid=${mid}`);
+                const response = await fetch(`${API}/api/devices/getPoiListByMid`, {
+                    headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
                 const data = await response.json();
-                if (Array.isArray(data)) {
-                    updatePOITable(data);
-                    // updateMapMarkers(data);
+                if (Array.isArray(data.data)) {
+                    updatePOITable(data.data);
+                    // updateMapMarkers(data.data);
                 } else {
                     console.error('Invalid data format received from API');
                 }
@@ -270,10 +274,25 @@
             const address = document.getElementById('address').value;
             const status = document.getElementById('status').value;
 
-            const url = `${API}opr=addpoi&latitude=${latitude}&langitude=${longitude}&status=${status}&location=${location}&address=${address}&mid=${mid}`;
+            const url = `${API}/api/devices/poiadd`;
+            const data = {
+                latitude: latitude,
+                langitude: longitude,
+                status: status,
+                location: location,
+                address: address,
+            };
+            const options = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(data)
+            };
 
             try {
-                const response = await fetch(url);
+                const response = await fetch(url, options);
                 if (response.ok) {
                     fetchPOIs();
                     clearInputs();
@@ -284,9 +303,17 @@
         }
 
         // Update POI status
-        async function updateStatus(id, status) {
+        async function updateStatus(no, status) {
+
             try {
-                const response = await fetch(`${API}?opr=updatepoi&id=${id}&status=${status}&mid=${mid}`);
+                const response = await fetch(`${API}/api/devices/poiupdate?no=${no}&status=${status}`, {
+                    method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                            'Content-Type': 'application/json'
+                        },
+                        // body: JSON.stringify({ no, status })
+                    });
                 if (response.ok) {
                     fetchPOIs();
                 }
@@ -295,11 +322,15 @@
             }
         }
 
-        // Delete POI
-        async function deletePOI(id) {
+        async function deletePOI(no) {
             if (confirm('Are you sure you want to delete this POI?')) {
                 try {
-                    const response = await fetch(`${API}?opr=deletepoi&id=${id}&mid=${mid}`);
+                    const response = await fetch(`${API}/api/devices/poidelete/${no}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                    });
                     if (response.ok) {
                         fetchPOIs();
                     }
@@ -320,15 +351,21 @@
                 const row = `
             <tr data-id="${poi.id}">
                 <td>${index + 1}</td>
-                <td>${poi.plocation}</td>
+                <td>${poi.location}</td>
                 <td>${poi.latitude}</td>
                 <td>${poi.langitude}</td>
-                <td>${poi.plocation}</td>
-                <td>${poi.status || 'Enable'}</td>
+                <td>${poi.address}</td>
+                <td style="${poi.status === 'Disable' ? 'color: red;' : 'color: green;'}">${poi.status || 'Enable'}</td>
                 <td>
-                    <button onclick="updateStatus(${poi.id}, 'Enable')" class="action-btn enable-btn">Enable</button>
-                    <button onclick="updateStatus(${poi.id}, 'Disable')" class="action-btn disable-btn">Disable</button>
-                    <button onclick="deletePOI(${poi.id})" class="action-btn delete-btn">Delete</button>
+                    <span class="action-btn enable-btn" onclick="updateStatus(${poi.no}, 'Enable')" title="Enable">
+                        <i class="fas fa-check-circle"></i>
+                    </span>
+                    <span class="action-btn disable-btn" onclick="updateStatus(${poi.no}, 'Disable')" title="Disable">
+                        <i class="fas fa-ban"></i>
+                    </span>
+                    <span class="action-btn delete-btn" onclick="deletePOI(${poi.no})" title="Delete">
+                        <i class="fas fa-trash-alt"></i>
+                    </span>
                 </td>
             </tr>
         `;
@@ -415,9 +452,9 @@
                 }
             });
 
-            if (!localStorage.getItem("token")) {
-                window.location.href = "../index.html";
-            }
+            // if (!localStorage.getItem("token")) {
+            //     window.location.href = "../index.html";
+            // }
         });
 
     </script>
