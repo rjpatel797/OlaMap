@@ -493,7 +493,6 @@
       $(".btn-ok").click(function () {
         $("#custom-alert").css("display", "none");
         // Delete user data from local storage
-        localStorage.removeItem('mid');
         localStorage.removeItem('key');
         localStorage.removeItem('keyType');
         window.location.href = "/index.html";
@@ -514,7 +513,7 @@
       // Prevent navigating back after logout
       window.onload = function () {
         // Check if 'mid' is available in localStorage
-        if (!localStorage.getItem('mid')) {
+        if (!localStorage.getItem('token')) {
           // Redirect to login page if 'mid' is not found
           window.location.href = '/index.html';
         }
