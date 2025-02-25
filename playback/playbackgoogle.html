@@ -1050,11 +1050,15 @@
 
             locationDetailsEl.innerHTML = 'Fetching location...';
 
-            fetch(`${API}opr=getLoc&lat=${lat}&lang=${lng}`)
+              fetch(`${API}/api/devices/getLocation?latitude=${lat}&longitude=${lng}`, {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            })
                 .then(response => response.json())
                 .then(data => {
-                    if (data && data.length > 0) {
-                        locationDetailsEl.innerHTML = ` ${data[0].location}`;
+                    if (data && data.data.length > 0) {
+                        locationDetailsEl.innerHTML = ` ${data.data[0].location}`;
                     } else {
                         locationDetailsEl.innerHTML = 'Location details not available.';
                     }
@@ -1067,25 +1071,25 @@
 
 
         // Function to fetch location from coordinates
-        async function fetchLocation(latlang) {
-            try {
-                if (!latlang) return "Location not available";
-                console.log(latlang)
-                const [lat, lng] = latlang
-                    .split(",")
-                    .map((coord) => parseFloat(coord));
-                if (isNaN(lat) || isNaN(lng)) return "Invalid coordinates";
+        // async function fetchLocation(latlang) {
+        //     try {
+        //         if (!latlang) return "Location not available";
+        //         console.log(latlang)
+        //         const [lat, lng] = latlang
+        //             .split(",")
+        //             .map((coord) => parseFloat(coord));
+        //         if (isNaN(lat) || isNaN(lng)) return "Invalid coordinates";
 
-                const response = await fetch(
-                    `${API}opr=getLoc&lat=${lng}&lang=${lat}`
-                );
-                const data = await response.json();
-                return data[0].location || "Location not available";
-            } catch (error) {
-                console.error("Error fetching location:", error);
-                return "Error fetching location";
-            }
-        }
+        //         const response = await fetch(
+        //             `${API}opr=getLoc&lat=${lng}&lang=${lat}`
+        //         );
+        //         const data = await response.json();
+        //         return data[0].location || "Location not available";
+        //     } catch (error) {
+        //         console.error("Error fetching location:", error);
+        //         return "Error fetching location";
+        //     }
+        // }
         // Helper function to calculate the duration in hours, minutes, and seconds
         function formatDuration(durationInMinutes) {
             const hours = Math.floor(durationInMinutes / 60);

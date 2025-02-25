@@ -542,13 +542,15 @@
 
         async function reverseGeocode(lat, lng) {
             try {
-                const response = await fetch(
-                    `https://ttsgps.in/getandrojsonforNewIphone.jsp?opr=getLoc&lat=${lat}&lang=${lng}`
-                );
+                const response = await fetch(`${API}/api/devices/getLocation?latitude=${lat}&longitude=${lng}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+                });
                 const data = await response.json();
 
-                if (data && data.length > 0 && data[0].location) {
-                    return data[0].location;
+                if (data && data.data.length > 0 && data.data[0].location) {
+                    return data.data[0].location;
                 }
                 return '';
             } catch (error) {
