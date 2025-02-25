@@ -212,8 +212,8 @@
                 .then(data => {
                     console.log("Device data received:", data);
 
-                    if (Array.isArray(data)) {
-                        devices = data.map(item => ({
+                    if (Array.isArray(data.data)) {
+                        devices = data.data.map(item => ({
                             name: item.dname || 'Unnamed Vehicle',
                             did: item.did
                         }));
@@ -262,12 +262,14 @@
             const formattedFromDate = formatDateForAPI(fromdate);
             const formattedToDate = formatDateForAPI(todate);
 
-            const url = `${API}opr=gethistoryreport&fromdate=${formattedFromDate}&todate=${formattedToDate}&did=${did}&interval=${interval}`;
-
-            fetch(url)
+            fetch(`${API}/api/devices/getHistoryReport?startDate=${formattedFromDate}&endDate=${formattedToDate}&deviceId=${did}&intervel=${Number(interval)}`, {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            })
                 .then(response => response.json())
                 .then(data => {
-                    displayReport(data);
+                    displayReport(data.data);
                 })
                 .catch(error => {
                     console.error("Error:", error);
@@ -313,8 +315,8 @@
                     <td>${index + 1}</td>
                     <td>${item.date || ''}</td>
                     <td>${item.speed || '0'}</td>
-                    <td>${item.Location || ''}</td>
-                    <td>${item.latitute},${item.Langitude || ''}</td>
+                    <td>${item.location || ''}</td>
+                    <td>${item.latitude},${item.longitude || ''}</td>
                 </tr>
             `).join('');
         }
