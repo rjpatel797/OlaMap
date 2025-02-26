@@ -1019,13 +1019,16 @@
 
             try {
                 const response = await fetch(
-                    `${API}opr=fleetsummaryreport&fromdate=${updateDateFormat(prevTime)}&todate=${updateDateFormat(currentTime)}&did=${deviceId}`
-                );
+                    `${API}/api/devices/fleetSummary?fromdate=${updateDateFormat(prevTime)}&todate=${updateDateFormat(currentTime)}&did=${deviceId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                })
                 const data = await response.json();
 
                 // Get the distance from the response
-                if (data && data.length > 0) {
-                    return data[0].distance || "0";
+                if (data && data.data.length > 0) {
+                    return data.data[0].distance || "0";
                 }
                 return "0";
             } catch (error) {
