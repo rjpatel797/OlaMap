@@ -384,8 +384,8 @@
 
                 // Get vehicle name
                 const deviceSelect = document.getElementById('deviceSelect');
-                const vehicleName = deviceSelect.options[deviceSelect.selectedIndex]?.text || 'Unknown Vehicle';
-                doc.text(`Vehicle: ${vehicleName}`, 15, 30);
+                // const vehicleName = deviceSelect.options[deviceSelect.selectedIndex]?.text || 'Unknown Vehicle';
+                // doc.text(`Vehicle: ${vehicleName}`, 15, 30);
 
                 // Define table headers
                 const headers = [[
@@ -455,7 +455,7 @@
                 const now = new Date();
                 const dateStr = now.toLocaleDateString().replace(/\//g, '-');
                 const timeStr = now.toLocaleTimeString().replace(/:/g, '-');
-                doc.save(`history_report_${vehicleName}_${dateStr}_${timeStr}.pdf`);
+                doc.save(`history_report_${dateStr}_${timeStr}.pdf`);
 
             } catch (error) {
                 console.error('Error generating PDF:', error);

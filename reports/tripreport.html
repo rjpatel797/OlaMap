@@ -774,8 +774,8 @@
                 doc.text(`Report Period: ${startDate} ${startTime} to ${endDate} ${endTime}`, 15, 25);
 
                 // Get vehicle number using the correct ID
-                const vehicleSelect = document.querySelector('select[id*="deviceSelect"]').value || 'Unknown Vehicle';
-                doc.text(`Vehicle: ${vehicleSelect}`, 15, 30);
+                // const vehicleSelect = document.querySelector('select[id*="deviceSelect"]').value || 'Unknown Vehicle';
+                // doc.text(`Vehicle: ${vehicleSelect}`, 15, 30);
 
                 // Define table headers based on your actual table
                 const headers = [[
@@ -873,7 +873,7 @@
                 const timeStr = now.toLocaleTimeString().replace(/:/g, '-');
 
                 // Save the PDF
-                doc.save(`trip_report_${vehicleSelect}_${dateStr}_${timeStr}.pdf`);
+                doc.save(`trip_report_${dateStr}_${timeStr}.pdf`);
 
             } catch (error) {
                 console.error('Error generating PDF:', error);
