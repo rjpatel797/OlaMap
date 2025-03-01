@@ -493,6 +493,8 @@
       $(".btn-ok").click(function () {
         $("#custom-alert").css("display", "none");
         // Delete user data from local storage
+        localStorage.removeItem('username');
+        localStorage.removeItem('token');
         localStorage.removeItem('key');
         localStorage.removeItem('keyType');
         window.location.href = "/index.html";
