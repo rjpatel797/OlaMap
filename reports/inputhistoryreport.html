@@ -113,7 +113,7 @@
 
         // Initialize when document is ready
         document.addEventListener('DOMContentLoaded', function () {
-            if (!localStorage.getItem('mid')) {
+            if (!localStorage.getItem('token')) {
                 // Redirect to login page if 'mid' is not found
                 window.location.href = '../index.html';
             }
@@ -195,21 +195,25 @@
       })
                 .then(response => response.json())
                 .then(data => {
-                    devices = data;
-                    populateVehicleList(data);
+                    devices = data.data;
+                    populateVehicleList(data.data);
                 })
                 .catch(error => console.error("Error fetching devices:", error));
         }
 
         function fetchDigitalInputs(deviceId) {
-            fetch(`${API}opr=getdigitalinput&did=${deviceId}`)
+            fetch(`${API}/api/devices/getDigitalInput?did=${deviceId}`, {
+                headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
                 .then(response => response.json())
                 .then(data => {
                     const inputSelect = document.getElementById('inputSelect');
                     inputSelect.innerHTML = '<option value="">Select Input</option>';
 
-                    if (Array.isArray(data[0])) {
-                        const validInputs = data[0].filter(input =>
+                    if (Array.isArray(data.data)) {
+                        const validInputs = data.data.filter(input =>
                             input !== null &&
                             input !== undefined &&
                             String(input) !== "Null" &&
@@ -221,6 +225,8 @@
                             option.textContent = String(input);
                             inputSelect.appendChild(option);
                         });
+                    }else{
+                        console.log("data is not of type array")
                     }
 
                     inputSelect.disabled = inputSelect.options.length <= 1;
@@ -258,16 +264,20 @@
             const fromdate = `${startDate} ${startTime}`;
             const todate = `${endDate} ${endTime}`;
 
-            const url = `${API}opr=getinputhistoryreport&ioreport=${input}&fromdate=${fromdate}&todate=${todate}&did=${selectedDeviceId}`;
+            const url = `${API}/api/devices/getInputHistoryReport?ioReport=${input}&fromDate=${fromdate}&toDate=${todate}&deviceId=${selectedDeviceId}`;
 
             // Show loading state
             const reportBody = document.getElementById('reportData');
             reportBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Loading...</td></tr>';
 
-            fetch(url)
+            fetch(`${API}/api/devices/getInputHistoryReport?ioReport=${input}&fromDate=${fromdate}&toDate=${todate}&deviceId=${selectedDeviceId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
                 .then(response => response.json())
                 .then(data => {
-                    displayReport(data);
+                    displayReport(data.data);
                 })
                 .catch(error => {
                     console.error('Error fetching report:', error);
@@ -304,16 +314,16 @@
                 // Count status occurrences
                 if (item.status === 'on') {
                     onCount++;
-                    totalOnTime += parseInt(item.timestamp) || 0;
+                    totalOnTime += item.timeStamp || 0;
                 } else {
                     offCount++;
-                    totalOffTime += parseInt(item.timestamp) || 0;
+                    totalOffTime += item.timeStamp || 0;
                 }
 
                 return `
             <tr>
-                <td>${item.starttime}</td>
-                <td>${item.endtime}</td>
+                <td>${item.startTime}</td>
+                <td>${item.endTime}</td>
                 <td>${item.status === 'on' ? item.time : ''}</td>
                 <td>${item.status === 'off' ? item.time : ''}</td>
             </tr>
@@ -565,11 +575,11 @@
                 const startTime = document.getElementById('startTime').value;
                 const endDate = document.getElementById('endDate').value;
                 const endTime = document.getElementById('endTime').value;
-                const deviceSelect = document.getElementById('deviceSelect');
+                // const deviceSelect = document.getElementById('deviceSelect');
                 const inputSelect = document.getElementById('inputSelect');
 
                 doc.text(`Report Period: ${startDate} ${startTime} to ${endDate} ${endTime}`, 15, 25);
-                doc.text(`Device: ${deviceSelect.options[deviceSelect.selectedIndex].text}`, 15, 30);
+                // doc.text(`Device: ${deviceSelect.options[deviceSelect.selectedIndex].text}`, 15, 30);
                 doc.text(`Input: ${inputSelect.options[inputSelect.selectedIndex].text}`, 15, 35);
 
                 // Get summary data
