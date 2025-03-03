@@ -270,17 +270,19 @@
         });
 
         function fetchPOIs() {
-            const mid = localStorage.getItem("mid");
-            console.log("Fetching poi with mid:", mid);
 
-            fetch(`${API}opr=getpoilistByMid&mid=${mid}`)
+            fetch(`${API}/api/devices/getPoiListByMid`, {
+                    headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                })
                 .then(response => response.json())
                 .then(data => {
                     console.log("POI data received:", data); // Changed log message to be more specific
 
-                    if (Array.isArray(data)) {
-                        poiList = data.map(item => ({
-                            name: item.plocation || 'Unnamed poi',
+                    if (Array.isArray(data.data)) {
+                        poiList = data.data.map(item => ({
+                            name: item.location || 'Unnamed poi',
                         }));
                         console.log("Processed POI list:", poiList); // Added debug log
                         populatePoiList(poiList);
@@ -313,8 +315,8 @@
                 .then(data => {
                     console.log("Device data received:", data);
 
-                    if (Array.isArray(data)) {
-                        devices = data.map(item => ({
+                    if (Array.isArray(data.data)) {
+                        devices = data.data.map(item => ({
                             name: item.dname || 'Unnamed Vehicle',
                             did: item.did
                         }));
