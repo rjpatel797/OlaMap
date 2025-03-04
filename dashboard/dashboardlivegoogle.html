@@ -110,13 +110,8 @@
   </div>
 
   <script src="../js/api.js"></script>
-  <script>
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_KEY}&callback=initMap`;
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-    </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap"
+    async defer></script>
   <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
   <script>
 
@@ -153,6 +148,19 @@
     }
 
 
+    function loadMapScript() {
+      const key = localStorage.getItem("key");
+      if (!key) {
+        console.error("No API key found");
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = `https://apis.mappls.com/advancedmaps/api/${key}/map_sdk?layer=vector&v=3.0&callback=initMap`;
+      script.defer = true;
+      script.async = true;
+      document.head.appendChild(script);
+    }
 
     // const olaMaps = new OlaMapsSDK.OlaMaps({
     //   apiKey: "0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9",
@@ -389,13 +397,11 @@
           .map((coord) => parseFloat(coord));
         if (isNaN(lat) || isNaN(lng)) return "Invalid coordinates";
 
-        const response = await fetch(`${API}/api/devices/getLocation?latitude=${lat}&longitude=${lng}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+        const response = await fetch(
+          `${API}opr=getLoc&lat=${lat}&lang=${lng}`
+        );
         const data = await response.json();
-        return data.data[0].location || "Location not available";
+        return data[0].location || "Location not available";
       } catch (error) {
         console.error("Error fetching location:", error);
         return "Error fetching location";
@@ -405,19 +411,15 @@
 
     async function fetchDeviceData() {
       const mid = localStorage.getItem("mid");
-      // if (!mid) {
-      //   console.error("No mid found");
-      //   return;
-      // }
+      if (!mid) {
+        console.error("No mid found");
+        return;
+      }
 
       try {
-        const response = await fetch(`${API}/api/devices/getVehicleByMid`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+        const response = await fetch(`${API}opr=getVehileByMid&mid=${mid}`);
         const data = await response.json();
-        devices = data.data.map(item => ({
+        devices = data.map(item => ({
           name: item.dname,
           deviceId: item.did,
           coordinates: item.latlang ?
@@ -1214,11 +1216,12 @@
     }
 
     $(document).ready(function () {
-      if (!localStorage.getItem("token")) {
+      if (!localStorage.getItem("mid")) {
         window.location.href = "index.html";
       }
 
       $("#navbar-container").load("../navbarola.html");
+      loadMapScript();
 
       // Event listeners
       $("#searchInput").on("input", filterDeviceList);
@@ -1483,16 +1486,13 @@
 
       try {
         const response = await fetch(
-          `${API}/api/devices/fleetSummary?fromdate=${formattedDate} 00:00:00&todate=${formattedDate} 23:59:59&did=${deviceId}`, {
-                headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            })
+          `${API}opr=fleetsummaryreport&fromdate=${formattedDate} 00:00&todate=${formattedDate} 23:59&did=${deviceId}`
+        );
         const data = await response.json();
 
         // Get the distance from the response
-        if (data && data.data.length > 0) {
-          return data.data[0].distance || "0";
+        if (data && data.length > 0) {
+          return data[0].distance || "0";
         }
         return "0";
       } catch (error) {

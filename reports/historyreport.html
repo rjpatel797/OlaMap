@@ -115,7 +115,7 @@
 
         $(document).ready(function () {
             // Check for mid in localStorage
-            if (!localStorage.getItem('token')) {
+            if (!localStorage.getItem('mid')) {
                 window.location.href = '../index.html';
             }
 
@@ -203,17 +203,13 @@
             const mid = localStorage.getItem("mid");
             console.log("Fetching devices with mid:", mid);
 
-            fetch(`${API}/api/devices/getDeviceListByMid`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+            fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
                 .then(response => response.json())
                 .then(data => {
                     console.log("Device data received:", data);
 
-                    if (Array.isArray(data.data)) {
-                        devices = data.data.map(item => ({
+                    if (Array.isArray(data)) {
+                        devices = data.map(item => ({
                             name: item.dname || 'Unnamed Vehicle',
                             did: item.did
                         }));
@@ -262,14 +258,12 @@
             const formattedFromDate = formatDateForAPI(fromdate);
             const formattedToDate = formatDateForAPI(todate);
 
-            fetch(`${API}/api/devices/getHistoryReport?startDate=${formattedFromDate}&endDate=${formattedToDate}&deviceId=${did}&intervel=${Number(interval)}`, {
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              }
-            })
+            const url = `${API}opr=gethistoryreport&fromdate=${formattedFromDate}&todate=${formattedToDate}&did=${did}&interval=${interval}`;
+
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    displayReport(data.data);
+                    displayReport(data);
                 })
                 .catch(error => {
                     console.error("Error:", error);
@@ -315,8 +309,8 @@
                     <td>${index + 1}</td>
                     <td>${item.date || ''}</td>
                     <td>${item.speed || '0'}</td>
-                    <td>${item.location || ''}</td>
-                    <td>${item.latitude},${item.longitude || ''}</td>
+                    <td>${item.Location || ''}</td>
+                    <td>${item.latitute},${item.Langitude || ''}</td>
                 </tr>
             `).join('');
         }
@@ -384,8 +378,8 @@
 
                 // Get vehicle name
                 const deviceSelect = document.getElementById('deviceSelect');
-                // const vehicleName = deviceSelect.options[deviceSelect.selectedIndex]?.text || 'Unknown Vehicle';
-                // doc.text(`Vehicle: ${vehicleName}`, 15, 30);
+                const vehicleName = deviceSelect.options[deviceSelect.selectedIndex]?.text || 'Unknown Vehicle';
+                doc.text(`Vehicle: ${vehicleName}`, 15, 30);
 
                 // Define table headers
                 const headers = [[
@@ -455,7 +449,7 @@
                 const now = new Date();
                 const dateStr = now.toLocaleDateString().replace(/\//g, '-');
                 const timeStr = now.toLocaleTimeString().replace(/:/g, '-');
-                doc.save(`history_report_${dateStr}_${timeStr}.pdf`);
+                doc.save(`history_report_${vehicleName}_${dateStr}_${timeStr}.pdf`);
 
             } catch (error) {
                 console.error('Error generating PDF:', error);

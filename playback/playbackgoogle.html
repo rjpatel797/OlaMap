@@ -172,25 +172,23 @@
     </div>
 
     <script src="../js/api.js"></script>
-    <script>
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_KEY}&callback=initMap&libraries=geometry`;
-        script.async = true;
-        script.defer = true;
-        document.head.appendChild(script);
-        </script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap&libraries=geometry"
+        async defer></script>
     <script>
         // Initialize when document is ready
         $(document).ready(function () {
-            if (!localStorage.getItem('token')) {
+            if (!localStorage.getItem('mid')) {
                 window.location.href = '../index.html';
             }
 
-            $("#navbar-container").load("../navbarola.html", function () {
-                console.log("Navbar loaded successfully!");
+            $("#navbar-container").load("navbarola.html", function () {
+                //console.log("Navbar loaded successfully!");
             });
 
-            setupDateValidation()
+            const mid = localStorage.getItem("mid");
+            //console.log("mid:::" + mid);
+
         });
 
         // Initialize map
@@ -285,22 +283,23 @@
         }
 
         function fetchDeviceData() {
-            // const mid = localStorage.getItem("mid");
-            // if (!mid) {
-            //     console.error("No mid found in localStorage");
-            //     return Promise.reject("No mid found");
-            // }
+            const mid = localStorage.getItem("mid");
+            if (!mid) {
+                console.error("No mid found in localStorage");
+                return Promise.reject("No mid found");
+            }
 
-            return fetch(`${API}/api/devices/getDeviceListByMid`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-                .then((response) => response.json())
-                .then((data) => {
-                    devices = data.data.map((item) => ({
+            return fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    if (!Array.isArray(data)) throw new Error("Invalid data format received");
+
+                    devices = data.map(item => ({
                         name: item.dname,
-                        did: item.did,
+                        did: item.did
                     }));
                     populateVehicleList(devices);
                 })
@@ -333,7 +332,7 @@
         }
 
         function formatTime(timeString) {
-            return timeString + ":00";
+            return timeString.replace(":", "") + "00";
         }
 
         function fetchPlaybackData(did) {
@@ -357,10 +356,10 @@
             }
 
             // Format dates to match your API requirement
-            const formattedFromDateTime = `${formatDate(fromDate)} ${formatTime(
+            const formattedFromDateTime = `${formatDate(fromDate)}${formatTime(
                 fromTime
             )}`;
-            const formattedToDateTime = `${formatDate(toDate)} ${formatTime(
+            const formattedToDateTime = `${formatDate(toDate)}${formatTime(
                 toTime
             )}`;
 
@@ -373,48 +372,38 @@
             }
 
             return fetch(
-                `${API}/api/devices/playbackdata?sdate=${formattedFromDateTime}&edate=${formattedToDateTime}&did=${did}`, {
-                headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            })
+                `${API}opr=getplaybacktest&sdate=${formattedFromDateTime}&edate=${formattedToDateTime}&did=${did}`
+            )
                 .then((response) => response.json())
                 .then((data) => {
-                    if(data.status !== false) {
-              if (Array.isArray(data.data)) {
-                  playbackData = data.data
-                  .map((item) => {
-                      const lng = parseFloat(item.langitude);
-                      const lat = parseFloat(item.latitude);
-                      const angle = parseFloat(item.angle);
-                      return !isNaN(lng) && !isNaN(lat) && !isNaN(angle)
-                        ? {
-                        coordinates: [lng, lat],
-                        angle: angle,
-                        deviceId: item.deviceId,
-                        speed: item.speed,
-                        gps: item.digital_2,
-                        engine: item.digital_2,
-                        date: item.DeviceDate,
-                        }
-                        : null;
-                  })
-                  .filter(Boolean);
-                  fetching = false;
-                  updateStartButtonState();
-                  // addStartEndMarkers();
-                  console.log("Playback Data Loaded:", playbackData);
-              } else {
-              fetching = false;
-              updateStartButtonState();
-              // addStartEndMarkers();
-              console.error("Unexpected data format: response is not an array");
-              }
-          } else {
-              alert(data.message);
-              fetching = false;
-              updateStartButtonState();
-          }
+                    if (Array.isArray(data)) {
+                        playbackData = data
+                            .map((item) => {
+                                const lng = parseFloat(item.langitude);
+                                const lat = parseFloat(item.latitude);
+                                const angle = parseFloat(item.angle);
+                                return !isNaN(lng) && !isNaN(lat) && !isNaN(angle)
+                                    ? {
+                                        coordinates: [lng, lat],
+                                        angle: angle,
+                                        deviceId: item.deviceId,
+                                        speed: item.speed,
+                                        gps: item.digital_2,
+                                        engine: item.digital_2,
+                                        date: item.DeviceDate,
+                                    }
+                                    : null;
+                            })
+                            .filter(Boolean);
+                        fetching = false;
+                        updateStartButtonState();
+                        // addStartEndMarkers();
+                    } else {
+                        fetching = false;
+                        updateStartButtonState();
+                        // addStartEndMarkers();
+                        console.error("Unexpected data format: response is not an array");
+                    }
                 })
                 .catch((error) => {
                     fetching = false;
@@ -817,16 +806,13 @@
 
             try {
                 const response = await fetch(
-                    `${API}/api/devices/fleetSummary?fromdate=${updateDateFormat(prevTime)}&todate=${updateDateFormat(currentTime)}&did=${deviceId}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                })
+                    `${API}opr=fleetsummaryreport&fromdate=${updateDateFormat(prevTime)}&todate=${updateDateFormat(currentTime)}&did=${deviceId}`
+                );
                 const data = await response.json();
 
                 // Get the distance from the response
-                if (data && data.data.length > 0) {
-                    return data.data[0].distance || "0";
+                if (data && data.length > 0) {
+                    return data[0].distance || "0";
                 }
                 return "0";
             } catch (error) {
@@ -1057,15 +1043,11 @@
 
             locationDetailsEl.innerHTML = 'Fetching location...';
 
-              fetch(`${API}/api/devices/getLocation?latitude=${lat}&longitude=${lng}`, {
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              }
-            })
+            fetch(`${API}opr=getLoc&lat=${lat}&lang=${lng}`)
                 .then(response => response.json())
                 .then(data => {
-                    if (data && data.data.length > 0) {
-                        locationDetailsEl.innerHTML = ` ${data.data[0].location}`;
+                    if (data && data.length > 0) {
+                        locationDetailsEl.innerHTML = ` ${data[0].location}`;
                     } else {
                         locationDetailsEl.innerHTML = 'Location details not available.';
                     }
@@ -1078,25 +1060,25 @@
 
 
         // Function to fetch location from coordinates
-        // async function fetchLocation(latlang) {
-        //     try {
-        //         if (!latlang) return "Location not available";
-        //         console.log(latlang)
-        //         const [lat, lng] = latlang
-        //             .split(",")
-        //             .map((coord) => parseFloat(coord));
-        //         if (isNaN(lat) || isNaN(lng)) return "Invalid coordinates";
+        async function fetchLocation(latlang) {
+            try {
+                if (!latlang) return "Location not available";
+                console.log(latlang)
+                const [lat, lng] = latlang
+                    .split(",")
+                    .map((coord) => parseFloat(coord));
+                if (isNaN(lat) || isNaN(lng)) return "Invalid coordinates";
 
-        //         const response = await fetch(
-        //             `${API}opr=getLoc&lat=${lng}&lang=${lat}`
-        //         );
-        //         const data = await response.json();
-        //         return data[0].location || "Location not available";
-        //     } catch (error) {
-        //         console.error("Error fetching location:", error);
-        //         return "Error fetching location";
-        //     }
-        // }
+                const response = await fetch(
+                    `${API}opr=getLoc&lat=${lng}&lang=${lat}`
+                );
+                const data = await response.json();
+                return data[0].location || "Location not available";
+            } catch (error) {
+                console.error("Error fetching location:", error);
+                return "Error fetching location";
+            }
+        }
         // Helper function to calculate the duration in hours, minutes, and seconds
         function formatDuration(durationInMinutes) {
             const hours = Math.floor(durationInMinutes / 60);
@@ -1976,6 +1958,20 @@
             }
         });
 
+        $(document).ready(function () {
+            // Load navbar from external file
+            $("#navbar-container").load("../navbarola.html", function () {
+                console.log("Navbar loaded successfully!");
+            });
+
+            // Check if 'mid' is available in localStorage otherwise ri-direct login page
+            if (!localStorage.getItem("mid")) {
+                // Redirect to login page if 'mid' is not found
+                window.location.href = "../index.html";
+            }
+
+            setupDateValidation();
+        });
 
         // Event listeners for playback controls
         $("#startPlayback").on("click", startPlayback);

@@ -304,23 +304,19 @@
     }
 
     function fetchDeviceData() {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("No token found in localStorage");
+      const mid = localStorage.getItem("mid");
+      if (!mid) {
+        console.error("No mid found in localStorage");
         return;
       }
 
-      return fetch(`${API}/api/devices/getDeviceListByMid`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      return fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
         .then(response => response.json())
         .then(data => {
-          if (!Array.isArray(data.data)) {
+          if (!Array.isArray(data)) {
             throw new Error("Invalid data format received");
           }
-          devices = data.data.map(item => ({
+          devices = data.map(item => ({
             name: item.dname,
             did: item.did,
           }));
@@ -344,23 +340,20 @@
         return Promise.reject("Date selection required");
       }
 
-      const formattedFromDateTime = `${formatDate(fromDate)} ${formatTime(fromTime)}`;
-      const formattedToDateTime = `${formatDate(toDate)} ${formatTime(toTime)}`;
+      const formattedFromDateTime = `${formatDate(fromDate)}${formatTime(fromTime)}`;
+      const formattedToDateTime = `${formatDate(toDate)}${formatTime(toTime)}`;
 
       try {
         const response = await fetch(
-        `${API}/api/devices/playbackdata?sdate=${formattedFromDateTime}&edate=${formattedToDateTime}&did=${deviceId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+          `${API}opr=getplaybacktest&sdate=${formattedFromDateTime}&edate=${formattedToDateTime}&did=${deviceId}`
+        );
         const data = await response.json();
 
-        if (!Array.isArray(data.data)) {
+        if (!Array.isArray(data)) {
           throw new Error("Invalid data format received");
         }
 
-        const processedData = data.data
+        const processedData = data
           .map(item => {
             const lng = Number(item.langitude);
             const lat = Number(item.latitude);
@@ -814,7 +807,7 @@
     }
 
     function formatTime(timeString) {
-      return timeString + ':00';
+      return timeString.replace(':', '') + '00';
     }
 
     function isValidCoordinate(lng, lat) {
@@ -954,7 +947,7 @@
 
     // Event Listeners
     $(document).ready(() => {
-      if (!localStorage.getItem('token')) {
+      if (!localStorage.getItem('mid')) {
         window.location.href = '../index.html';
         return;
       }

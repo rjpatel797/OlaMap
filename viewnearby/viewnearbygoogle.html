@@ -22,13 +22,9 @@
         <div id="map"></div>
     </div>
     <script src="../js/api.js"></script>
-    <script>
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_KEY}&callback=initMap&libraries=geometry`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-      </script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap&libraries=geometry"
+        async defer></script>
     <script>
 
         let map;
@@ -99,6 +95,11 @@
 
         let throttleTimer;
         function updateNearbyVehicles() {
+            const mid = localStorage.getItem("mid");
+            if (!mid) {
+                console.error("No mid found in localStorage");
+                return;
+            }
 
             // Prevent multiple calls within 2 seconds
             if (throttleTimer) return;
@@ -106,19 +107,15 @@
                 throttleTimer = null;
             }, 2000);
 
-            fetch(`${API}/api/devices/getVehicleByMid`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+            fetch(`${API}opr=getVehileByMid&mid=${mid}`)
                 .then(response => response.json())
                 .then(data => {
-                    if (!Array.isArray(data.data)) {
+                    if (!Array.isArray(data)) {
                         console.warn("Received non-array data:", data);
                         return;
                     }
 
-                    const nearbyVehicles = data.data.filter(vehicle => {
+                    const nearbyVehicles = data.filter(vehicle => {
                         if (!vehicle.latlang) return false;
                         const [lat, lng] = vehicle.latlang.split(',').map(Number);
                         if (isNaN(lat) || isNaN(lng)) return false;
@@ -138,7 +135,7 @@
         }
 
         window.addEventListener('load', function () {
-            if (!localStorage.getItem("token")) {
+            if (!localStorage.getItem("mid")) {
                 window.location.href = "index.html";
                 return;
             }
@@ -182,7 +179,7 @@
                 const currentDate = new Date();
                 const deviceDate = new Date(vehicle.ddate);
                 const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-                const ignitionStatus = vehicle.ignition;
+                const ignitionStatus = vehicle.ignition?.toLowerCase() === 'true';
 
                 let iconUrl;
                 if (hoursDifference > 2) {
@@ -437,7 +434,7 @@
         // Load navbar
         $(document).ready(() => {
             $("#navbar-container").load("../navbarola.html");
-            if (!localStorage.getItem("token")) {
+            if (!localStorage.getItem("mid")) {
                 window.location.href = "../index.html";
             }
         });

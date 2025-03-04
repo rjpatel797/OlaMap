@@ -127,7 +127,7 @@
 
     // Initialize when document is ready
     $(document).ready(function () {
-      if (!localStorage.getItem('token')) {
+      if (!localStorage.getItem('mid')) {
         window.location.href = '../index.html';
       }
 
@@ -135,6 +135,8 @@
         console.log("Navbar loaded successfully!");
       });
 
+      const mid = localStorage.getItem("mid");
+      console.log("mid:::" + mid);
 
       setDefaultDates();
       loadMapScript();
@@ -202,7 +204,7 @@
     }
 
     function formatTime(timeString) {
-      return timeString + ':00';
+      return timeString.replace(':', '') + '00';
     }
 
     // Vehicle list handling functions
@@ -256,20 +258,16 @@
 
     // Data fetching functions
     function fetchDeviceData() {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("No token found in localStorage");
+      const mid = localStorage.getItem("mid");
+      if (!mid) {
+        console.error("No mid found in localStorage");
         return;
       }
 
-      fetch(`${API}/api/devices/getDeviceListByMid`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
         .then(response => response.json())
         .then(data => {
-          devices = data.data.map(item => ({
+          devices = data.map(item => ({
             name: item.dname,
             did: item.did
           }));
@@ -281,15 +279,6 @@
         });
     }
 
-    function formatDate(dateString) {
-      const date = new Date(dateString);
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    }
-
-    function formatTime(timeString) {
-      return timeString + ':00';
-    }
-
     function fetchPlaybackData(did) {
       if (!did) return Promise.reject("No device ID provided");
 
@@ -298,8 +287,8 @@
       const fromTime = document.getElementById("fromTime").value;
       const toTime = document.getElementById("toTime").value;
 
-      const formattedFromDateTime = `${formatDate(fromDate)} ${formatTime(fromTime)}`;
-      const formattedToDateTime = `${formatDate(toDate)} ${formatTime(toTime)}`;
+      const formattedFromDateTime = fromDate.split('-').join('') + fromTime.split(':').join('');
+      const formattedToDateTime = toDate.split('-').join('') + toTime.split(':').join('');
 
       console.log("Fetching data for:", {
         did: did,
@@ -307,19 +296,14 @@
         toDateTime: formattedToDateTime
       });
 
-      return fetch(
-        `${API}/api/devices/playbackdata?sdate=${formattedFromDateTime}&edate=${formattedToDateTime}&did=${did}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+      return fetch(`${API}opr=getplaybacktest&sdate=${formattedFromDateTime}00&edate=${formattedToDateTime}59&did=${did}`)
         .then(response => response.json())
         .then(data => {
-          if (!Array.isArray(data.data) || data.length === 0) {
+          if (!Array.isArray(data) || data.length === 0) {
             throw new Error("No data available for the selected period");
           }
 
-          playbackData = data.data.map(item => ({
+          playbackData = data.map(item => ({
             coordinates: [Number(item.latitude), Number(item.langitude)],
             angle: Number(item.angle) || 0,
             speed: Number(item.speed) || 0,

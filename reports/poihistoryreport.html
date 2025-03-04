@@ -128,7 +128,7 @@
 
         $(document).ready(function () {
             // Check for mid in localStorage
-            if (!localStorage.getItem('token')) {
+            if (!localStorage.getItem('mid')) {
                 window.location.href = '../index.html';
             }
 
@@ -304,11 +304,7 @@
             const mid = localStorage.getItem("mid");
             console.log("Fetching devices with mid:", mid);
 
-            fetch(`${API}/api/devices/getDeviceListByMid`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
+            fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
                 .then(response => response.json())
                 .then(data => {
                     console.log("Device data received:", data);

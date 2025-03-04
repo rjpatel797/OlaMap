@@ -90,7 +90,7 @@
             });
 
             // Check for authentication
-            if (!localStorage.getItem("token")) {
+            if (!localStorage.getItem("mid")) {
                 window.location.href = "/index.html";
             }
 
@@ -106,14 +106,9 @@
                 // Show loading state
                 tableBody.innerHTML = '<tr><td colspan="8" class="loading">Loading devices...</td></tr>';
 
-                // Fetch data from API with header authorization
-                const response = await fetch(`${API}/api/devices/getDeviceInfo`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem("token")}`
-                    }
-                });
-                const json = await response.json();
-                const devices = json.data;
+                // Fetch data from API
+                const response = await fetch(`${API}opr=getdeviceinfo&mid=${mid}`);
+                const devices = await response.json();
 
                 // Handle empty data
                 if (!devices || devices.length === 0) {
@@ -123,17 +118,17 @@
                 // Populate table with data
                 tableBody.innerHTML = devices.map((device, index) => `
                     <tr>
-                        <td class="checkbox-cell" id="device_${device.deviceId}">
+                        <td class="checkbox-cell" id="device_${device.deviceid}">
                             ${index + 1}
                         </td>
-                        <td>${device.deviceName || ''}</td>
-                        <td>${device.deviceType || 'Truck'}</td>
-                        <td>${device.deviceMobile || ''}</td>
+                        <td>${device.devicename || ''}</td>
+                        <td>${device.devicetype || 'Truck'}</td>
+                        <td>${device.devicemobile || ''}</td>
                         <td>${device.imei || ''}</td>
-                        <td>${device.driverName || 'ABC'}</td>
-                        <td>${device.driverMobile || '9999999999'}</td>
+                        <td>${device.drivername || 'ABC'}</td>
+                        <td>${device.drivermob || '9999999999'}</td>
                         <td>
-                            <svg onclick="editDevice('${device.deviceId}')" 
+                            <svg onclick="editDevice('${device.deviceid}')" 
                                 style="cursor: pointer; width: 16px; height: 16px; color: #2563eb;" 
                                 xmlns="http://www.w3.org/2000/svg" 
                                 viewBox="0 0 24 24" 
@@ -208,25 +203,11 @@
             const driverNo = document.getElementById('driverNo').value;
 
             try {
-                const url = `${API}/api/devices/updateDeviceInfo?deviceId=${deviceId}&deviceName=${deviceName}&imeinumber=${imei}&mobileNo=${mobileNo}&deviceType=${deviceType}&driverName=${driverName}&driverMobileNo=${driverNo}`;
+                const url = `${API}opr=editdevice&deviceid=${deviceId}&deviceName=${deviceName}&imei=${imei}&mobileNo=${mobileNo}&deviceType=${deviceType}&driverName=${driverName}&driverNo=${driverNo}`;
 
-                const response = await fetch(url,{
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem("token")}`
-                    }
-                });
+                const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
-                }
-
-                const json = await response.json();
-
-                if(!json.status === true){
-                    document.getElementById('modalMessage').className = 'modal-message error';
-                    document.getElementById('modalMessage').textContent = json.message;
-                    throw new Error('Error')
                 }
 
                 // Show success message
