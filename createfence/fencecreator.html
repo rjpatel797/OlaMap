@@ -70,7 +70,7 @@
     <script>
         // Initialize Ola Maps
         const olaMaps = new OlaMapsSDK.OlaMaps({
-            apiKey: "0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9"
+            apiKey: OLA_KEY
         });
 
         // Initialize map
@@ -730,7 +730,7 @@
         // Function to search places
         async function searchPlaces(query) {
             try {
-                const response = await fetch(`https://api.olamaps.io/places/v1/autocomplete?input=${encodeURIComponent(query)}&api_key=0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9`);
+                const response = await fetch(`https://api.olamaps.io/places/v1/autocomplete?input=${encodeURIComponent(query)}&api_key=${OLA_KEY}`);
                 const data = await response.json();
 
                 console.log('API Response:', data); // Debug log
@@ -790,7 +790,7 @@
                     });
                 } else {
                     // Fallback to getting details if geometry isn't in the prediction
-                    const response = await fetch(`https://api.olamaps.io/places/v1/details?place_id=${prediction.place_id}&api_key=0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9`);
+                    const response = await fetch(`https://api.olamaps.io/places/v1/details?place_id=${prediction.place_id}&api_key=${OLA_KEY}`);
                     const data = await response.json();
 
                     if (data.result && data.result.geometry && data.result.geometry.location) {
@@ -815,7 +815,7 @@
                 searchInput.value = description;
 
                 // If the prediction includes geometry, use it directly
-                const response = await fetch(`https://api.olamaps.io/places/v1/details?place_id=${placeId}&api_key=0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9`);
+                const response = await fetch(`https://api.olamaps.io/places/v1/details?place_id=${placeId}&api_key=${OLA_KEY}`);
 
                 const data = await response.json();
 
