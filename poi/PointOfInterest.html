@@ -25,6 +25,10 @@
         </div>
 
         <div id="map"></div>
+        <div id="customPopup" class="popup">
+            <span class="close-btn" onclick="hidePopup(true)">✖</span>
+            <div id="popupContent"></div>
+        </div>
 
         <div class="controls">
             <div class="input-group">
@@ -72,7 +76,7 @@
         let draggedMarker = null;
         // Initialize Ola Map
         const olaMap = new OlaMapsSDK.OlaMaps({
-            apiKey: '0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9'
+            apiKey: OLA_KEY
         });
 
         function initializeMap() {
@@ -83,23 +87,30 @@
                 zoom: 12
             });
 
-            // Handle both style.load and load events
+            // Handle style.load event
             map.on('style.load', () => {
                 console.log('Map style loaded completely');
                 styleLoaded = true;
-                loadLocationMarkerIcon().then(() => {
-                    // After style is loaded, check if we have URL parameters to process
+                
+                try {
+                    // After style is loaded, fetch POIs and add markers
+                    fetchPOIs();
+                    
+                    // Then check if we have URL parameters to process
                     const urlParams = new URLSearchParams(window.location.search);
                     if (urlParams.get('lat') && urlParams.get('lng')) {
                         initializeFromParams();
                     }
-                });
+                } catch (error) {
+                    console.error("Error initializing map markers:", error);
+                }
             });
 
             map.on('load', () => {
                 console.log('Map loaded');
             });
         }
+
         // Fetch POIs from API
         async function fetchPOIs() {
             const mid = localStorage.getItem("mid");
@@ -109,7 +120,18 @@
 
                 if (Array.isArray(data)) {
                     updatePOITable(data);
-                    updateMapMarkers(data);
+                    
+                    // Ensure the location marker is loaded before updating markers
+                    try {
+                        if (styleLoaded && map) {
+                            await loadLocationMarkerIcon();
+                            updateMapMarkers(data);
+                        } else {
+                            console.log("Map not ready yet, will display markers once it's loaded");
+                        }
+                    } catch (error) {
+                        console.error("Error loading marker icon:", error);
+                    }
                 } else {
                     console.error('Invalid data format received from API');
                 }
@@ -117,6 +139,13 @@
                 console.error('Error fetching POIs:', error);
             }
         }
+
+        const originalUpdateStatus = updateStatus;
+        updateStatus = async function(id, status) {
+            await originalUpdateStatus(id, status);
+            // After status is updated, refresh all markers
+            await fetchPOIs();
+        };
 
         // Add new POI
         async function addPOI() {
@@ -170,19 +199,140 @@
         }
 
         function updateMapMarkers(pois) {
-            // Remove existing markers
-            markers.forEach(marker => marker.remove());
+            // Check if the map is fully loaded and style is loaded
+            if (!map || !styleLoaded) {
+                console.log("Map or style not fully loaded yet, will retry later");
+                setTimeout(() => updateMapMarkers(pois), 500);
+                return;
+            }
+
+            // First, remove all existing marker layers and sources
+            markers.forEach(marker => {
+                if (marker.remove) {
+                    marker.remove();
+                }
+            });
             markers = [];
 
-            // Add new markers
-            pois.forEach(poi => {
-                const marker = olaMap.addMarker({
-                    lngLat: [poi.longitude, poi.latitude],
-                    popup: { text: poi.location, open: false },
-                    color: poi.status === 'Enable' ? '#27ae60' : '#e74c3c'
-                });
-                markers.push(marker);
+            // Add markers for each POI
+            pois.forEach((poi, index) => {
+                // Skip if latitude or longitude is missing or invalid
+                if (!poi.latitude || !poi.langitude || isNaN(parseFloat(poi.latitude)) || isNaN(parseFloat(poi.langitude))) {
+                    console.warn(`Skipping POI with invalid coordinates: ${poi.id} - ${poi.plocation}`);
+                    return;
+                }
+
+                const lat = parseFloat(poi.latitude);
+                const lng = parseFloat(poi.langitude);
+                const markerId = `poi-marker-${poi.id || index}`; // Use index as fallback if id is undefined
+                const sourceId = `poi-source-${poi.id || index}`;
+
+                // Create GeoJSON source for this marker
+                try {
+                    // Create a point feature
+                    const markerFeature = {
+                        type: 'Feature',
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [lng, lat]
+                        },
+                        properties: {
+                            id: poi.id,
+                            title: poi.plocation || `POI ${index + 1}`,
+                            description: poi.address || '',
+                            status: poi.status || 'Enable'
+                        }
+                    };
+
+                    // Add the source
+                    map.addSource(sourceId, {
+                        type: 'geojson',
+                        data: markerFeature
+                    });
+
+                    // Add the marker layer
+                    map.addLayer({
+                        id: markerId,
+                        type: 'symbol',
+                        source: sourceId,
+                        layout: {
+                            'icon-image': 'location-marker',
+                            'icon-size': 0.7,
+                            'icon-anchor': 'bottom',
+                            'icon-allow-overlap': true
+                        },
+                        paint: {
+                            // Use different colors based on status
+                            'icon-color': poi.status === 'Enable' ? '#27ae60' : '#e74c3c'
+                        }
+                    });
+
+                    // Add this marker to our tracking array with additional info
+                    markers.push({
+                        id: poi.id,
+                        layerId: markerId,
+                        sourceId: sourceId,
+                        remove: function() {
+                            if (map.getLayer(this.layerId)) {
+                                map.removeLayer(this.layerId);
+                            }
+                            if (map.getSource(this.sourceId)) {
+                                map.removeSource(this.sourceId);
+                            }
+                        }
+                    });
+
+                    // Add click event for this marker
+                    map.on('click', markerId, (e) => {
+                        const feature = e.features[0];
+                        const properties = feature.properties;
+                        
+                        // Create popup content
+                        const popupContent = `
+                            <div class="map-popup">
+                                <h3>${properties.title}</h3>
+                                <p>${properties.description || ''}</p>
+                                <p style="color: ${properties.status === 'Enable' ? 'green' : 'red'}">
+                                    Status: ${properties.status}
+                                </p>
+                            </div>
+                        `;
+                        
+                        // Create and display a popup using olaMap (the SDK instance)
+                        const popup = olaMap.addPopup({
+                            lngLat: feature.geometry.coordinates,
+                            text: popupContent,
+                            open: true
+                        }).addTo(map);
+                    });
+
+                    // Change cursor when hovering over marker
+                    map.on('mouseenter', markerId, () => {
+                        map.getCanvas().style.cursor = 'pointer';
+                    });
+                    
+                    map.on('mouseleave', markerId, () => {
+                        map.getCanvas().style.cursor = '';
+                    });
+
+                } catch (error) {
+                    console.error(`Error adding marker for POI ${poi.id || index}:`, error);
+                }
             });
+        }
+
+        async function ensureLocationMarkerLoaded() {
+            // Check if the image is already loaded
+            try {
+                const hasImage = map.hasImage('location-marker');
+                if (!hasImage) {
+                    await loadLocationMarkerIcon();
+                }
+                return true;
+            } catch (error) {
+                console.error('Error checking/loading location marker:', error);
+                return false;
+            }
         }
 
         async function updateStatus(id, status) {
@@ -264,7 +414,7 @@
         async function searchPlaces(query) {
             try {
                 const response = await fetch(
-                    `https://api.olamaps.io/places/v1/autocomplete?input=${encodeURIComponent(query)}&api_key=0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9`,
+                    `https://api.olamaps.io/places/v1/autocomplete?input=${encodeURIComponent(query)}&api_key=${OLA_KEY}`,
                     {
                         headers: {
                             'X-Request-Id': generateRequestId()
@@ -299,30 +449,144 @@
             resultsDiv.style.display = 'block';
         }
 
+        function handleMarkerClick(e, marker) {
+            if (!e.features || e.features.length === 0) return;
+            
+            // Set this marker as active
+            markers.forEach(m => m.isActive = false);
+            marker.isActive = true;
+            
+            const feature = e.features[0];
+            const properties = feature.properties;
+            const poiTitle = properties.title || 'POI';
+            const poiAddress = properties.description || '';
+            const poiStatus = properties.status || 'Enable';
+            
+            // Get the popup elements
+            const popup = document.getElementById("customPopup");
+            const popupContent = document.getElementById("popupContent");
+            
+            // Update popup content
+            popupContent.innerHTML = `
+                <div style="border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 5px;">
+                    <b>Location:</b> ${poiTitle} 
+                </div>
+                <div>
+                    <b>Address:</b> ${poiAddress} <br/>
+                    <b>Status:</b> <span class="status-indicator ${poiStatus === 'Enable' ? 'status-on' : 'status-off'}">
+                        ${poiStatus}
+                    </span><br/>
+                    <b>Coordinates:</b> ${feature.geometry.coordinates[1].toFixed(6)}, ${feature.geometry.coordinates[0].toFixed(6)}
+                </div>
+            `;
+            
+            // Show the popup
+            popup.style.display = "block";
+            
+            // Position the popup
+            const mapPos = map.project(feature.geometry.coordinates);
+            popup.style.left = `${mapPos.x}px`;
+            popup.style.top = `${mapPos.y + 110}px`;
+        }
+
+        // Update the event listeners in the init function
+        function setupPopupListeners() {
+            // Add map movement listener for popup positioning
+            map.on("move", updatePopupPosition);
+            
+            // Close popup when clicking elsewhere on map
+            map.on('click', function(e) {
+                const features = map.queryRenderedFeatures(e.point);
+                const isMarkerClick = features.some(f => 
+                    f.layer && f.layer.id && f.layer.id.startsWith('poi-marker-')
+                );
+                
+                if (!isMarkerClick) {
+                    hidePopup();
+                }
+            });
+            
+            // Add close button functionality
+            const closeBtn = document.querySelector(".popup .close-btn");
+            if (closeBtn) {
+                closeBtn.addEventListener("click", function() {
+                    hidePopup(true);
+                });
+            }
+        }
+
+        function updatePopupPosition() {
+            const popup = document.getElementById("customPopup");
+            if (popup && popup.style.display === "block") {
+                // Find which marker the popup belongs to (the active one)
+                const activeMarker = markers.find(m => m.isActive);
+                
+                if (activeMarker && activeMarker.coordinates) {
+                    const mapPos = map.project(activeMarker.coordinates);
+                    popup.style.left = `${mapPos.x}px`;
+                    popup.style.top = `${mapPos.y + 110}px`;
+                }
+            }
+        }
+
+        // Global function to hide popup
+        function hidePopup(manuallyClosed = false) {
+            const popup = document.getElementById("customPopup");
+            if (popup) {
+                popup.style.display = "none";
+            }
+            
+            // Reset active state on all markers
+            if (markers) {
+                markers.forEach(m => m.isActive = false);
+            }
+        }
+
         // Add this function at the top level to load the custom location marker icon
         function loadLocationMarkerIcon() {
-            // Create a teardrop SVG icon with a white dot
-            const locationMarkerSVG = `
-        <svg width="30" height="45" viewBox="0 0 30 45" xmlns="http://www.w3.org/2000/svg">
-            <!-- Main teardrop shape -->
-            <path d="M15 0C6.716 0 0 6.716 0 15c0 8.284 15 30 15 30s15-21.716 15-30c0-8.284-6.716-15-15-15z" fill="#FF0000"
-                stroke="#FFFFFF" stroke-width="2" />
-            <!-- White dot in upper part -->
-            <circle cx="15" cy="15" r="4" fill="#FFFFFF" />
-        </svg>
-        `;
-
-            // Convert SVG to data URL
-            const svgUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(locationMarkerSVG);
-
-            // Load the image into the map
             return new Promise((resolve, reject) => {
+                // Check if the image already exists
+                try {
+                    if (map.hasImage('location-marker')) {
+                        console.log('Location marker already loaded');
+                        resolve();
+                        return;
+                    }
+                } catch (e) {
+                    // If error occurs during check, we'll try to load it anyway
+                    console.log('Error checking if image exists:', e);
+                }
+
+                // Create a teardrop SVG icon with a white dot
+                const locationMarkerSVG = `
+                <svg width="30" height="45" viewBox="0 0 30 45" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Main teardrop shape -->
+                    <path d="M15 0C6.716 0 0 6.716 0 15c0 8.284 15 30 15 30s15-21.716 15-30c0-8.284-6.716-15-15-15z" fill="#FF0000"
+                        stroke="#FFFFFF" stroke-width="2" />
+                    <!-- White dot in upper part -->
+                    <circle cx="15" cy="15" r="4" fill="#FFFFFF" />
+                </svg>
+                `;
+
+                // Convert SVG to data URL
+                const svgUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(locationMarkerSVG);
+
+                // Load the image into the map
                 const img = new Image();
                 img.onload = () => {
-                    map.addImage('location-marker', img);
-                    resolve();
+                    try {
+                        map.addImage('location-marker', img);
+                        console.log('Location marker loaded successfully');
+                        resolve();
+                    } catch (error) {
+                        console.error('Error adding image to map:', error);
+                        reject(error);
+                    }
                 };
-                img.onerror = reject;
+                img.onerror = (error) => {
+                    console.error('Error loading image:', error);
+                    reject(error);
+                };
                 img.src = svgUrl;
             });
         }
@@ -489,7 +753,7 @@
         async function getPlaceDetails(placeId) {
             try {
                 const response = await fetch(
-                    `https://api.olamaps.io/places/v1/details?place_id=${placeId}&api_key=0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9`,
+                    `https://api.olamaps.io/places/v1/details?place_id=${placeId}&api_key=${OLA_KEY}`,
                     {
                         headers: {
                             'X-Request-Id': generateRequestId()
