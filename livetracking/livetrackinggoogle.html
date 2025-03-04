@@ -85,7 +85,7 @@
         let devices = [];
         // Create and append MapMyIndia script dynamically
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap&libraries=marker&v=beta`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_KEY}&callback=initMap&libraries=marker&v=beta`;
         script.defer = true;
         script.async = true;
         document.head.appendChild(script);
