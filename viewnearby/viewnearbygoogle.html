@@ -99,11 +99,6 @@
 
         let throttleTimer;
         function updateNearbyVehicles() {
-            const mid = localStorage.getItem("mid");
-            if (!mid) {
-                console.error("No mid found in localStorage");
-                return;
-            }
 
             // Prevent multiple calls within 2 seconds
             if (throttleTimer) return;
@@ -111,15 +106,19 @@
                 throttleTimer = null;
             }, 2000);
 
-            fetch(`${API}opr=getVehileByMid&mid=${mid}`)
+            fetch(`${API}/api/devices/getVehicleByMid`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
                 .then(response => response.json())
                 .then(data => {
-                    if (!Array.isArray(data)) {
+                    if (!Array.isArray(data.data)) {
                         console.warn("Received non-array data:", data);
                         return;
                     }
 
-                    const nearbyVehicles = data.filter(vehicle => {
+                    const nearbyVehicles = data.data.filter(vehicle => {
                         if (!vehicle.latlang) return false;
                         const [lat, lng] = vehicle.latlang.split(',').map(Number);
                         if (isNaN(lat) || isNaN(lng)) return false;
@@ -139,7 +138,7 @@
         }
 
         window.addEventListener('load', function () {
-            if (!localStorage.getItem("mid")) {
+            if (!localStorage.getItem("token")) {
                 window.location.href = "index.html";
                 return;
             }
@@ -183,7 +182,7 @@
                 const currentDate = new Date();
                 const deviceDate = new Date(vehicle.ddate);
                 const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-                const ignitionStatus = vehicle.ignition?.toLowerCase() === 'true';
+                const ignitionStatus = vehicle.ignition;
 
                 let iconUrl;
                 if (hoursDifference > 2) {
@@ -438,7 +437,7 @@
         // Load navbar
         $(document).ready(() => {
             $("#navbar-container").load("../navbarola.html");
-            if (!localStorage.getItem("mid")) {
+            if (!localStorage.getItem("token")) {
                 window.location.href = "../index.html";
             }
         });

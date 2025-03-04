@@ -113,7 +113,7 @@
         $(document).ready(function () {
 
             // Check if 'mid' is available in localStorage otherwise ri-direct login page
-            if (!localStorage.getItem('mid')) {
+            if (!localStorage.getItem('token')) {
                 // Redirect to login page if 'mid' is not found
                 window.location.href = '../index.html';
             }
@@ -359,11 +359,15 @@
 
         function fetchDeviceData() {
             const mid = localStorage.getItem("mid");
-            fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+            fetch(`${API}/api/devices/getDeviceListByMid`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
                 .then(response => response.json())
                 .then(data => {
-                    devices = data;
-                    populateVehicleList(data);
+                    devices = data.data;
+                    populateVehicleList(data.data);
                 })
                 .catch(error => console.error("Error fetching devices:", error));
         }
@@ -472,7 +476,7 @@
             const hours = String(date.getHours()).padStart(2, '0');
             const minutes = String(date.getMinutes()).padStart(2, '0');
 
-            return `${year}-${month}-${day} ${hours}:${minutes}`;
+            return `${year}-${month}-${day} ${hours}:${minutes}:00`;
         }
 
         function fetchSpeedReport(fromdate, todate, deviceid, speedlimit) {
@@ -485,20 +489,21 @@
                 </tr>
             `;
 
-            const url = `${API}opr=getspeedmoniteringReport&speedlimit=${speedlimit}&fromdate=${fromdate}&todate=${todate}&deviceid=${deviceid}`;
-
-            fetch(url)
-                .then(response => response.text())
+            fetch(`${API}/api/devices/getSpeedMoniteringReport?speedLimit=${speedlimit}&fromDate=${fromdate}&toDate=${todate}&deviceId=${deviceid}`, {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            })
+                .then(response => response.json())
                 .then(data => {
                     try {
                         // Parse the JSON response directly without any text manipulation
-                        const parsedData = JSON.parse(data);
-                        console.log("Parsed Speed Report Data:", parsedData);
+                        console.log(data.data)
 
-                        if (Array.isArray(parsedData)) {
-                            displaySpeedReportData(parsedData);
+                        if (Array.isArray(data.data)) {
+                            displaySpeedReportData(data);
                         } else {
-                            displaySpeedReportData([parsedData]);
+                            console.log("error")
                         }
                     } catch (parseError) {
                         console.error("JSON Parse Error:", parseError);
@@ -575,16 +580,17 @@
                 return;
             }
 
-            reportBody.innerHTML = data.map((item, index) => {
-                const startLocation = formatLocation(item.startlocaitonlatitude, item.startlocaitonlangitude);
-                const endLocation = formatLocation(item.endlocationlatitude, item.endlocationlangitude);
 
+            reportBody.innerHTML = data.data.map((item, index) => {
+                const startLocation = formatLocation(item.startLatitude, item.startLongitude);
+                const endLocation = formatLocation(item.endLatitude, item.endLongitude);
+                console.log(item)
                 return `
                     <tr>
                         <td>${index + 1}</td>
                         <td>${item.deviceName || 'N/A'}</td>
-                        <td>${item.starttime}</td>
-                        <td>${item.endtime}</td>
+                        <td>${item.startTime}</td>
+                        <td>${item.endTime}</td>
                         <td>${startLocation}</td>
                         <td>${endLocation}</td>
                         <td>${item.MaxSpeed} km/h</td>

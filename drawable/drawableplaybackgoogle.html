@@ -174,21 +174,25 @@
 
     // Fetch device data
     function fetchDeviceData() {
-      const mid = localStorage.getItem("mid");
-      if (!mid) {
-        console.error("No mid found in localStorage");
-        return Promise.reject("No mid found");
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("No token found in localStorage");
+        return Promise.reject("No token found");
       }
 
-      return fetch(`${API}opr=getdevicelistByMid&mid=${mid}`)
+      return fetch(`${API}/api/devices/getDeviceListByMid`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
         .then(response => {
           if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
           return response.json();
         })
         .then(data => {
-          if (!Array.isArray(data)) throw new Error("Invalid data format received");
+          if (!Array.isArray(data.data)) throw new Error("Invalid data format received");
 
-          devices = data.map(item => ({
+          devices = data.data.map(item => ({
             name: item.dname,
             did: item.did
           }));
@@ -265,7 +269,7 @@
     }
 
     function formatTime(timeString) {
-      return timeString.replace(':', '') + '00';
+      return timeString + ':00';
     }
 
     // Validate coordinates
@@ -289,8 +293,8 @@
         return Promise.reject("Date selection required");
       }
 
-      const formattedFromDateTime = `${formatDate(fromDate)}${formatTime(fromTime)}`;
-      const formattedToDateTime = `${formatDate(toDate)}${formatTime(toTime)}`;
+      const formattedFromDateTime = `${formatDate(fromDate)} ${formatTime(fromTime)}`;
+      const formattedToDateTime = `${formatDate(toDate)} ${formatTime(toTime)}`;
 
       console.log('Fetching data with params:', {
         did,
@@ -298,12 +302,17 @@
         toDateTime: formattedToDateTime
       });
 
-      return fetch(`${API}opr=getplaybacktest&sdate=${formattedFromDateTime}&edate=${formattedToDateTime}&did=${did}`)
+      return fetch(
+        `${API}/api/devices/playbackdata?sdate=${formattedFromDateTime}&edate=${formattedToDateTime}&did=${did}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
         .then(response => response.json())
         .then(data => {
           console.log('Raw API response:', data); // Log raw data
 
-          if (!Array.isArray(data)) {
+          if (!Array.isArray(data.data)) {
             console.error('Invalid data format:', data);
             throw new Error("Invalid data format received");
           }
@@ -318,7 +327,7 @@
             console.log('Sample data item:', data[0]);
           }
 
-          playbackData = data
+          playbackData = data.data
             .map((item, index) => {
               // Convert and validate coordinates
               const lng = Number(item.langitude);
@@ -1016,7 +1025,7 @@
       });
 
       // Check if 'mid' is available in localStorage otherwise ri-direct login page
-      if (!localStorage.getItem('mid')) {
+      if (!localStorage.getItem('token')) {
         // Redirect to login page if 'mid' is not found
         window.location.href = '../index.html';
       }

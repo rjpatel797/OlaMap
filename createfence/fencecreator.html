@@ -54,6 +54,24 @@
             </div>
         </div>
 
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Sl No.</th>
+                        <th>Fence Value</th>
+                        <th>Fence Name</th>
+                        <th>Fence Type</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="fenceTable">
+                    <!-- Data will be inserted dynamically here -->
+                </tbody>
+            </table>
+
+        </div>
+
         <div class="name-popup" id="namePopup">
             <div class="popup-content">
                 <label for="fenceName">Name:</label>
@@ -94,7 +112,7 @@
             });
 
             // Check if 'mid' is available in localStorage
-            if (!localStorage.getItem("mid")) {
+            if (!localStorage.getItem("token")) {
                 window.location.href = "../index.html";
             }
         });
@@ -428,14 +446,14 @@
             const name = document.getElementById('fenceName').value;
             if (!name || !currentShape) return;
 
-            const mid = localStorage.getItem('mid');
-            if (!mid) {
-                console.error('mid not found in local storage.');
-                alert('User ID (mid) not found. Please set mid in localStorage.');
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.error('token not found in local storage.');
+                alert('User ID (token) not found. Please set token in localStorage.');
                 return;
             }
 
-            let url = '';
+            let data;
 
             if (currentDrawingMode === 'circle') {
                 // Circle shape: currentShape = { center: [lng, lat], radius: radiusInMeters }
@@ -444,8 +462,11 @@
                 const radius = currentShape.radius;
 
                 // Construct URL for circle fence
-                // &fvalue=lat,long,radius
-                url = `${API}opr=savefence&fvalue=${lat},${lng},${radius}&fname=${encodeURIComponent(name)}&ftype=circle&mid=${encodeURIComponent(mid)}`;
+                data = {
+                    fenceValue: `${lat},${lng},${radius}`,
+                    fenceName: name,
+                    fenceType: 'circle',
+                };
 
             } else if (currentDrawingMode === 'polygon') {
                 // Polygon shape: currentShape = { type: 'Feature', geometry: { type: 'Polygon', coordinates: [ [ [lng, lat], [lng, lat], ... ] ] } }
@@ -457,18 +478,28 @@
                 const coordPairs = coords.map(c => `${c[1]},${c[0]}`).join(',');
 
                 // Construct URL for polygon fence
-                // &fvalue=point1lat,point1long,point2lat,point2long,...etc.
-                url = `${API}opr=savefence&fvalue=${coordPairs}&fname=${encodeURIComponent(name)}&ftype=polygon&mid=${encodeURIComponent(mid)}`;
+                data = {
+                    fenceValue: coordPairs,
+                    fenceName: name,
+                    fenceType: 'polygon',
+                };
             } else {
                 console.error('Unsupported fence type:', currentDrawingMode);
                 return;
             }
 
-            fetch(url)
+            fetch(`${API}/api/devices/saveFence`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(data)
+            })
                 .then(response => response.json())
                 .then(data => {
-                    if (data[0].msg === "0") {
-                        console.log('Fence saved:', data[0].msg);
+                    if (data.status === true) {
+                        // console.log('Fence saved:', data.data);
                         cleanupDrawing();
                         document.getElementById('namePopup').classList.remove('active');
                         currentDrawingMode = null;
@@ -479,7 +510,8 @@
                         });
 
                         alert("Successfully added the fence.")
-                    } else if (data[0].msg === "1") {
+                        renderTable()
+                    } else  {
                         throw new Error('Failed to save fence.');
                     }
                 })
@@ -733,7 +765,7 @@
                 const response = await fetch(`https://api.olamaps.io/places/v1/autocomplete?input=${encodeURIComponent(query)}&api_key=${OLA_KEY}`);
                 const data = await response.json();
 
-                console.log('API Response:', data); // Debug log
+                // console.log('API Response:', data); // Debug log
 
                 if (data.predictions && Array.isArray(data.predictions)) {
                     displaySuggestions(data.predictions);
@@ -847,6 +879,307 @@
                 essential: true
             });
         }
+
+
+        let fencesData;
+
+        renderTable()
+
+        let previousFencesData = []; // Stores the last known fence data
+
+        async function renderTable() {
+            const tableBody = document.getElementById("fenceTable");
+            
+            try {
+                const response = await fetch(`${API}/api/devices/getFenceListByMid`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem("token")}`
+                    }
+                });
+
+                const json = await response.json();
+                const newFencesData = json.data || [];
+
+                // console.log("Fetched Data:", newFencesData);
+
+                if (!newFencesData.length) {
+                    tableBody.innerHTML = '<tr><td colspan="8" class="error">No devices found</td></tr>';
+                    previousFencesData = []; // Reset stored data
+                    return;
+                }
+
+                // **Check if data has changed** before re-rendering
+                if (JSON.stringify(previousFencesData) === JSON.stringify(newFencesData)) {
+                    console.log("No changes detected, skipping render.");
+                    return;
+                }
+
+                // Clear table only if there is a change
+                tableBody.innerHTML = "";
+
+                // Render only new/changed data
+                newFencesData.forEach((fence, index) => {
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${fence.fenceValue}</td>
+                        <td>${fence.fenceName}</td>
+                        <td>${fence.fenceType}</td>
+                        <td class="action-icons">
+                            <i class="fa fa-eye view-icon" title="View Fence" onclick="viewFence(${fence.fenceId})"></i>
+                            <i class="fa fa-edit edit-icon" title="Edit Fence" onclick="editFence(${fence.fenceId}, '${fence.fenceName.replace(/'/g, "\\'")}')"></i>
+                            <i class="fa fa-trash delete-icon" title="Delete Fence" onclick="deleteFence(${fence.fenceId})"></i>
+                        </td>
+                    `;
+
+                    tableBody.appendChild(row);
+                });
+
+                // **Update stored data after successful render**
+                previousFencesData = newFencesData;
+
+            } catch (error) {
+                console.error('Error fetching fences:', error);
+                tableBody.innerHTML = '<tr><td colspan="8" class="error">Failed to load fences. Please try again later.</td></tr>';
+            }
+        }
+
+
+        function viewFence(id) {
+            // const fence = fences.find(item => item.id === id);
+            // if (fence) {
+            //     alert(`Viewing Fence: \n\nName: ${fence.fenceName} \nType: ${fence.fenceType} \nValue: ${fence.fenceValue}`);
+            // }
+        }
+
+        async function editFence(id, currentName) {
+    // Create Edit Modal
+    let modal = document.createElement("div");
+    modal.id = "editModal";
+    modal.innerHTML = `
+        <div class="modal-overlay" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;">
+            
+            <div class="modal-content" style="
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                width: 350px;
+                text-align: center;
+                box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);">
+                
+                <h2>Edit Fence Name</h2>
+                <p>Enter the new name for the fence:</p>
+                <input type="text" id="fenceNameInput" value="${currentName}" style="
+                    width: 90%;
+                    padding: 8px;
+                    margin-top: 10px;
+                    border: 1px solid #ccc;
+                    border-radius: 5px;">
+                <div class="modal-buttons" style="margin-top: 20px; display: flex; justify-content: space-around;">
+                    <button id="cancelEdit" style="
+                        padding: 10px 15px;
+                        background-color: gray;
+                        color: white;
+                        border: none;
+                        border-radius: 5px;
+                        cursor: pointer;">Cancel</button>
+                        
+                    <button id="saveEdit" style="
+                        padding: 10px 15px;
+                        background-color: blue;
+                        color: white;
+                        border: none;
+                        border-radius: 5px;
+                        cursor: pointer;">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Append modal to body
+    document.body.appendChild(modal);
+
+    // Close modal on cancel
+    document.getElementById("cancelEdit").addEventListener("click", () => {
+        document.body.removeChild(modal);
+    });
+
+    // Save changes and send API request
+    document.getElementById("saveEdit").addEventListener("click", async function () {
+        let newName = document.getElementById("fenceNameInput").value.trim();
+
+        if (!newName) {
+            showSuccessModal("Fence name cannot be empty!", "error");
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API}/api/devices/updateFence?fenceId=${id}&fenceName=${encodeURIComponent(newName)}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                document.body.removeChild(modal); // Remove edit modal
+
+                if (data.status === true) {
+                    showSuccessModal("Fence name updated successfully!", "success");
+                    renderTable(); // Refresh table
+                } else {
+                    showSuccessModal("Failed to update fence name.", "error");
+                }
+            }
+        } catch (error) {
+            showSuccessModal("Server error. Please try again later.", "error");
+        }
+    });
+}
+
+        async function deleteFence(id) {
+            // Create Confirmation Modal
+            let modal = document.createElement("div");
+            modal.id = "deleteModal";
+            modal.innerHTML = `
+                <div class="modal-overlay" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 1000;">
+                    
+                    <div class="modal-content" style="
+                        background: white;
+                        padding: 20px;
+                        border-radius: 8px;
+                        width: 350px;
+                        text-align: center;
+                        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);">
+                        
+                        <h2>Are you sure?</h2>
+                        <p>You are about to delete this fence. This action cannot be undone.</p>
+                        <div class="modal-buttons" style="margin-top: 20px; display: flex; justify-content: space-around;">
+                            <button id="cancelBtn" style="
+                                padding: 10px 15px;
+                                background-color: gray;
+                                color: white;
+                                border: none;
+                                border-radius: 5px;
+                                cursor: pointer;">Cancel</button>
+                                
+                            <button id="confirmDelete" style="
+                                padding: 10px 15px;
+                                background-color: red;
+                                color: white;
+                                border: none;
+                                border-radius: 5px;
+                                cursor: pointer;">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Append modal to body
+            document.body.appendChild(modal);
+
+            // Cancel button removes modal
+            document.getElementById("cancelBtn").addEventListener("click", () => {
+                document.body.removeChild(modal);
+            });
+
+            // Confirm Delete
+            document.getElementById("confirmDelete").addEventListener("click", async function () {
+                try {
+                    const response = await fetch(`${API}/api/devices/fencedelete/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + localStorage.getItem('token')
+                        },
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        document.body.removeChild(modal); // Remove confirmation modal
+
+                        if (data.status === true) {
+                            // Show success modal
+                            showSuccessModal("Fence deleted successfully!");
+                            renderTable(); // Refresh the table
+                        } else {
+                            showSuccessModal("Failed to delete fence. Please try again.");
+                        }
+                    }
+                } catch (error) {
+                    showSuccessModal("Server error. Please try again later.");
+                }
+            });
+        }
+
+        // Success Modal Function
+        function showSuccessModal(message, type = "success") {
+    let successModal = document.createElement("div");
+    successModal.innerHTML = `
+        <div class="modal-overlay" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;">
+            
+            <div class="modal-content" style="
+                background: ${type === "success" ? "white" : "#ffdddd"};
+                padding: 20px;
+                border-radius: 8px;
+                width: 350px;
+                text-align: center;
+                box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);">
+                
+                <h2>${type === "success" ? "Success" : "Error"}</h2>
+                <p>${message}</p>
+                <button id="closeSuccessModal" style="
+                    padding: 10px 15px;
+                    background-color: ${type === "success" ? "green" : "red"};
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    margin-top: 15px;">OK</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(successModal);
+
+    // Close modal when OK is clicked
+    document.getElementById("closeSuccessModal").addEventListener("click", () => {
+        document.body.removeChild(successModal);
+    });
+}
 
         // Hide suggestions when clicking outside
         document.addEventListener('click', (e) => {

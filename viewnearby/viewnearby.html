@@ -56,13 +56,13 @@
         });
 
         function updateNearbyVehicles() {
-            const mid = localStorage.getItem("mid");
-            if (!mid) {
-                console.error("No mid found in localStorage");
-                return;
-            }
+            
 
-            fetch(`${API}opr=getVehileByMid&mid=${mid}`)
+            fetch(`${API}/api/devices/getVehicleByMid`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
@@ -70,13 +70,13 @@
                     return response.json();
                 })
                 .then(data => {
-                    if (!Array.isArray(data)) {
+                    if (!Array.isArray(data.data)) {
                         console.warn("Received non-array data:", data);
                         return;
                     }
 
-                    console.log(`Found ${data.length} total vehicles`);
-                    const nearbyVehicles = data.filter(vehicle => {
+                    console.log(`Found ${data.data.length} total vehicles`);
+                    const nearbyVehicles = data.data.filter(vehicle => {
                         if (!vehicle.latlang) {
                             console.warn(`Vehicle ${vehicle.dname} has no latlang data`);
                             return false;
@@ -103,7 +103,7 @@
         }
 
         window.addEventListener('load', function () {
-            if (!localStorage.getItem("mid")) {
+            if (!localStorage.getItem("token")) {
                 window.location.href = "index.html";
                 return;
             }
@@ -124,7 +124,6 @@
             const urlDeviceId = deviceId.toString();
 
             // Log the first vehicle to see its structure
-            console.log('Sample vehicle structure:', vehicles[0]);
 
             // Find the selected vehicle - try different possible property names
             const selectedVehicle = vehicles.find(v =>
@@ -134,8 +133,6 @@
                 (v.dname?.toString() === urlDeviceId)
             );
 
-            console.log('URL DeviceId:', urlDeviceId);
-            console.log('Selected Vehicle:', selectedVehicle);
 
             // Find nearest vehicle to the selected vehicle
             const nearestToSelected = selectedVehicle ? findNearestToSelected(vehicles, selectedVehicle) : null;
@@ -170,7 +167,7 @@
                 const currentDate = new Date();
                 const deviceDate = new Date(vehicle.ddate);
                 const hoursDifference = (currentDate - deviceDate) / (1000 * 60 * 60);
-                const ignitionStatus = vehicle.ignition?.toLowerCase() === 'true';
+                const ignitionStatus = vehicle.ignition;
 
                 if (hoursDifference > 2) {
                     carImage.src = '/deviceTracking/images/blackcar1.png';
@@ -241,9 +238,6 @@
             });
 
             // Add console log to show all properties of the first vehicle
-            if (vehicles.length > 0) {
-                console.log('Available vehicle properties:', Object.keys(vehicles[0]));
-            }
         }
 
 

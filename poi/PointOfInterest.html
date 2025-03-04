@@ -115,7 +115,11 @@
         async function fetchPOIs() {
             const mid = localStorage.getItem("mid");
             try {
-                const response = await fetch(`${API}opr=getpoilistByMid&mid=${mid}`);
+                const response = await fetch(`${API}/api/devices/getPoiListByMid`, {
+                    headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
                 const data = await response.json();
 
                 if (Array.isArray(data)) {
@@ -132,6 +136,7 @@
                     } catch (error) {
                         console.error("Error loading marker icon:", error);
                     }
+
                 } else {
                     console.error('Invalid data format received from API');
                 }
@@ -155,10 +160,25 @@
             const address = document.getElementById('address').value;
             const status = document.getElementById('status').value;
 
-            const url = `${API}opr=addpoi&latitude=${latitude}&langitude=${longitude}&status=${status}&location=${location}&address=${address}&mid=${mid}`;
+            const url = `${API}/api/devices/poiadd`;
+            const data = {
+                latitude: latitude,
+                langitude: longitude,
+                status: status,
+                location: location,
+                address: address,
+            };
+            const options = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(data)
+            };
 
             try {
-                const response = await fetch(url);
+                const response = await fetch(url, options);
                 if (response.ok) {
                     fetchPOIs();
                     clearInputs();
@@ -176,19 +196,19 @@
                 const row = `
                     <tr data-id="${poi.id}">
                         <td>${index + 1}</td>
-                        <td>${poi.plocation || ''}</td>
+                        <td>${poi.location || ''}</td>
                         <td>${poi.latitude || ''}</td>
                         <td>${poi.langitude || ''}</td>
                         <td>${poi.address || ''}</td>
                         <td style="${poi.status === 'Disable' ? 'color: red;' : 'color: green;'}">${poi.status || 'Enable'}</td>
                         <td>
-                            <span class="action-btn enable-btn" onclick="updateStatus(${poi.id}, 'Enable')" title="Enable">
+                            <span class="action-btn enable-btn" onclick="updateStatus(${poi.no}, 'Enable')" title="Enable">
                                 <i class="fas fa-check-circle"></i>
                             </span>
-                            <span class="action-btn disable-btn" onclick="updateStatus(${poi.id}, 'Disable')" title="Disable">
+                            <span class="action-btn disable-btn" onclick="updateStatus(${poi.no}, 'Disable')" title="Disable">
                                 <i class="fas fa-ban"></i>
                             </span>
-                            <span class="action-btn delete-btn" onclick="deletePOI(${poi.id})" title="Delete">
+                            <span class="action-btn delete-btn" onclick="deletePOI(${poi.no})" title="Delete">
                                 <i class="fas fa-trash-alt"></i>
                             </span>
                         </td>
@@ -337,8 +357,16 @@
 
         async function updateStatus(id, status) {
 
+
             try {
-                const response = await fetch(`${API}opr=updatepoi&id=${id}&status=${status}&mid=${mid}`);
+                const response = await fetch(`${API}/api/devices/poiupdate?no=${no}&status=${status}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                            'Content-Type': 'application/json'
+                        },
+                        // body: JSON.stringify({ no, status })
+                    });
                 if (response.ok) {
                     fetchPOIs();
                 }
@@ -347,10 +375,15 @@
             }
         }
 
-        async function deletePOI(id) {
+        async function deletePOI(no) {
             if (confirm('Are you sure you want to delete this POI?')) {
                 try {
-                    const response = await fetch(`${API}opr=deletepoi&id=${id}&mid=${mid}`);
+                    const response = await fetch(`${API}/api/devices/poidelete/${no}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                    });
                     if (response.ok) {
                         fetchPOIs();
                     }
@@ -379,7 +412,7 @@
                 console.log("Navbar loaded successfully!");
             });
 
-            if (!localStorage.getItem("mid")) {
+            if (!localStorage.getItem("token")) {
                 window.location.href = "../index.html";
             }
 
@@ -775,13 +808,15 @@
 
         async function reverseGeocode(lat, lng) {
             try {
-                const response = await fetch(
-                    `https://ttsgps.in/getandrojsonforNewIphone.jsp?opr=getLoc&lat=${lat}&lang=${lng}`
-                );
+                const response = await fetch(`${API}/api/devices/getLocation?latitude=${lat}&longitude=${lng}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+                });
                 const data = await response.json();
 
-                if (data && data.length > 0 && data[0].location) {
-                    return data[0].location;
+                if (data && data.data.length > 0 && data.data[0].location) {
+                    return data.data[0].location;
                 }
                 return '';
             } catch (error) {

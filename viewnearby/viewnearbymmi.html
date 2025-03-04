@@ -40,7 +40,7 @@
             });
 
             // Check if 'mid' is available in localStorage otherwise ri-direct login page
-            if (!localStorage.getItem('mid')) {
+            if (!localStorage.getItem('token')) {
                 // Redirect to login page if 'mid' is not found
                 window.location.href = '../index.html';
             }
@@ -55,7 +55,7 @@
         document.head.appendChild(script);
 
         function initMap() {
-            if (!localStorage.getItem("mid")) {
+            if (!localStorage.getItem("token")) {
                 window.location.href = "index.html";
                 return;
             }
@@ -86,18 +86,21 @@
         }
 
         function fetchAndDisplayVehicles() {
-            const mid = localStorage.getItem("mid");
 
-            fetch(`${API}opr=getVehileByMid&mid=${mid}`)
+            fetch(`${API}/api/devices/getVehicleByMid`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
                 .then(response => response.json())
                 .then(vehicles => {
-                    if (!Array.isArray(vehicles)) {
+                    if (!Array.isArray(vehicles.data)) {
                         console.warn("Invalid response format");
                         return;
                     }
 
                     // Find selected vehicle
-                    const selectedVehicle = vehicles.find(v => v.did == deviceId);
+                    const selectedVehicle = vehicles.data.find(v => v.did == deviceId);
                     if (!selectedVehicle) {
                         console.error("Selected vehicle not found");
                         return;
@@ -107,7 +110,7 @@
                     const [selectedLat, selectedLng] = selectedVehicle.latlang.split(',').map(Number);
 
                     // Find all vehicles within radius
-                    const nearbyVehicles = vehicles
+                    const nearbyVehicles = vehicles.data
                         .filter(vehicle => {
                             if (vehicle.did == deviceId) return false;
                             if (!vehicle.latlang) return false;
@@ -317,7 +320,7 @@
 
         // Check authentication on load
         window.addEventListener('load', () => {
-            if (!localStorage.getItem("mid")) {
+            if (!localStorage.getItem("token")) {
                 window.location.href = "index.html";
             }
         });
