@@ -363,7 +363,6 @@
         }
 
         function fetchHistoryReport(fromdate, todate, did, interval, withDetail) {
-            const mid = localStorage.getItem("mid")
             const reportBody = document.getElementById('reportData');
             reportBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Loading...</td></tr>';
 
@@ -371,12 +370,14 @@
             const formattedFromDate = formatDateForAPI(fromdate);
             const formattedToDate = formatDateForAPI(todate);
 
-            const url = `${API}opr=poihistoryreport&mid=${mid}&did=${did}&sdate=${formattedFromDate}&edate=${formattedToDate}&poiname=${encodeURIComponent(selectedPOI)}&radius=${interval}`;
-
-            fetch(url)
+            fetch(`${API}/Android/poihistoryreport?did=${did}&sdate=${formattedFromDate}&edate=${formattedToDate}&poiname=${encodeURIComponent(selectedPOI)}&radius=${interval}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
                 .then(response => response.json())
                 .then(data => {
-                    displayReport(data);
+                    displayReport(data.data);
                 })
                 .catch(error => {
                     console.error("Error:", error);
@@ -492,9 +493,9 @@
                 doc.text(`Report Period: ${startDate} ${startTime} to ${endDate} ${endTime}`, 15, 25);
 
                 // Get vehicle name
-                const deviceSelect = document.getElementById('deviceSelect');
-                const vehicleName = deviceSelect.options[deviceSelect.selectedIndex]?.text || 'Unknown Vehicle';
-                doc.text(`Vehicle: ${vehicleName}`, 15, 30);
+                // const deviceSelect = document.getElementById('deviceSelect');
+                // const vehicleName = deviceSelect.options[deviceSelect.selectedIndex]?.text || 'Unknown Vehicle';
+                // doc.text(`Vehicle: ${vehicleName}`, 15, 30);
 
                 // Define table headers
                 const headers = [[
@@ -564,7 +565,7 @@
                 const now = new Date();
                 const dateStr = now.toLocaleDateString().replace(/\//g, '-');
                 const timeStr = now.toLocaleTimeString().replace(/:/g, '-');
-                doc.save(`history_report_${vehicleName}_${dateStr}_${timeStr}.pdf`);
+                doc.save(`history_report_${dateStr}_${timeStr}.pdf`);
 
             } catch (error) {
                 console.error('Error generating PDF:', error);
