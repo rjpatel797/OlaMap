@@ -122,14 +122,14 @@
                 });
                 const data = await response.json();
 
-                if (Array.isArray(data)) {
-                    updatePOITable(data);
+                if (Array.isArray(data.data)) {
+                    updatePOITable(data.data);
                     
                     // Ensure the location marker is loaded before updating markers
                     try {
                         if (styleLoaded && map) {
                             await loadLocationMarkerIcon();
-                            updateMapMarkers(data);
+                            updateMapMarkers(data.data);
                         } else {
                             console.log("Map not ready yet, will display markers once it's loaded");
                         }
