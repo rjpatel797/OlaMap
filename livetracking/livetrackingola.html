@@ -84,7 +84,7 @@
       <script>
         // Initialize the Ola Maps SDK
         const olaMaps = new OlaMapsSDK.OlaMaps({
-          apiKey: "0OiYwalFPHxDTgjBQlXOtUj9S70okyKvaJ02wBf9",
+          apiKey: OLA_KEY,
         });
 
         // Initialize map
@@ -99,6 +99,8 @@
         let trackingInterval = null;
         let isTracking = false;
         let currentMarker = null;
+        let pathCoordinates = []; // Array to store path coordinates
+        let vehiclePath = null; // Variable to store the polyline object
 
         const ANGLE_OFFSET = 90;
         const popup = document.getElementById("customPopup");
@@ -135,6 +137,16 @@
             currentMarker.remove();
             currentMarker = null;
           }
+
+          // Clear the path polyline
+          if (vehiclePath) {
+            myMap.removeLayer(vehiclePath.id);
+            myMap.removeSource(vehiclePath.source);
+            vehiclePath = null;
+          }
+          
+          // Reset the path coordinates array
+          pathCoordinates = [];
 
           lastPosition = null;
           isAnimating = false;
@@ -279,8 +291,33 @@
             ? data.latlang.split(",").map(coord => parseFloat(coord)).reverse()
             : [10, 10];
 
+          // Add new coordinates to path if they're different from the last position
+          if (!lastPosition || 
+              (lastPosition[0] !== coordinates[0] || lastPosition[1] !== coordinates[1])) {
+            
+            // For the first point, just add it
+            if (pathCoordinates.length === 0) {
+              pathCoordinates.push(lastPosition || coordinates);
+            }
+            
+            // Here we're only adding the previous position (lastPosition) to the path,
+            // not the current coordinates, so the line is always one step behind the marker
+            if (lastPosition) {
+              pathCoordinates.push(lastPosition);
+            }
+            
+            // Limit the number of points in the path (optional, to avoid performance issues)
+            const MAX_PATH_POINTS = 100; // Adjust as needed
+            if (pathCoordinates.length > MAX_PATH_POINTS) {
+              pathCoordinates = pathCoordinates.slice(-MAX_PATH_POINTS);
+            }
+            
+            // Update the polyline with new coordinates
+            updateVehiclePath();
+          }
+
           if (!currentMarker) {
-            // Initial marker creation
+            // Initial marker creation (existing code)
             const customMarker = document.createElement("div");
             customMarker.classList.add("customMarkerClass");
 
@@ -686,6 +723,16 @@
             currentMarker = null;
           }
 
+          // Clear the path polyline
+          if (vehiclePath) {
+            myMap.removeLayer(vehiclePath.id);
+            myMap.removeSource(vehiclePath.source);
+            vehiclePath = null;
+          }
+          
+          // Reset the path coordinates array
+          pathCoordinates = [];
+
           // Reset position tracking variables
           lastPosition = null;
           isAnimating = false;
@@ -704,8 +751,72 @@
           if (selectedVehicle) {
             selectedVehicle.textContent = 'Select Vehicle';
           }
+        }
 
+        function createVehiclePath() {
+          // Check if a path already exists and remove it
+          if (vehiclePath) {
+            myMap.removeLayer(vehiclePath.id);
+            myMap.removeSource(vehiclePath.source);
+          }
 
+          // Create a unique source and layer ID
+          const sourceId = 'vehicle-path-source';
+          const layerId = 'vehicle-path-layer';
+
+          // Add the GeoJSON source for the path
+          myMap.addSource(sourceId, {
+            'type': 'geojson',
+            'data': {
+              'type': 'Feature',
+              'properties': {},
+              'geometry': {
+                'type': 'LineString',
+                'coordinates': pathCoordinates
+              }
+            }
+          });
+
+          // Add the line layer
+          myMap.addLayer({
+            'id': layerId,
+            'type': 'line',
+            'source': sourceId,
+            'layout': {
+              'line-join': 'round',
+              'line-cap': 'round'
+            },
+            'paint': {
+              'line-color': '#3498db', // Blue color
+              'line-width': 4,
+              'line-opacity': 0.8,
+            }
+          });
+
+          // Store reference to the path for later updates
+          vehiclePath = {
+            id: layerId,
+            source: sourceId
+          };
+        }
+
+        function updateVehiclePath() {
+          if (!vehiclePath) {
+            if (pathCoordinates.length >= 2) {
+              createVehiclePath();
+            }
+            return;
+          }
+
+          // Update the GeoJSON data in the source
+          myMap.getSource(vehiclePath.source).setData({
+            'type': 'Feature',
+            'properties': {},
+            'geometry': {
+              'type': 'LineString',
+              'coordinates': pathCoordinates
+            }
+          });
         }
 
         // Update the track button click handler

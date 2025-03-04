@@ -172,9 +172,13 @@
     </div>
 
     <script src="../js/api.js"></script>
-    <script
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBjSJzY7GgAuRw_Pf5tUCJU7oMm_rg0aWg&callback=initMap&libraries=geometry"
-        async defer></script>
+    <script>
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_KEY}&callback=initMap&libraries=geometry`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+        </script>
     <script>
         // Initialize when document is ready
         $(document).ready(function () {
