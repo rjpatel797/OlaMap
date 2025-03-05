@@ -114,30 +114,43 @@
         }
 
         .action-btn {
-    cursor: pointer;
-    padding: 6px;
-    margin: 0 3px;
-    border-radius: 4px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.enable-btn {
-    color: #28a745;
-}
-
-.disable-btn {
-    color: #ffc107;
-}
-
-.delete-btn {
-    color: #dc3545;
-}
-
-.action-btn:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-}
+            cursor: pointer;
+            margin: 0 5px;
+            color: #333;
+            transition: color 0.3s;
+        }
+        
+        .view-btn {
+            color: #2980b9;
+        }
+        
+        .view-btn:hover {
+            color: #3498db;
+        }
+        
+        .enable-btn {
+            color: #27ae60;
+        }
+        
+        .enable-btn:hover {
+            color: #2ecc71;
+        }
+        
+        .disable-btn {
+            color: #c0392b;
+        }
+        
+        .disable-btn:hover {
+            color: #e74c3c;
+        }
+        
+        .delete-btn {
+            color: #e74c3c;
+        }
+        
+        .delete-btn:hover {
+            color: #c0392b;
+        }
 
 /* Optional: Add transition for smooth hover effect */
 .action-btn i {
