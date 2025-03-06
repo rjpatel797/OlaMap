@@ -147,21 +147,21 @@
 
         function fetchLocationPoiAPI() {
             const isChecked = document.getElementById('locationPoi').checked;
-            if (isChecked) {
-                // Call your API to fetch location data
-                fetch(`${API}opr=addpoi&latitude=22.333&langitude=66.99999&status=Enable&location=NA&address=Testing&mid=${mid}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log("Location POI data received:", data);
-                        // Handle the data as needed
-                    })
-                    .catch(error => {
-                        console.error("Error fetching location POI data:", error);
-                    });
-            } else {
-                console.log("Location by POI checkbox is unchecked.");
-                // Handle the case when the checkbox is unchecked if necessary
-            }
+            // if (isChecked) {
+            //     // Call your API to fetch location data
+            //     fetch(`${API}opr=addpoi&latitude=22.333&langitude=66.99999&status=Enable&location=NA&address=Testing&mid=${mid}`)
+            //         .then(response => response.json())
+            //         .then(data => {
+            //             console.log("Location POI data received:", data);
+            //             // Handle the data as needed
+            //         })
+            //         .catch(error => {
+            //             console.error("Error fetching location POI data:", error);
+            //         });
+            // } else {
+            //     console.log("Location by POI checkbox is unchecked.");
+            //     // Handle the case when the checkbox is unchecked if necessary
+            // }
         }
 
         function resetForm() {
@@ -495,8 +495,8 @@
                 .then(data => {
                     console.log("vehicle data received:", data);
 
-                    if (Array.isArray(data)) {
-                        devices = data.map(item => ({
+                    if (Array.isArray(data.data)) {
+                        devices = data.data.map(item => ({
                             name: item.dname || 'Unnamed vehicle',
                             did: item.did
                         }));
@@ -607,10 +607,16 @@
 
             // Make API call
             // Make API call with multiple device IDs
-            fetch(`${API}opr=getstopagereportDetalis1&sdate=${sdate}&edate=${edate}&did=${deviceIds}&minstop=${minStop}`)
+            fetch(`${API}/Android/getstopagereport?sdate=${sdate} 00:00:00&edate=${edate} 23:59:59&did=${deviceIds}&minstop=${minStop}`,{
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                }
+            })
                 .then(response => response.json())
                 .then(data => {
-                    displayReport(data);
+                    displayReport(data.data);
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -786,7 +792,7 @@
 
         function exportExcel() {
             // Get headers
-            const headers = ['vehicle Group', 'vehicle Name', 'Distance Travelled(km)', 'Max. Speed(km/h)', 'Drive Time', 'Stoppage Time'];
+            const headers = [ 'vehicle Name','Start Date', 'End Date', 'Duration', 'Location'];
 
             // Get data rows
             const rows = document.querySelectorAll('#reportData tr');
@@ -880,10 +886,10 @@
                 doc.text(`Report Period: ${startDate} ${startTime} to ${endDate} ${endTime}`, 15, 25);
 
                 // Get selected vehicle name
-                const deviceSelect = document.getElementById('deviceSelect');
-                const selectedOption = deviceSelect.options[deviceSelect.selectedIndex];
-                const vehicleName = selectedOption ? selectedOption.text : 'Unknown Vehicle';
-                doc.text(`Vehicle: ${vehicleName}`, 15, 30);
+                // const deviceSelect = document.getElementById('deviceSelect');
+                // const selectedOption = deviceSelect.options[deviceSelect.selectedIndex];
+                // const vehicleName = selectedOption ? selectedOption.text : 'Unknown Vehicle';
+                // doc.text(`Vehicle: ${vehicleName}`, 15, 30);
 
                 // Get minimum stop time
                 const minStop = document.getElementById('minStop').value;
@@ -965,7 +971,7 @@
                 const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
 
                 // Save the PDF
-                doc.save(`stoppage_report_${vehicleName}_${dateStr}_${timeStr}.pdf`);
+                doc.save(`stoppage_report_${dateStr}_${timeStr}.pdf`);
 
             } catch (error) {
                 console.error('Error generating PDF:', error);
